@@ -1,0 +1,1037 @@
+[
+    {
+        "name": "单刀开关",
+        "icon": "single_pole",
+        "type_name": "开关",
+        "cfg_type": "KD",
+        "iport": 0,
+        "params": {
+            "iport": "开关量"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            0
+        ],
+        "offline": [
+            64,
+            0
+        ],
+        "shortErr": [
+            134,
+            0
+        ],
+        "open": [
+            0,
+            0
+        ],
+        "close": [
+            64,
+            0
+        ],
+        "ioError": [
+            134,
+            0
+        ]
+       
+    },
+    {
+        "name": "空气开关",
+        "icon": "air_switch",
+        "type_name": "开关",
+        "cfg_type": "K",
+        "iport": 0,
+        "params": {
+            "iport": "开关量"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            60
+        ],
+        "offline": [
+            64,
+            60
+        ],
+        "shortErr": [
+            134,
+            60
+        ],
+        "open": [
+            0,
+            60
+        ],
+        "close": [
+            64,
+            60
+        ],
+        "ioError": [
+            134,
+            60
+        ]
+    },
+    {
+        "name": "电表",
+        "icon": "meter",
+        "type_name": "电表",
+        "cfg_type": "meter",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            120
+        ],
+        "offline": [
+            64,
+            120
+        ],
+        "shortErr": [
+            134,
+            120
+        ],
+        "open": [
+            0,
+            120
+        ],
+        "close": [
+            64,
+            120
+        ],
+        "ioError": [
+            134,
+            120
+        ]
+    },
+    {
+        "name": "智慧网关",
+        "icon": "smart_controller",
+        "type_name": "控制器",
+        "cfg_type": "smart_controller",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            180
+        ],
+        "offline": [
+            64,
+            180
+        ],
+        "shortErr": [
+            134,
+            180
+        ],
+        "open": [
+            0,
+            180
+        ],
+        "close": [
+            64,
+            180
+        ],
+        "ioError": [
+            134,
+            180
+        ]
+    },
+    {
+        "name": "景观灯控制器",
+        "icon": "landscape_light_controller",
+        "type_name": "控制器",
+        "cfg_type": "landscape_light_controller",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            240
+        ],
+        "offline": [
+            64,
+            240
+        ],
+        "shortErr": [
+            134,
+            240
+        ],
+        "open": [
+            0,
+            240
+        ],
+        "close": [
+            64,
+            240
+        ],
+        "ioError": [
+            134,
+            240
+        ]
+    },
+    {
+        "name": "景观亮化控制模块",
+        "icon": "landscape_light_module",
+        "type_name": "控制器",
+        "cfg_type": "landscape_light_module",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            300
+        ],
+        "offline": [
+            64,
+            300
+        ],
+        "shortErr": [
+            134,
+            300
+        ],
+        "open": [
+            0,
+            300
+        ],
+        "close": [
+            64,
+            300
+        ],
+        "ioError": [
+            134,
+            300
+        ]
+    },
+    {
+        "name": "集中控制器",
+        "icon": "centralized_controller",
+        "type_name": "控制器",
+        "cfg_type": "centralized_controller",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            360
+        ],
+        "offline": [
+            64,
+            360
+        ],
+        "shortErr": [
+            134,
+            360
+        ],
+        "open": [
+            0,
+            360
+        ],
+        "close": [
+            64,
+            360
+        ],
+        "ioError": [
+            134,
+            360
+        ]
+    },
+    {
+        "name": "交流接触器",
+        "icon": "contactor",
+        "type_name": "交流接触器",
+        "cfg_type": "J",
+        "port": 2,
+        "iport": 0,
+        "warn_min": null,
+        "warn_max": null,
+        "meter": null,
+        "vadjust": null,
+        "vadjust_data": null,
+        "display_name": null,
+        "params": {
+            "display_name": "控制名称",
+            "port": "控制端口号",
+            "iport": "输入开关量"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"A1",
+        "selectTypeB":"B2",
+        "selectTypeC":"C3",
+        "online": [
+            0,
+            450
+        ],
+        "offline": [
+            64,
+            450
+        ],
+        "shortErr": [
+            134,
+            450
+        ],
+        "open": [
+            0,
+            450
+        ],
+        "close": [
+            64,
+            450
+        ],
+        "ioError": [
+            134,
+            450
+        ]
+    },
+    {
+        "name": "熔断器",
+        "icon": "fuse",
+        "type_name": "电路保护器",
+        "cfg_type": "R",
+        "cfg_sub_type": "mini",
+        "iport": 0,
+        "params": {
+            "iport": "开关量"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "online": [
+            0,
+            510
+        ],
+        "offline": [
+            64,
+            510
+        ],
+        "shortErr": [
+            134,
+            510
+        ],
+        "open": [
+            0,
+            510
+        ],
+        "close": [
+            64,
+            510
+        ],
+        "ioError": [
+            134,
+            510
+        ]
+    },
+    {
+        "name": "微型断路器",
+        "icon": "protector",
+        "type_name": "电路保护器",
+        "cfg_type": "R",
+        "cfg_sub_type": "main",
+        "iport": 0,
+        "params": {
+            "iport": "开关量"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "online": [
+            0,
+            540
+        ],
+        "offline": [
+            64,
+            540
+        ],
+        "shortErr": [
+            134,
+            540
+        ],
+        "open": [
+            0,
+            540
+        ],
+        "close": [
+            64,
+            540
+        ],
+        "ioError": [
+            134,
+            540
+        ]
+    },
+    {
+        "name": "门禁",
+        "icon": "door",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "door",
+        "corral": 1,
+        "iport": 0,
+        "display_name": "配电箱门",
+        "params": {
+            "iport": "开关量",
+            "corral": "正常值",
+            "display_name": "名称"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "close": [
+            0,
+            600
+        ],
+        "open": [
+            64,
+            600
+        ],
+        "ioError": [
+            134,
+            600
+        ],
+        "online": [
+            0,
+            600
+        ],
+        "offline": [
+            64,
+            600
+        ],
+        "shortErr": [
+            134,
+            600
+        ]
+        
+    },
+    {
+        "name": "灯",
+        "icon": "lamp",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "lamp",
+        "display_name": null,
+        "params": {
+            "display_name": "名称"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            710
+        ],
+        "close": [
+            64,
+            710
+        ],
+        "ioError": [
+            134,
+            710
+        ],
+        "online": [
+            0,
+            710
+        ],
+        "offline": [
+            64,
+            710
+        ],
+        "shortErr": [
+            134,
+            710
+        ]
+    },
+    {
+        "name": "传感器",
+        "icon": "sensor",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "sensor",
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "display_name": null,
+        "params": {
+            "display_name": "名称"
+        },
+        "open": [
+            0,
+            720
+        ],
+        "close": [
+            64,
+            720
+        ],
+        "ioError": [
+            134,
+            720
+        ],
+        "online": [
+            0,
+            720
+        ],
+        "offline": [
+            64,
+            720
+        ],
+        "shortErr": [
+            134,
+            720
+        ]
+    },
+    {
+        "name": "互动屏",
+        "icon": "control_panel",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "control_panel",
+        "display_name": null,
+        "params": {
+            "display_name": "名称"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            780
+        ],
+        "close": [
+            64,
+            780
+        ],
+        "ioError": [
+            134,
+            780
+        ],
+        "online": [
+            0,
+            780
+        ],
+        "offline": [
+            64,
+            780
+        ],
+        "shortErr": [
+            134,
+            780
+        ]
+    },
+    {
+        "name": "无线",
+        "icon": "wifi",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "ap",
+        "display_name": null,
+        "params": {
+            "display_name": "名称"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            840
+        ],
+        "close": [
+            64,
+            840
+        ],
+        "ioError": [
+            134,
+            840
+        ],
+        "online": [
+            0,
+            840
+        ],
+        "offline": [
+            64,
+            840
+        ],
+        "shortErr": [
+            134,
+            840
+        ]
+    },
+    {
+        "name": "环境气象",
+        "icon": "weather",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "envir",
+        "display_name": null,
+        "params": {
+            "display_name": "名称"
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            900
+        ],
+        "close": [
+            64,
+            900
+        ],
+        "ioError": [
+            134,
+            900
+        ],
+        "online": [
+            0,
+            900
+        ],
+        "offline": [
+            64,
+            900
+        ],
+        "shortErr": [
+            134,
+            900
+        ]
+    },
+    {
+        "name": "水浸",
+        "icon": "water_cut",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "water_immersion",
+        "display_name": "水浸",
+        "params": {
+            "iport": "开关量",
+            "display_name": "名称"
+        },
+        "corral":1,
+        "iport":0,
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            960
+        ],
+        "close": [
+            64,
+            960
+        ],
+        "ioError": [
+            134,
+            960
+        ],
+        "online": [
+            0,
+            960
+        ],
+        "offline": [
+            64,
+            960
+        ],
+        "shortErr": [
+            134,
+            960
+        ]
+    },
+    {
+        "name": "广告屏",
+        "icon": "LED",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "led",
+        "display_name": null,
+        "device_id": "",
+        "serviceName": "led",
+        "params": {},
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            1020
+        ],
+        "close": [
+            64,
+            1020
+        ],
+        "ioError": [
+            134,
+            1020
+        ],
+        "online": [
+            0,
+            1020
+        ],
+        "offline": [
+            64,
+            1020
+        ],
+        "shortErr": [
+            134,
+            1020
+        ]
+    },
+    {
+        "name": "枪机摄像头",
+        "icon": "camera",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "camera",
+        "display_name": null,
+        "device_id": null,
+        "serviceName": "camera",
+        "params": {},
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            1080
+        ],
+        "close": [
+            64,
+            1080
+        ],
+        "ioError": [
+            134,
+            1080
+        ],
+        "online": [
+            0,
+            1080
+        ],
+        "offline": [
+            64,
+            1080
+        ],
+        "shortErr": [
+            134,
+            1080
+        ]
+    },
+    {
+        "name": "球机摄像头",
+        "icon": "ball_camera",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "camera",
+        "display_name": null,
+        "device_id": null,
+        "serviceName": "camera",
+        "params": {},
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            1140
+        ],
+        "close": [
+            64,
+            1140
+        ],
+        "ioError": [
+            134,
+            1140
+        ],
+        "online": [
+            0,
+            1140
+        ],
+        "offline": [
+            64,
+            1140
+        ],
+        "shortErr": [
+            134,
+            1140
+        ]
+    },
+    {
+        "name": "IP广播",
+        "icon": "broadcast",
+        "type": "broadcast",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "broadcast",
+        "display_name": null,
+        "device_id": null,
+        "serviceName": "broadcast",
+        "params": {},
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            1200
+        ],
+        "close": [
+            64,
+            1200
+        ],
+        "ioError": [
+            134,
+            1200
+        ],
+        "online": [
+            0,
+            1200
+        ],
+        "offline": [
+            64,
+            1200
+        ],
+        "shortErr": [
+            134,
+            1200
+        ]
+    },
+    {
+        "name": "一键对讲",
+        "icon": "walkie_talkie",
+        "type_name": "输出",
+        "cfg_type": "O",
+        "cfg_sub_type": "walkie_talkie",
+        "display_name": null,
+        "device_id": null,
+        "serviceName": "talkie",
+        "params": {},
+        "phaseA": true, 
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "open": [
+            0,
+            1260
+        ],
+        "close": [
+            64,
+            1260
+        ],
+        "ioError": [
+            134,
+            1260
+        ],
+        "online": [
+            0,
+            1260
+        ],
+        "offline": [
+            64,
+            1260
+        ],
+        "shortErr": [
+            134,
+            1260
+        ]
+    },
+    {
+        "name": "电流传感器",
+        "icon": "current_sensor",
+        "type_name": "电流传感器",
+        "cfg_type": "I",
+        "port": null,
+        "iport": 0,
+        "warn_min": null,
+        "warn_max": null,
+        "meter": null,
+        "vadjust": null,
+        "vadjust_data": null,
+        "display_name": null,
+        "params": {
+            "display_name": "输出路段名",
+            "meter":"传感器量程",
+            "port": "采集端口号",
+            "iport": "输入开关量",
+            "warn_max":"报警上限值",
+            "warn_min":"报警下限值",
+            "vadjust":"电流校正值"
+            
+        },
+        "phaseA": true,
+        "phaseB": true,
+        "phaseC": true,
+        "isOpenA":false,
+        "isOpenB":false,
+        "isOpenC":false,
+        "selectTypeA":"NONE",
+        "selectTypeB":"A1",
+        "selectTypeC":"NONE",
+        "online": [
+            0,
+            1420
+        ],
+        "offline": [
+            64,
+            1420
+        ],
+        "fault": [
+            134,
+            1420
+        ],
+        "open": [ 
+            0,
+            1420
+        ],
+        "close":[
+            67,
+            1420
+        ],
+        "ioError":[
+            134,
+            1420
+        ],
+        "none": [
+            205,
+            1420
+        ],
+        "shortErr": [
+            276,
+            1420
+        ],
+        "up": [
+            342,
+            1420
+        ],
+        "down": [
+            408,
+            1420
+        ]
+      
+       
+
+    }
+]
