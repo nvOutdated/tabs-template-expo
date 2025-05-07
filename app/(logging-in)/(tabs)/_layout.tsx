@@ -1,13 +1,13 @@
-import { useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { themeColors } from "@/constants/themeColors";
+import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
 
 export default function TabCameraLayout() {
-  const { theme } = useTheme();
-  const currentTheme = themeColors[theme as keyof typeof themeColors];
+  const currentTheme = useCurrentTheme();
+  const {theme} = useTheme()
+  // const currentTheme = themeColors[theme as keyof typeof themeColors];
   const { width, height } = useWindowDimensions();
   const [isLandscape, setIsLandscape] = useState(false);
 
@@ -55,19 +55,6 @@ export default function TabCameraLayout() {
         ),
       }}
     >
-      <Tabs.Screen
-        name="(camera)"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }: any) => (
-            <Ionicons
-              name={focused ? "home-sharp" : "home-outline"}
-              color={color}
-              size={isLandscape ? 20 : 24}
-            />
-          ),
-        }}
-      />
        <Tabs.Screen
         name="(configuration)"
         options={{
@@ -83,6 +70,20 @@ export default function TabCameraLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="(camera)"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }: any) => (
+            <Ionicons
+              name={focused ? "camera" : "camera-outline"}
+              color={color}
+              size={isLandscape ? 20 : 24}
+            />
+          ),
+        }}
+      />
+      
       <Tabs.Screen
         name="(personal)"
         options={{

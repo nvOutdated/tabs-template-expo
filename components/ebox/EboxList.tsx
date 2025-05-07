@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
 import EboxImageModal from "./EboxImageModal";
-
 type ElectricItem = {
   id: number;
   sn: string;
@@ -209,7 +208,6 @@ export default function EboxList({
     ),
     [loading]
   );
-
   return (
     <>
       <FlatList

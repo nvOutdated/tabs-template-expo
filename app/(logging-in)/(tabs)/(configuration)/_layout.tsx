@@ -1,7 +1,6 @@
-import { useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { themeColors } from "@/constants/themeColors";
+import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { Dimensions, ImageBackground, StatusBar, StyleProp, TextStyle, View } from 'react-native';
+import { Dimensions, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EleBoxScreen from "./ebox";
 import SmartLampScreen from "./smartLamp";
@@ -11,76 +10,72 @@ const { width } = Dimensions.get('window');
 const seaImage = require('@/assets/images/background/birdBgc.png');
 
 export default function TabMusicLayout() {
-  const { theme } = useTheme();
-  const currentTheme = themeColors[theme as keyof typeof themeColors];
+  // const { theme } = useTheme();
+  // const currentTheme = themeColors[theme as keyof typeof themeColors];
+  const currentTheme = useCurrentTheme()
   const insets = useSafeAreaInsets();
 
-  const labelStyle: StyleProp<TextStyle> = {
-    textTransform: 'none',
-    fontWeight: '600',
-    fontSize: 14,
-  };
-
-  const activeLabelStyle: StyleProp<TextStyle> = {
-    ...labelStyle,
-    fontSize: 18,
-    fontWeight: 'bold',
-  };
+  const renderLabel = ({ focused, color, children }: { focused: boolean; color: string; children: string }) => (
+    <Text
+      style={{
+        color,
+        fontSize: focused ? 20 : 16,
+        fontWeight: focused ? '800' : '400',
+        textTransform: 'none',
+        lineHeight:20,
+      }}
+    >
+      {children}
+    </Text>
+  );
 
   return (
-    <View style={{ flex: 1 }}>
-      <ImageBackground 
-        source={seaImage}
-        resizeMode="cover"
-        style={{ 
-          flex: 1,
-          paddingTop: insets.top 
+    <View style={{ flex: 1, backgroundColor: currentTheme.headerBg, }}>
+      <StatusBar 
+        translucent 
+        backgroundColor={currentTheme.headerBg}
+        barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}
+      />
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: currentTheme.activeTint,
+          tabBarInactiveTintColor: currentTheme.inactiveTint,
+          tabBarIndicatorStyle: {
+            display: "none"
+          },
+          tabBarStyle: {
+            backgroundColor: 'transparent',
+            height: 40,
+            padding: 0,
+            marginTop: insets.top-5,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
+          tabBarItemStyle: {
+            width: width*0.2,
+            height: 40,
+            padding: 0,
+            margin:0,
+          },
+          tabBarLabel: renderLabel,
         }}
       >
-        <StatusBar 
-          translucent 
-          backgroundColor="transparent"
-        />
-        <Tab.Navigator
-          screenOptions={{
-            tabBarActiveTintColor: currentTheme.activeTint,
-            tabBarInactiveTintColor: currentTheme.inactiveTint,
-            tabBarIndicatorStyle: {
-              display: 'none',
-            },
-            tabBarStyle: {
-              backgroundColor: 'transparent',
-              height: 44,
-              paddingTop: 0,
-              margin: 0,
-              elevation: 0,
-              shadowOpacity: 0,
-              borderBottomWidth: 0,
-            },
-            tabBarItemStyle: {
-              width: width / 2,
-            },
-            tabBarLabelStyle: labelStyle,
+        <Tab.Screen
+          name="index"
+          options={{
+            title: "ebox",
           }}
-        >
-          <Tab.Screen
-            name="index"
-            options={{
-              title: "ebox",
-              tabBarLabelStyle: activeLabelStyle,
-            }}
-            component={EleBoxScreen}
-          />
-          <Tab.Screen
-            name="smartLamp"
-            options={{
-              title: "smartLamp",
-              tabBarLabelStyle: activeLabelStyle,
-            }}
-            component={SmartLampScreen}
-          />
-        </Tab.Navigator>
-      </ImageBackground>
+          component={EleBoxScreen}
+        />
+        <Tab.Screen
+          name="smartLamp"
+          options={{
+            title: "smart",
+          }}
+          component={SmartLampScreen}
+        />
+      </Tab.Navigator>
     </View>
   );
 }

@@ -17,12 +17,12 @@ import {
   View,
 } from "react-native";
 // import { useAuthStore } from "@/store/auther";
+import { DEFAULT_BASE_URL } from "@/constants/defaultConfig";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
 // const md5 = require('md5');
 // const default_url = 'http://182.99.177.29:48099'
-const default_url = 'http://192.168.1.197:38099'
 export default function LoginIndex() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -136,7 +136,7 @@ export default function LoginIndex() {
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(loginForm[key as keyof typeof loginForm]))
         .join('&');
       
-      const response = await fetch(`${default_url}/smart/auth/token`, {
+      const response = await fetch(`${DEFAULT_BASE_URL}/smart/auth/token`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"

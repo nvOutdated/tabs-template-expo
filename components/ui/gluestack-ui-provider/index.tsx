@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { config } from './config';
-import { View, ViewProps } from 'react-native';
 import { OverlayProvider } from '@gluestack-ui/overlay';
 import { ToastProvider } from '@gluestack-ui/toast';
 import { useColorScheme } from 'nativewind';
+import React from 'react';
+import { View, ViewProps } from 'react-native';
+import { config } from './config';
 
-export type ModeType = 'light' | 'dark' | 'system';
+export type ModeType = 'light' | 'dark' | 'blue' | 'yellow' | 'pink' | 'green';
 
 export function GluestackUIProvider({
   mode = 'light',
@@ -16,16 +16,19 @@ export function GluestackUIProvider({
   style?: ViewProps['style'];
 }) {
   const { colorScheme, setColorScheme } = useColorScheme();
-
-  useEffect(() => {
-    setColorScheme(mode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  // useEffect(() => {
+  //   if (mode !== 'system') {
+  //     setColorScheme(mode);
+  //     console.log(mode,colorScheme,"当前主题");
+      
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [mode]);
 
   return (
     <View
       style={[
-        config[colorScheme!],
+        config[mode],
         { flex: 1, height: '100%', width: '100%' },
         props.style,
       ]}

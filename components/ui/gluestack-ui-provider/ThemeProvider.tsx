@@ -2,11 +2,12 @@
 "use client";
 
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { themeColors } from "@/constants/themeColors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from 'nativewind';
 import React, { createContext, useContext, useEffect, useState } from "react";
 // 扩展主题类型
-type Theme = "light" | "dark" ;
+type Theme = "light" | "dark" | "blue" | "yellow" | "pink" | "green";
 
 interface ThemeContextType {
   theme: Theme;
@@ -30,7 +31,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     (async () => {
       const savedTheme = await AsyncStorage.getItem("theme") as Theme;
-      if (savedTheme && ["light", "dark"].includes(savedTheme)) {
+      if (savedTheme && ["light", "dark", "blue", "yellow", "pink", "green"].includes(savedTheme)) {
         setTheme(savedTheme);
         setColorScheme(savedTheme);
       }
@@ -38,8 +39,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const toggleTheme = () => {
-    // 主题循环切换：light -> dark -> blue -> light
-    const themeOrder: Theme[] = ["light", "dark"];
+    // 主题循环切换：light -> dark -> blue -> yellow -> pink -> green -> light
+    const themeOrder: Theme[] = ["light", "dark", "blue", "yellow", "pink", "green"];
     const currentIndex = themeOrder.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themeOrder.length;
     const newTheme = themeOrder[nextIndex];
@@ -69,4 +70,9 @@ export const useTheme = () => {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
+};
+
+export const useCurrentTheme = () => {
+  const { theme } = useTheme();
+  return themeColors[theme as keyof typeof themeColors];
 };

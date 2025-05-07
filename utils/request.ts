@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { getStorageDefaultUrl, getToken, saveToken } from './useStorageState';
 // const DEFAULT_BASE_URL = 'http://182.99.177.29:48099';
-const DEFAULT_BASE_URL = 'http://192.168.1.197:38099';
+// const DEFAULT_BASE_URL = 'http://192.168.1.197:38099';
+import { DEFAULT_BASE_URL } from "@/constants/defaultConfig";
 let baseURL = DEFAULT_BASE_URL;
 
 
@@ -96,7 +97,7 @@ const handleResponse = async (response: Response, onError?: (type: string, messa
     if (onError) {
       onError('error', errorMessage);
     }
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // throw new Error(`HTTP error! status: ${response.status}`);
   }
 
   return response.json();

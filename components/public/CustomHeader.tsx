@@ -4,7 +4,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { ImageBackground, Pressable, StatusBar, Text, View } from 'react-native';
+import { Pressable, StatusBar, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -35,9 +35,9 @@ export function CustomHeader({ title }: CustomHeaderProps) {
     titleOffset.value = withRepeat(
       withSequence(
         withTiming(0, { duration: 1000, easing: Easing.linear }),
-        withTiming(-30, { duration: 1000, easing: Easing.linear }),
-        withTiming(-30, { duration: 2000, easing: Easing.linear }), // 增加停留时间
-        withTiming(0, { duration: 1000, easing: Easing.linear })
+        withTiming(-20, { duration: 1000, easing: Easing.linear }),
+        withTiming(-20, { duration: 1000, easing: Easing.linear }), // 增加停留时间
+        withTiming(10, { duration: 2000, easing: Easing.linear })
       ),
       -1,
       true
@@ -55,24 +55,29 @@ export function CustomHeader({ title }: CustomHeaderProps) {
   }
 
   return (
-    <ImageBackground 
+   /*  <ImageBackground 
       source={seaImage}
       resizeMode="cover"
       style={{
         paddingTop: insets.top,
+        backgroundColor:currentTheme.headerBg,
       }}
-    >
-      <StatusBar backgroundColor="transparent" translucent />
+    > */
+     
       <View style={{ 
         padding: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        // backgroundColor:"transparent",
+        paddingTop: insets.top,
+        backgroundColor:currentTheme.headerBg,
       }}>
+         <StatusBar backgroundColor="transparent" translucent />
         <View style={{ flex: 3/5, height: 30, overflow: 'hidden' }}>
           <Animated.View style={[
             { 
-              height: 60,
+              height: 40,
               justifyContent: 'center',
               alignItems: 'center'
             }, 
@@ -120,6 +125,6 @@ export function CustomHeader({ title }: CustomHeaderProps) {
           </Pressable>
         </View>
       </View>
-    </ImageBackground>
+  /*   </ImageBackground> */
   );
 }

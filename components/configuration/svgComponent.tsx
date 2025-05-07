@@ -101,8 +101,7 @@ const ConnectionLine = memo(
         return {
           color: "#d66b6b",
           strokeTack: midY += 5,
-          // isSetDash: node.voltageC
-          isSetDash: true
+          isSetDash: node.voltageC
         };
       }
     };
