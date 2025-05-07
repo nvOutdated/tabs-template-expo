@@ -51,13 +51,13 @@ export default function AreaDrawer({
           >
             {area.name}
           </Text>
-          {hasChildren && (
+          {/*  {hasChildren && (
             <Ionicons
               name="chevron-down"
               size={20}
               color={currentTheme.activeTint}
             />
-          )}
+          )} */}
         </TouchableOpacity>
         {hasChildren && area.children?.map(child => renderAreaItem(child, level + 1))}
       </View>
@@ -73,15 +73,16 @@ export default function AreaDrawer({
         style={[
           styles.drawer,
           {
-            backgroundColor: currentTheme.headerBg,
+            // backgroundColor: currentTheme.headerBg,
             // top: insets.top + 60,
             height: height - insets.top - insets.bottom,
           },
         ]}
+        className="bg-secondary-300"
       >
         <View style={styles.header}>
           <Text style={[styles.title, { color: currentTheme.activeTint }]}>
-            选择区域
+            区域选择
           </Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={currentTheme.activeTint} />

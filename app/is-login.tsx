@@ -125,13 +125,10 @@ export default function LoginIndex() {
       return;
     }
     setLoginFailed(false);
-    console.log("点击登录");
     
     try {
       loginForm.username = username;
       loginForm.password = md5(password);
-      console.log(loginForm,"loginForm");
-      
       const formBody = Object.keys(loginForm)
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(loginForm[key as keyof typeof loginForm]))
         .join('&');

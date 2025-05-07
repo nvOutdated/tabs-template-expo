@@ -1,45 +1,50 @@
 import { getEboxListApi } from "@/api/street/configuration";
+import AreaDrawer, { Area } from "@/components/ebox/AreaDrawer";
 import AreaHeader from "@/components/ebox/AreaHeader";
 import EboxList from "@/components/ebox/EboxList";
-import { useEffect, useState } from "react";
-import { RefreshControl, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-// import AreaDrawer, { Area } from "@/components/ebox/AreaDrawer";
 
-// const { width } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// // 虚拟数据
-// const mockAreas: Area[] = [
-//   {
-//     id: 1,
-//     name: '区域一',
-//     children: [
-//       { id: 11, name: '子区域1-1' },
-//       { id: 12, name: '子区域1-2' },
-//     ]
-//   },
-//   {
-//     id: 2,
-//     name: '区域二',
-//     children: [
-//       { id: 21, name: '子区域2-1' },
-//       { id: 22, name: '子区域2-2' },
-//     ]
-//   },
-//   {
-//     id: 3,
-//     name: '区域三',
-//     children: [
-//       { id: 31, name: '子区域3-1' },
-//       { id: 32, name: '子区域3-2' },
-//     ]
-//   },
-// ];
+// 虚拟数据
+const mockAreas: Area[] = [
+  {
+    id: 1,
+    name: '区域一',
+    children: [
+      { id: 11, name: '子区域1-1' },
+      { id: 12, name: '子区域1-2' },
+    ]
+  },
+  {
+    id: 2,
+    name: '区域二',
+    children: [
+      { id: 21, name: '子区域2-1' },
+      { id: 22, name: '子区域2-2' },
+    ]
+  },
+  {
+    id: 3,
+    name: '区域三',
+    children: [
+      { id: 31, name: '子区域3-1' },
+      { id: 32, name: '子区域3-2' },
+    ]
+  },
+];
+type AreaHeaderProps = {
+  onSearch: (text: string) => void;
+};
 export default function EboxScreen() {
   const [electricBoxes, setElectricBoxes] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [selectedArea, setSelectedArea] = useState<Area>(mockAreas[0]);
+  const [searchText, setSearchText] = useState('');
   const fetchEleBoxes = async () => {
     try {
       setLoading(true);
@@ -68,12 +73,26 @@ export default function EboxScreen() {
   const handleSearch = (text: string) => {
     // TODO: 实现搜索功能
     console.log('Search:', text);
+    console.log(electricBoxes[0],111);
+    const selectData = [...electricBoxes].filter(i=>i.device_info.device_code.includes(text))
+    setElectricBoxes(selectData)
+    // const selectData = [...electricBoxes].filter(i=>i.name)
   };
-
+  const handleSelectArea = useCallback((area: typeof selectedArea) => {
+    setSelectedArea(area);
+    setShowDrawer(false);
+  }, []);
+  const handleSetShowDrawer = useCallback(()=>{
+    setShowDrawer(true);
+  },[])
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
-        <AreaHeader onSearch={handleSearch} />
+        <AreaHeader 
+        onSearch={handleSearch} 
+        handleSetShowDrawer={handleSetShowDrawer}
+        selectedArea={selectedArea}
+         />
         <EboxList
           electricBoxes={electricBoxes}
           loading={loading}
@@ -85,6 +104,14 @@ export default function EboxScreen() {
           }
         />
       </View>
+
+      <AreaDrawer
+        visible={showDrawer}
+        onClose={() => setShowDrawer(false) }
+        areas={mockAreas}
+        selectedArea={selectedArea}
+        onSelectArea={handleSelectArea}
+      />
     </GestureHandlerRootView>
   );
 }

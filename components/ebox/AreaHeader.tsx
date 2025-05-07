@@ -1,50 +1,21 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AreaDrawer, { Area } from "./AreaDrawer";
-
+import { Animated, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 const { width } = Dimensions.get('window');
-
-// 虚拟数据
-const mockAreas: Area[] = [
-  {
-    id: 1,
-    name: '区域一',
-    children: [
-      { id: 11, name: '子区域1-1' },
-      { id: 12, name: '子区域1-2' },
-    ]
-  },
-  {
-    id: 2,
-    name: '区域二',
-    children: [
-      { id: 21, name: '子区域2-1' },
-      { id: 22, name: '子区域2-2' },
-    ]
-  },
-  {
-    id: 3,
-    name: '区域三',
-    children: [
-      { id: 31, name: '子区域3-1' },
-      { id: 32, name: '子区域3-2' },
-    ]
-  },
-];
 
 type AreaHeaderProps = {
   onSearch: (text: string) => void;
+  handleSetShowDrawer:()=>void;
+  selectedArea:{
+    id:number,
+    name:string,
+  };
 };
 
-export default function AreaHeader({ onSearch }: AreaHeaderProps) {
+export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }: AreaHeaderProps) {
   const currentTheme = useCurrentTheme();
-  const insets = useSafeAreaInsets();
   const [showSearch, setShowSearch] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [selectedArea, setSelectedArea] = useState<Area>(mockAreas[0]);
   const [searchText, setSearchText] = useState('');
   const searchAnimation = useRef(new Animated.Value(0)).current;
 
@@ -82,19 +53,15 @@ export default function AreaHeader({ onSearch }: AreaHeaderProps) {
     onSearch(searchText);
   }, [searchText, onSearch]);
 
-  const handleSelectArea = useCallback((area: typeof selectedArea) => {
-    setSelectedArea(area);
-    setShowDrawer(false);
-  }, []);
-
   return (
     <View style={[styles.container]}>
-      <View style={[styles.header, { backgroundColor: currentTheme.headerBg }]}>
+      <View style={[styles.header, ]} className="bg-secondary-400">
         <TouchableOpacity
           style={styles.drawerButton}
-          onPress={() => setShowDrawer(true)}
+          onPress={() => handleSetShowDrawer()}
         >
           <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
+          <Text className="text-typography-100 ml-1 align-middle font-medium">区域</Text>
         </TouchableOpacity>
 
         <View style={styles.centerContainer}>
@@ -151,14 +118,6 @@ export default function AreaHeader({ onSearch }: AreaHeaderProps) {
           </TouchableOpacity>
         </View>
       </View>
-
-      <AreaDrawer
-        visible={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        areas={mockAreas}
-        selectedArea={selectedArea}
-        onSelectArea={handleSelectArea}
-      />
     </View>
   );
 }
@@ -171,6 +130,7 @@ const styles = StyleSheet.create({
   header: {
     height: 44,
     flexDirection: 'row',
+    // justifyContent:"flex-start",
     alignItems: 'center',
     paddingHorizontal: 5,
     borderBottomWidth: 1,
@@ -178,6 +138,7 @@ const styles = StyleSheet.create({
   },
   drawerButton: {
     padding: 4,
+    flexDirection: 'row',
   },
   centerContainer: {
     flex: 1,
@@ -207,14 +168,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 32,
+    height: 38,
     backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 16,
-    paddingHorizontal: 12,
+    paddingHorizontal: 5,
   },
   searchInput: {
     flex: 1,
     height: '100%',
     fontSize: 14,
+    lineHeight:2,
   },
 }); 
