@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/store/autherStore';
 import { getToken } from '@/utils/useStorageState';
-import { useAuthStore } from '@/store/auther';
+import { useEffect, useState } from 'react';
 
 interface UseAuthResult {
   isLoggedIn: boolean | null;

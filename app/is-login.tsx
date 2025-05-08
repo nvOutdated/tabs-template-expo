@@ -18,12 +18,14 @@ import {
 } from "react-native";
 // import { useAuthStore } from "@/store/auther";
 import { DEFAULT_BASE_URL } from "@/constants/defaultConfig";
+import { useWebSocketStore } from '@/store/websocketStore';
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
 // const md5 = require('md5');
 // const default_url = 'http://182.99.177.29:48099'
 export default function LoginIndex() {
+  const {init}  = useWebSocketStore()
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginFailed, setLoginFailed] = useState(false);
@@ -150,7 +152,7 @@ export default function LoginIndex() {
       }
       
       if (response.ok) {
-        console.log("登录成功");
+        // console.log("登录成功");
         if (rememberPassword) {
           await saveUserInfo({name: username, password: password});
         } else {
@@ -165,7 +167,7 @@ export default function LoginIndex() {
         
         setTimeout(() => {
           router.replace("/(logging-in)/(tabs)/(configuration)/ebox");
-        }, 1000);
+        }, 500);
       } else {
         console.log("登录失败",response);
         setLoginFailed(true);

@@ -8,7 +8,7 @@ type AreaHeaderProps = {
   onSearch: (text: string) => void;
   handleSetShowDrawer:()=>void;
   selectedArea:{
-    id:number,
+    area_id:number,
     name:string,
   };
 };

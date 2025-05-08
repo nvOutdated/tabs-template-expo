@@ -1,5 +1,4 @@
 import { useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { useWebSocketStore } from "@/store/websocket";
 import { getUserInfo, saveToken } from "@/utils/useStorageState";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -14,7 +13,6 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 type Theme = 'light' | 'dark' | 'blue' | 'yellow' | 'pink' | 'green';
 
 const themes: { name: Theme; color: string }[] = [
@@ -44,7 +42,6 @@ export default function PersonIndex() {
 
   const logout = async () => {
     await saveToken("");
-    useWebSocketStore.getState().disconnect();
     router.replace("/is-login");
   };
 

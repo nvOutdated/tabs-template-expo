@@ -1,10 +1,24 @@
 import { useAuth } from '@/hooks/useAuth';
+import { useWebSocketStore } from '@/store/websocketStore';
+import { getToken } from '@/utils/useStorageState';
 import { Redirect, Stack } from 'expo-router';
-import React, { JSX } from 'react';
+import React, { JSX, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 export default function AuthLayout(): JSX.Element {
+  const { init,disconnect,isConnected } = useWebSocketStore();
   // console.log(useTheme(),"主题");
-  
+  useEffect(() => {
+    getToken().then(token => {
+      console.log("重新加载ws",isConnected,token);
+      
+      if(token&&!isConnected) {
+        init()
+      }
+    })
+    return ()=>{
+      disconnect()
+    }
+   },[])
   const { isLoggedIn, isLoading, error } = useAuth();
   // Show loading indicator while checking authentication status
   if (isLoading) {

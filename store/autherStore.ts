@@ -1,6 +1,5 @@
-import { get } from '@gluestack-style/react';
+// import { get } from '@gluestack-style/react';
 import { create } from 'zustand';
-import { persist,createJSONStorage } from 'zustand/middleware';
 
 interface AuthState {
   token: string | null;

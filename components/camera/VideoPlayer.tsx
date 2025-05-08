@@ -98,7 +98,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
     }
     controlsTimer.current = setTimeout(() => {
       setShowControls(false);
-    }, 3000);
+    }, 3000) as unknown as NodeJS.Timeout;
   };
 
   return (
@@ -164,7 +164,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
               }
               controlsTimer.current = setTimeout(() => {
                 setShowControls(false);
-              }, 3000);
+              }, 3000)as unknown as NodeJS.Timeout;;
             }}
             style={[styles.controlButton, { marginLeft: 20 }]}
           >

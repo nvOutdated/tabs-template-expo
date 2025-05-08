@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -8,9 +8,10 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 
+import { useWebSocketStore } from "@/store/websocketStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
@@ -23,6 +24,8 @@ type ElectricItem = {
   device_info: {
     device_code: string;
     online: boolean;
+    open: boolean;
+    warn: boolean;
     loops: boolean[];
     images?: string[];
   };
@@ -31,7 +34,7 @@ type ElectricItem = {
 type Props = {
   electricBoxes: ElectricItem[];
   onEndReached?: () => void;
-  refreshControl?: React.ReactElement<RefreshControl['props']>;
+  refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
 };
 
@@ -40,6 +43,35 @@ const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120; // 压缩后的卡片高度
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
+
+// 添加状态配置常量
+const DEVICE_STATUS = {
+  OFFLINE: {
+    condition: (info: ElectricItem['device_info']) => !info.online && !info.open && !info.warn,
+    label: '离线',
+    dotStyle: 'offline',
+    textStyle: 'offlineText'
+  },
+  ONLINE: {
+    condition: (info: ElectricItem['device_info']) => info.online && !info.open && !info.warn,
+    label: '在线',
+    dotStyle: 'online',
+    textStyle: 'onlineText'
+  },
+  OPEN: {
+    condition: (info: ElectricItem['device_info']) => info.online && info.open && !info.warn,
+    label: '打开',
+    dotStyle: 'open',
+    textStyle: 'openText'
+  },
+  WARN: {
+    condition: (info: ElectricItem['device_info']) => info.online && info.warn,
+    label: '报警',
+    dotStyle: 'warn',
+    textStyle: 'warnText'
+  }
+} as const;
+
 export default function EboxList({
   electricBoxes,
   onEndReached,
@@ -49,7 +81,7 @@ export default function EboxList({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-
+  const {smartLight} = useWebSocketStore()
   const handleImagePress = (images: string[], index: number = 0) => {
     // console.log('handleImagePress called with images:', images);
     setSelectedImages(images);
@@ -58,21 +90,25 @@ export default function EboxList({
   };
   const getConfigurationDetails = (item: ElectricItem) => {
     router.push({
-      pathname: '/(logging-in)/(modal)/configuration',
+      pathname: "/(logging-in)/(modal)/configuration",
       params: {
-        item: JSON.stringify(item)
-      }
+        item: JSON.stringify(item),
+      },
     });
   };
+  useEffect(()=>{
+    console.log(smartLight,"返回数据");
+    
+ },[smartLight])
   // Memoized ebox item component for better performance
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
     // 使用实际的电箱图片
     const images = item.device_info.images || [
       "https://img2.baidu.com/it/u=2278823923,4036155378&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=889",
-      "https://inews.gtimg.com/news_bt/O7ZsQ9IrSfcWAWLPeaRcfeEt5FdyeTfnFYrSGmDSKlU0sAA/1000"
+      "https://inews.gtimg.com/news_bt/O7ZsQ9IrSfcWAWLPeaRcfeEt5FdyeTfnFYrSGmDSKlU0sAA/1000",
     ];
     // console.log('ElectricItem images:', images);
-
+ 
     return (
       <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
         <Pressable style={styles.card} className="bg-background-50">
@@ -86,14 +122,12 @@ export default function EboxList({
             </Text>
           </View>
           <View style={styles.pointConfig}>
-            <Pressable 
+            <Pressable
               style={styles.configButton}
               onPress={() => getConfigurationDetails(item)}
             >
               <Ionicons name="settings-outline" size={20} color="#409eff" />
-              <Text style={styles.configButtonText}>
-                组态
-              </Text>
+              <Text style={styles.configButtonText}>组态</Text>
             </Pressable>
           </View>
           <View style={styles.imageRowContainer}>
@@ -115,7 +149,7 @@ export default function EboxList({
                 />
               )}
             </Pressable>
-            
+
             <View style={styles.infoContainer}>
               <Text
                 style={styles.code}
@@ -133,22 +167,16 @@ export default function EboxList({
               </Text>
               <View style={styles.statusContainer}>
                 <Text style={styles.statusText}>状态: </Text>
-                <View
-                  style={[
-                    styles.statusDot,
-                    item.device_info.online ? styles.online : styles.offline,
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.statusText,
-                    item.device_info.online
-                      ? styles.onlineText
-                      : styles.offlineText,
-                  ]}
-                >
-                  {item.device_info.online ? "在线" : "离线"}
-                </Text>
+                {Object.values(DEVICE_STATUS).map((status) => 
+                  status.condition(item.device_info) && (
+                    <View key={status.label} className=" flex-row ">
+                      <View style={[styles.statusDot, styles[status.dotStyle]]} />
+                      <Text style={[styles.statusText, styles[status.textStyle]]}>
+                        {status.label}
+                      </Text>
+                    </View>
+                  )
+                )}
               </View>
               <View style={styles.loopsContainer}>
                 <Text style={styles.loopsTitle}>回路:</Text>
@@ -174,7 +202,7 @@ export default function EboxList({
     );
   });
 
-  ElectricItem.displayName = 'ElectricItem';
+  ElectricItem.displayName = "ElectricItem";
 
   // Memoized renderItem function
   const renderItem = useCallback(
@@ -282,23 +310,23 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   pointConfig: {
-    position:'absolute',
-    right:10,
-    top:5,
+    position: "absolute",
+    right: 10,
+    top: 5,
     // marginLeft: 10,
   },
   configButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(64, 158, 255, 0.1)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(64, 158, 255, 0.1)",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(64, 158, 255, 0.2)',
+    borderColor: "rgba(64, 158, 255, 0.2)",
   },
   configButtonText: {
-    color: '#409eff',
+    color: "#409eff",
     marginLeft: 4,
     fontSize: 12,
   },
@@ -334,22 +362,35 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 2,
+    lineHeight:8,
   },
   online: {
     backgroundColor: "#52c41a",
   },
   offline: {
-    backgroundColor: "#ff4d4f",
+    backgroundColor: "#909399",
+  },
+  open: {
+    backgroundColor: "#E6A23C",
+  },
+  warn: {
+    backgroundColor: "#F56C6C",
   },
   onlineText: {
     color: "#52c41a",
   },
+  openText:{
+    color:"#E6A23C"
+  },
   offlineText: {
-    color: "#ff4d4f",
+    color: "#909399",
+  },
+  warnText:{
+     color:"#F56C6C"
   },
   loopsContainer: {
     // marginTop: 4,
-    width:'80%',
+    width: "80%",
     flexDirection: "row",
   },
   loopsTitle: {
@@ -357,7 +398,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   loopsGrid: {
-    width:'80%',
+    width: "80%",
     flexDirection: "row",
     // flexWrap: 'none',
     gap: 1,

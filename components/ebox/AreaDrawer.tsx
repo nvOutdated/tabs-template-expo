@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { width, height } = Dimensions.get('window');
 
 export type Area = {
-  id: number;
+  area_id: number;
   name: string;
   children?: Area[];
 };
@@ -30,10 +30,10 @@ export default function AreaDrawer({
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   const renderAreaItem = useCallback((area: Area, level: number = 0) => {
-    const isSelected = selectedArea.id === area.id;
+    const isSelected = selectedArea.area_id === area.area_id;
     const hasChildren = area.children && area.children.length > 0;
     return (
-      <View key={area.id}>
+      <View key={area.area_id}>
         <TouchableOpacity
           style={[
             styles.areaItem,
