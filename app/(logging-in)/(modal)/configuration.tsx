@@ -33,7 +33,8 @@ interface TreeNode {
   xAxis: number;
   yAxis: number;
   children?: TreeNode[];
-  emsg:string;
+  emsg:string|null;
+  num_value:number|null;
   [key: string]: any;
 }
 

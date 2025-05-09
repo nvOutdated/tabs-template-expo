@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -107,10 +107,10 @@ export default function EboxList({
       },
     });
   };
-  useEffect(()=>{
-    console.log(smartLight,"返回数据");
+//   useEffect(()=>{
+//     console.log(smartLight,"返回数据");
     
- },[smartLight])
+//  },[smartLight])
   // Memoized ebox item component for better performance
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
     // 使用实际的电箱图片
