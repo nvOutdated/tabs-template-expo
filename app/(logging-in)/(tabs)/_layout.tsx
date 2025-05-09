@@ -3,13 +3,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
-export default function TabCameraLayout() {
+export default function TabLoggingLayout() {
   const currentTheme = useCurrentTheme();
   const {theme} = useTheme()
   // const currentTheme = themeColors[theme as keyof typeof themeColors];
   const { width, height } = useWindowDimensions();
   const [isLandscape, setIsLandscape] = useState(false);
-  // const {connect} = useWebSocketStore()
   useEffect(() => {
     setIsLandscape(width > height);
   }, [width, height]);

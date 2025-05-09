@@ -10,6 +10,7 @@ export default function ModalLayout() {
             <Stack.Screen name="videoModal" options={{ headerShown: false }} />
             <Stack.Screen name="messageModal" options={{ headerShown: true }} />
             <Stack.Screen name="configuration" options={{ headerShown: false }} />
+            <Stack.Screen name='addDeviceModal' options={{headerShown:false}}></Stack.Screen>
         </Stack>
     );
 }

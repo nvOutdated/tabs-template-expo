@@ -1,9 +1,10 @@
 import { Image } from "expo-image";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -36,6 +37,7 @@ type Props = {
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
+  hasMore?: boolean;
 };
 
 const { width } = Dimensions.get("window");
@@ -77,11 +79,20 @@ export default function EboxList({
   onEndReached,
   refreshControl,
   loading,
+  hasMore = true,
 }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const {smartLight} = useWebSocketStore()
+  
+  // 使用 useRef 存储不需要触发重渲染的值
+  const modalRef = useRef({
+    setVisible: (visible: boolean) => setModalVisible(visible),
+    setImages: (images: string[]) => setSelectedImages(images),
+    setIndex: (index: number) => setSelectedIndex(index)
+  });
+
   const handleImagePress = (images: string[], index: number = 0) => {
     // console.log('handleImagePress called with images:', images);
     setSelectedImages(images);
@@ -169,7 +180,7 @@ export default function EboxList({
                 <Text style={styles.statusText}>状态: </Text>
                 {Object.values(DEVICE_STATUS).map((status) => 
                   status.condition(item.device_info) && (
-                    <View key={status.label} className=" flex-row ">
+                    <View key={status.label} className=" flex-row items-center">
                       <View style={[styles.statusDot, styles[status.dotStyle]]} />
                       <Text style={[styles.statusText, styles[status.textStyle]]}>
                         {status.label}
@@ -227,15 +238,27 @@ export default function EboxList({
   const ListFooterComponent = useMemo(
     () => (
       <View style={styles.footer}>
-        {loading ? (
-          <ActivityIndicator size="small" color="#409eff" />
-        ) : (
-          <Text style={styles.footerText}>no more messsage</Text>
-        )}
+        {loading && electricBoxes.length > 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#409eff" />
+            <Text style={styles.loadingText}>加载中...</Text>
+          </View>
+        ) : electricBoxes.length === 0 ? (
+          <Text style={styles.footerText}>暂无数据</Text>
+        ) : !hasMore ? (
+          <Text style={styles.footerText}>没有更多数据了</Text>
+        ) : null}
       </View>
     ),
-    [loading]
+    [loading, electricBoxes.length, hasMore]
   );
+
+  const getItemLayout = (data: any, index: number) => ({
+    length: CARD_HEIGHT,
+    offset: CARD_HEIGHT * index,
+    index,
+  });
+
   return (
     <>
       <FlatList
@@ -243,12 +266,25 @@ export default function EboxList({
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[
+          styles.container,
+          electricBoxes.length === 0 && styles.emptyContainer
+        ]}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         refreshControl={refreshControl}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
+        getItemLayout={getItemLayout}
+        removeClippedSubviews={Platform.OS === 'android'}
+        maxToRenderPerBatch={5}
+        windowSize={3}
+        initialNumToRender={8}
+        updateCellsBatchingPeriod={50}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 10,
+        }}
       />
       <EboxImageModal
         visible={modalVisible}
@@ -435,8 +471,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  },
   footerText: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });

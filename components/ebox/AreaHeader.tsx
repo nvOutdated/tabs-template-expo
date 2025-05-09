@@ -1,5 +1,6 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 const { width } = Dimensions.get('window');
@@ -61,7 +62,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
           onPress={() => handleSetShowDrawer()}
         >
           <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
-          <Text className="text-typography-100 ml-1 align-middle font-medium">区域</Text>
+          <Text className="text-tertiary-500 ml-1 align-middle font-medium">区域</Text>
         </TouchableOpacity>
 
         <View style={styles.centerContainer}>
@@ -109,9 +110,11 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
               color={currentTheme.activeTint}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.scanButton}>
+          <TouchableOpacity style={styles.scanButton} onPress={(()=>{
+            router.push("/(logging-in)/(modal)/addDeviceModal")
+          })}>
             <Ionicons
-              name="scan-outline"
+              name="add"
               size={24}
               color={currentTheme.activeTint}
             />

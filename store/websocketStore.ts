@@ -4,7 +4,10 @@ import { create } from "zustand";
 interface WebSocketState {
   isConnected: boolean;
   error: Error | null;
-  smartLight: object;
+  smartLight: {
+    did?:number|null;
+    [key: string]: any;
+  };
   init: () => void;
   disconnect: () => void;
   sendMessage: (message: string) => void;
@@ -13,7 +16,7 @@ interface WebSocketState {
 export const useWebSocketStore = create<WebSocketState>((set) => ({
   isConnected: false,
   error: null,
-  smartLight: {},
+  smartLight: {did:null},
   
   // 初始化WebSocket连接
   init: () => {

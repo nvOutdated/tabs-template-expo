@@ -36,6 +36,7 @@ const { width, height } = Dimensions.get("window");
 const ICON_SIZE = 60;
 
 export interface ConfigNode {
+  emsg: string|null;
   xAxis: number;
   yAxis: number;
   spriteX: number;
@@ -55,6 +56,7 @@ export interface ConfigNode {
   selectTypeA: string;
   selectTypeB: string;
   selectTypeC: string;
+  num_value:number|null;
 }
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -176,7 +178,7 @@ const ConnectionLine = memo(
         {node.cfg_type === "I" && node.display_name?.length > 0 && (
           <SvgText
             x={midX - 20}
-            y={midY + 80}
+            y={midY + 60}
             fill="#fff"
             fontSize="10"
             textAnchor="middle"
@@ -187,6 +189,43 @@ const ConnectionLine = memo(
               </TSpan>
             ))}
           </SvgText>
+        )}
+        {node.cfg_type === "I" && node.emsg && node.emsg.length > 0 && (
+          <SvgText
+            x={midX + 10}
+            y={midY + 80}
+            fill="red"
+            fontSize="10"
+            textAnchor="middle"
+          >
+            {node.emsg.split("").map((char, index) => (
+              <TSpan key={index} x={midX + 10} dy={index === 0 ? 0 : 16}>
+                {char}
+              </TSpan>
+            ))}
+          </SvgText>
+        )}
+        {node.cfg_type === "I" && node.num_value !== null && (
+          <>
+            <Rect
+              x={midX - 20}
+              y={midY + 15}
+              width={40}
+              height={20}
+              rx={4}
+              fill="rgba(0, 0, 0, 0.6)"
+            />
+            <SvgText
+              x={midX}
+              y={midY + 25}
+              fill="#409eff"
+              fontSize="12"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {node.num_value.toString()}
+            </SvgText>
+          </>
         )}
       </React.Fragment>
     );

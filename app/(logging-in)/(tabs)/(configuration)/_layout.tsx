@@ -9,7 +9,7 @@ const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get('window');
 const seaImage = require('@/assets/images/background/birdBgc.png');
 
-export default function TabMusicLayout() {
+export default function TabConfigurationLayout() {
   // const { theme } = useTheme();
   // const currentTheme = themeColors[theme as keyof typeof themeColors];
   const currentTheme = useCurrentTheme()
@@ -41,7 +41,8 @@ export default function TabMusicLayout() {
           tabBarActiveTintColor: currentTheme.activeTint,
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
-            display: "none"
+            // display: "none"
+            borderColor:currentTheme.textColor
           },
           tabBarStyle: {
             backgroundColor: 'transparent',

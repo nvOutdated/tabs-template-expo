@@ -1,11 +1,10 @@
-import React, { HtmlHTMLAttributes } from 'react';
+import React from 'react';
 import {
+    Animated,
+    Dimensions,
     StyleSheet,
     Text,
-    View,
-    TouchableOpacity,
-    Animated,
-    Dimensions
+    TouchableOpacity
 } from 'react-native';
 type props = {
     isVisible: boolean; // 是否显示抽屉

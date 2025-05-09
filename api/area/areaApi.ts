@@ -6,3 +6,10 @@ export const get_area_list =(params={})=>{
         body:params
     })
 }
+
+export const ebox_list = (params:{})=>{
+    return request("/smart/light/ebox/query/list",{
+       method:"post",
+       body:params
+    })
+}

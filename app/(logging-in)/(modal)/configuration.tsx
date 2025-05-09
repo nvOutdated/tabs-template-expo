@@ -3,12 +3,12 @@ import deviceMapJson from '@/assets/JSON/device_map_json.json';
 import ConfigurationGraph, {
   ConfigNode,
 } from "@/components/configuration/svgComponent";
+import { useWebSocketStore } from "@/store/websocketStore";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 // 修改 DeviceMeta 接口以匹配实际的 JSON 结构
 interface DeviceMeta {
   name: string;
@@ -33,6 +33,7 @@ interface TreeNode {
   xAxis: number;
   yAxis: number;
   children?: TreeNode[];
+  emsg:string;
   [key: string]: any;
 }
 
@@ -40,6 +41,7 @@ export default function ConfigurationPage() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const {smartLight} = useWebSocketStore()
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,40 +112,70 @@ export default function ConfigurationPage() {
     getObj(treeList);
     return list;
   };
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        setLoading(true);
-        const item = JSON.parse(params.item as string);
-        const response = await getElectricCfg({
-          cfg_type: "ebox",
-          cfg_id: item.id,
-        });
-
-        if (response.code === 200) {
-          setConfig(response.data);
-          const nodes = flattenTree(response.data.node);
-          setNodes(nodes);
-          // console.log(nodes);
-          
-        } else {
-          setError(response.msg || "获取配置失败");
-        }
-      } catch (err) {
-        console.error("获取配置失败:", err);
-        setError("获取配置失败，请检查网络连接");
-      } finally {
-        setLoading(false);
+  const fetchConfig = async () => {
+    try {
+      setLoading(true);
+      const item = JSON.parse(params.item as string);
+      const response = await getElectricCfg({
+        cfg_type: "ebox",
+        cfg_id: item.id,
+      });
+      if (response.code === 200) {
+        setConfig(response.data);
+        const nodes = flattenTree(response.data.node);
+        setNodes(nodes);
+        // console.log(nodes);
+        
+      } else {
+        setError(response.msg || "获取配置失败");
       }
-    };
+    } catch (err) {
+      console.error("获取配置失败:", err);
+      setError("获取配置失败，请检查网络连接");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    // const fetchConfig = async () => {
+    //   try {
+    //     setLoading(true);
+    //     const item = JSON.parse(params.item as string);
+    //     const response = await getElectricCfg({
+    //       cfg_type: "ebox",
+    //       cfg_id: item.id,
+    //     });
+    //     if (response.code === 200) {
+    //       setConfig(response.data);
+    //       const nodes = flattenTree(response.data.node);
+    //       setNodes(nodes);
+    //       // console.log(nodes);
+          
+    //     } else {
+    //       setError(response.msg || "获取配置失败");
+    //     }
+    //   } catch (err) {
+    //     console.error("获取配置失败:", err);
+    //     setError("获取配置失败，请检查网络连接");
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
 
     fetchConfig();
   }, [params.item]);
-
+  useEffect(()=>{
+    
+     const item = JSON.parse(params.item as string);
+     console.log(item.device_info.id,smartLight.did);
+     if(item.device_info.id===smartLight.did){
+      fetchConfig();
+     }
+  },[smartLight])
   const handleBack = () => {
     router.back();
   };
-
+  
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>

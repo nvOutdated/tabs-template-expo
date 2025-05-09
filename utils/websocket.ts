@@ -30,7 +30,7 @@ export class WebSocketManager {
 
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `http://192.168.1.168:38400`;
+    return `http://192.168.1.180:38400`;
   }
 
   private async initWebSocket() {
@@ -41,7 +41,6 @@ export class WebSocketManager {
         return;
       }
       console.log("重新示例化websocket");
-      
       this.ws = new WebSocket(this.getWebSocketUrl());
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);
