@@ -20,14 +20,10 @@ export class WebSocketManager {
   private messageHandlers: ((message: WebSocketMessage) => void)[] = [];
   private statusHandlers: ((isConnected: boolean) => void)[] = [];
 
-  constructor() {
-    // 移除自动初始化
-  }
-
   public init() {
     this.initWebSocket();
   }
-
+  
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `http://182.99.177.29:38400`;

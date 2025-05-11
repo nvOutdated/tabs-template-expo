@@ -1,10 +1,11 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { Dimensions, StatusBar, Text, View } from 'react-native';
+import { router } from "expo-router";
+import { Dimensions, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EleBoxScreen from "./ebox";
 import SmartLampScreen from "./smartLamp";
-
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get('window');
 const seaImage = require('@/assets/images/background/birdBgc.png');
@@ -22,7 +23,7 @@ export default function TabConfigurationLayout() {
         fontSize: focused ? 20 : 16,
         fontWeight: focused ? '800' : '400',
         textTransform: 'none',
-        lineHeight:20,
+        lineHeight: 20,
       }}
     >
       {children}
@@ -31,8 +32,8 @@ export default function TabConfigurationLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: currentTheme.headerBg, }}>
-      <StatusBar 
-        translucent 
+      <StatusBar
+        translucent
         backgroundColor={currentTheme.headerBg}
         barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}
       />
@@ -42,22 +43,22 @@ export default function TabConfigurationLayout() {
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
             // display: "none"
-            borderColor:currentTheme.textColor
+            borderColor: currentTheme.textColor
           },
           tabBarStyle: {
             backgroundColor: 'transparent',
-            height: 40,
+            height: 45,
             padding: 0,
-            marginTop: insets.top-5,
+            marginTop: insets.top - 5,
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
           },
           tabBarItemStyle: {
-            width: width*0.2,
+            width: width * 0.2, // 两个标签各占40%总宽度
             height: 40,
             padding: 0,
-            margin:0,
+            margin: 0,
           },
           tabBarLabel: renderLabel,
         }}
@@ -77,6 +78,28 @@ export default function TabConfigurationLayout() {
           component={SmartLampScreen}
         />
       </Tab.Navigator>
+      <View style={{
+        position: 'absolute',
+        right: 0,
+        top: insets.top - 5,
+        width: width * 0.1,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: currentTheme.headerBg,
+        zIndex: 1,
+      }}>
+        <TouchableOpacity
+          className="flex-row items-center w-full h-full justify-center pt-2"
+          onPress={() => {router.push("/(logging-in)/(modal)/addDeviceModal") }}
+        >
+          <Ionicons
+              name="add"
+              size={24}
+              color={currentTheme.activeTint}
+            />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

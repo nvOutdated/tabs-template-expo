@@ -1,4 +1,4 @@
-import { useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
+import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { getUserInfo, saveToken } from "@/utils/useStorageState";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -13,6 +13,7 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 type Theme = 'light' | 'dark' | 'blue' | 'yellow' | 'pink' | 'green';
 
 const themes: { name: Theme; color: string }[] = [
@@ -28,7 +29,7 @@ export default function PersonIndex() {
   const [userInfo, setUserInfo] = useState<string>("");
   const { theme, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
-
+  const currentTheme = useCurrentTheme();
   useEffect(() => {
     const fetchUserInfo = async () => {
       const info = await getUserInfo();
@@ -46,10 +47,17 @@ export default function PersonIndex() {
   };
 
   return (
-    <ScrollView className={`flex-1 bg-background-50 p-4`}>
+    <ScrollView className={`flex-1 bg-background-100`}>
+      {/* 页面标题 */}
+      <View style={{ paddingTop: insets.top,backgroundColor:currentTheme.headerBg }} className="mb-4 " >
+        <Text className="text-2xl font-bold text-primary-500 text-center border-outline-200">个人中心</Text>
+        <StatusBar translucent backgroundColor="transparent" barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}/>
+      </View>
+     
       {/* 用户信息区域 */}
-      <View className="items-center mb-8" style={{ paddingTop: insets.top }}>
-        <StatusBar translucent backgroundColor="transparent" />
+     <View className="p-4">
+     <View className="items-center mb-8">
+        
         <Image
           source={require("@/assets/images/images/amzing.png")}
           className="w-24 h-24 rounded-full mb-4"
@@ -97,6 +105,7 @@ export default function PersonIndex() {
         <Ionicons name="log-out" size={20} color="white" />
         <Text className="text-white ml-2 text-lg">退出登录</Text>
       </TouchableOpacity>
+     </View>
     </ScrollView>
   );
 }

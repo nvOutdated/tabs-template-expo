@@ -1,6 +1,5 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 const { width } = Dimensions.get('window');
@@ -128,7 +127,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
               color={currentTheme.activeTint}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.scanButton} onPress={(()=>{
+          {/* <TouchableOpacity style={styles.scanButton} onPress={(()=>{
             router.push("/(logging-in)/(modal)/addDeviceModal")
           })}>
             <Ionicons
@@ -136,7 +135,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
               size={24}
               color={currentTheme.activeTint}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     </View>
@@ -145,7 +144,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
+    // borderTopWidth: 1,
     margin: 0,
   },
   header: {
@@ -154,8 +153,8 @@ const styles = StyleSheet.create({
     // justifyContent:"flex-start",
     alignItems: 'center',
     paddingHorizontal: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    // borderBottomWidth: 1,
+    // borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   drawerButton: {
     padding: 4,

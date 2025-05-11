@@ -33,7 +33,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const savedTheme = await AsyncStorage.getItem("theme") as Theme;
       if (savedTheme && ["light", "dark", "blue", "yellow", "pink", "green"].includes(savedTheme)) {
         setTheme(savedTheme);
-        setColorScheme(savedTheme);
+        // setColorScheme(savedTheme);
       }
     })();
   }, []);
@@ -45,7 +45,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const nextIndex = (currentIndex + 1) % themeOrder.length;
     const newTheme = themeOrder[nextIndex];
     setTheme(newTheme);
-    setColorScheme(newTheme);
+    // setColorScheme(newTheme);
     console.log(newTheme,"主题切换");
     
     AsyncStorage.setItem("theme", newTheme);
@@ -53,7 +53,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const changeTheme = (newTheme: Theme) => {
     setTheme(newTheme);
-    setColorScheme(newTheme);
+    // setColorScheme(newTheme);
     AsyncStorage.setItem("theme", newTheme);
   };
 
