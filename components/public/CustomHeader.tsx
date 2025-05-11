@@ -26,10 +26,7 @@ export function CustomHeader({ title }: CustomHeaderProps) {
   const { theme } = useTheme();
   const currentTheme = themeColors[theme as keyof typeof themeColors];
   const insets = useSafeAreaInsets();
-  console.log(insets,'insets');
-  
   const titleOffset = useSharedValue(0);
-
   useEffect(() => { 
     // 设置标题轮播动画
     titleOffset.value = withRepeat(

@@ -155,7 +155,8 @@ export default function CameraIndexScreen() {
           </TouchableOpacity>
 
           <TextInput
-            className="flex-1 text-base ml-2 h-10 text-left text-typography-900"
+            className="flex-1  ml-2 h-10 text-left  align-middle text-typography-900"
+            style={styles.searchInput}
             placeholder="搜索..."
             placeholderTextColor={currentTheme.textColor}
             value={searchText}
@@ -258,6 +259,12 @@ const styles = StyleSheet.create({
   retryText: {
     color: '#fff',
     fontSize: 14,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 14,
+    lineHeight:2,
   },
 });
 

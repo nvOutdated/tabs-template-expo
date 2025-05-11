@@ -19,7 +19,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const searchAnimation = useRef(new Animated.Value(0)).current;
-
+  const useInputRef = useRef(null)
   useEffect(() => {
     Animated.timing(searchAnimation, {
       toValue: showSearch ? 1 : 0,
@@ -45,6 +45,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
 
   const toggleSearch = useCallback(() => {
     setShowSearch(!showSearch);
+    // useInputRef.current.focus()
     if (!showSearch) {
       setSearchText('');
     }
@@ -88,6 +89,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
             ]}
           >
             <TextInput
+              ref={useInputRef}
               style={[styles.searchInput, { color: currentTheme.activeTint }]}
               placeholder="搜索..."
               placeholderTextColor={currentTheme.inactiveTint}

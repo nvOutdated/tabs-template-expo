@@ -30,7 +30,7 @@ export class WebSocketManager {
 
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `http://192.168.1.180:38400`;
+    return `http://182.99.177.29:38400`;
   }
 
   private async initWebSocket() {
@@ -65,7 +65,7 @@ export class WebSocketManager {
   private handleMessage(event: MessageEvent) {
     try {
       const message: WebSocketMessage = JSON.parse(event.data);
-      console.log("[WebSocket] 收到消息:", message);
+      // console.log("[WebSocket] 收到消息:", message);
 
       if (message.code === 200) {
         this.retries = 0;

@@ -1,7 +1,9 @@
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
+import { useScannerStore } from '@/store/scannerStore';
 import { Ionicons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +11,16 @@ const Tab = createMaterialTopTabNavigator();
 
 // 电箱表单组件
 function EboxForm() {
+  const { scanResult, setScanResult } = useScannerStore();
+  useEffect(() => {
+    if(scanResult){
+      console.log('scanResult', scanResult);
+      // setScanResult('');
+    }
+    return () => {
+      setScanResult('');
+    };
+  }, [scanResult]);
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">
       <View className="mb-6">
@@ -48,6 +60,16 @@ function EboxForm() {
             <Text className="text-base text-tertiary-400">请选择所属区域</Text>
             <Ionicons name="chevron-down" size={20} color="#666" />
           </Pressable>
+        </View>
+      </View>
+      <View className="mb-6">
+        <View className="flex-row items-center mb-2">
+          <Text className="text-base text-tertiary-900 w-20">扫码结果</Text>
+          {
+           ( scanResult&&scanResult.length>0)?
+           <Text className="text-base text-tertiary-400">{scanResult}</Text>:
+           <Text className="text-base text-tertiary-400">暂无扫码结果</Text>
+          }
         </View>
       </View>
     </ScrollView>
@@ -103,11 +125,14 @@ function SmartLampForm() {
 export default function AddDeviceModal() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
-
+   
   const handleScanPress = () => {
-    router.push('/(logging-in)/(modal)/scan');
+    // router.push('/(logging-in)/(modal)/scan');
+    router.push('/(logging-in)/(modal)/scannerModal');
   };
-
+  const handleScanResult = (result: { data: string; type: string }) => {
+    console.log('扫码结果:', result);
+  };
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
       {/* 顶部导航栏 */}
@@ -118,12 +143,13 @@ export default function AddDeviceModal() {
         >
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
         </Pressable>
-        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>新增设备</Text>
+        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>Add Device</Text>
         <Pressable
           onPress={handleScanPress}
           className="p-2"
         >
           <Ionicons name="scan-outline" size={24} color={currentTheme.textColor} />
+          {/* <ScannerComponent onScanResult={handleScanResult} /> */}
         </Pressable>
       </View>
 
@@ -152,23 +178,23 @@ export default function AddDeviceModal() {
       >
         <Tab.Screen
           name="ebox"
-          options={{ title: '电箱' }}
+          options={{ title: 'EBOX' }}
           component={EboxForm}
         />
         <Tab.Screen
           name="smartLamp"
-          options={{ title: '智能灯' }}
+          options={{ title: 'SmartLight' }}
           component={SmartLampForm}
         />
       </Tab.Navigator>
 
       {/* 底部提交按钮 */}
-      <View className="p-4 bg-white border-t border-tertiary-200">
+      <View className="p-4 bg-secondary-200 border-t text-center border-outline-100">
         <Pressable 
-          className="h-11 rounded-lg items-center justify-center "
-          style={{ backgroundColor: currentTheme.activeTint }}
+          className="h-11  rounded-lg items-center justify-center bg-primary-100"
+          // style={{ backgroundColor: currentTheme.activeTint }}
         >
-          <Text className="text-base font-semibold text-white">提交</Text>
+          <Text className="text-base font-semibold text-tertiary-100">提交</Text>
         </Pressable>
       </View>
     </View>

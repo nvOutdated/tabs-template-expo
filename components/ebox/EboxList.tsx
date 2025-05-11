@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 
-import { useWebSocketStore } from "@/store/websocketStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
@@ -84,8 +83,6 @@ export default function EboxList({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const {smartLight} = useWebSocketStore()
-  
   // 使用 useRef 存储不需要触发重渲染的值
   const modalRef = useRef({
     setVisible: (visible: boolean) => setModalVisible(visible),

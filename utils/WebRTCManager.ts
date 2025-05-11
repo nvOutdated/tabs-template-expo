@@ -1,6 +1,5 @@
-import { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from 'react-native-webrtc';
-import axios from 'axios';
 import { getCameraPlayUrl } from '@/api/camera/cameraApi';
+import { RTCPeerConnection, RTCSessionDescription } from 'react-native-webrtc';
 
 export interface WebRTCStream {
   stream: any;
@@ -123,20 +122,22 @@ export class WebRTCManager {
       const serverBaseUrl = 'http://182.99.177.29:30080';
       const requestUrl = `${serverBaseUrl}/index/api/webrtc?app=rtp&stream=${stream}&type=play`;
 
-      const response = await axios.post(
-        requestUrl,
-        offer.sdp,
-        {
-          headers: {
-            'Content-Type': 'text/plain;charset=UTF-8',
-            'Accept': 'application/json, text/plain, */*',
-          },
-          timeout: 10000,
-        }
-      );
+      const fetchResponse = await fetch(requestUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8',
+          'Accept': 'application/json, text/plain, */*',
+        },
+        body: offer.sdp,
+      });
 
-      if (response.data.code === 0 || response.data.sdp) {
-        const answerSdp = response.data.sdp || response.data.data;
+      if (!fetchResponse.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const responseData = await fetchResponse.json();
+
+      if (responseData.code === 0 || responseData.sdp) {
+        const answerSdp = responseData.sdp || responseData.data;
         await this.peerConnection.setRemoteDescription(
           new RTCSessionDescription({
             type: 'answer',

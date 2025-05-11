@@ -46,6 +46,14 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(XDD) to access your camera",
+          "microphonePermission": "Allow $(XDD) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ],
       "expo-secure-store",
       "@config-plugins/react-native-webrtc"
     ],
