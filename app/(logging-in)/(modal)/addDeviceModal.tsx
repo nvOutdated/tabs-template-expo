@@ -15,11 +15,10 @@ function EboxForm() {
   useEffect(() => {
     if(scanResult){
       console.log('scanResult', scanResult);
-      // setScanResult('');
     }
-    return () => {
-      setScanResult('');
-    };
+    // return () => {
+    //   setScanResult('');
+    // };
   }, [scanResult]);
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">

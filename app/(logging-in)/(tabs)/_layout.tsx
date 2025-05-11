@@ -1,4 +1,5 @@
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
+import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
@@ -52,6 +53,7 @@ export default function TabLoggingLayout() {
         ),
       }}
     >
+      
        <Tabs.Screen
         name="(configuration)"
         options={{
@@ -62,36 +64,51 @@ export default function TabLoggingLayout() {
                 focused ? "settings" : "settings-outline"
               }
               color={color}
-              size={focused ? 30 : 20}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(camera)"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }: any) => (
-            <Ionicons
-              name={focused ? "camera" : "camera-outline"}
-              color={color}
-              size={isLandscape ? 20 : 24}
+              size={focused ? 25 : 18}
             />
           ),
         }}
       />
       
       <Tabs.Screen
+        name="(camera)"
+        options={{
+          title: "camera",
+          tabBarIcon: ({ color, focused }: any) => (
+            <Ionicons
+              name={focused ? "camera" : "camera"}
+              color={color}
+              size={isLandscape ? 30 : 20}
+            />
+          ),
+        }}
+      />
+       <Tabs.Screen
+        name="(gis)"
+        options={{
+          title: "GIS",
+          tabBarIcon: ({ color, focused }: any) => (
+            <Feather
+              name={
+                focused ? "map-pin" : "map-pin"
+              }
+              color={color}
+              size={focused ? 25 : 18}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="(personal)"
         options={{
-          title: "personal",
+          title: "person",
           tabBarIcon: ({ color, focused }: any) => (
             <Ionicons
               name={
                 focused ? "person" : "person-outline"
               }
               color={color}
-              size={focused ? 30 : 20}
+              size={focused ? 25 : 18}
             />
           ),
         }}

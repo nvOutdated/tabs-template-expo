@@ -19,7 +19,8 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const searchAnimation = useRef(new Animated.Value(0)).current;
-  const useInputRef = useRef(null)
+  const useInputRef = useRef<TextInput>(null);
+
   useEffect(() => {
     Animated.timing(searchAnimation, {
       toValue: showSearch ? 1 : 0,
@@ -44,14 +45,27 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
   });
 
   const toggleSearch = useCallback(() => {
-    setShowSearch(!showSearch);
-    // useInputRef.current.focus()
-    if (!showSearch) {
+    const newShowSearch = !showSearch;
+    setShowSearch(newShowSearch);
+    if (newShowSearch) {
       setSearchText('');
+      // 确保在状态更新后立即聚焦
+      setTimeout(() => {
+        useInputRef.current?.focus();
+      }, 100);
+    } else {
+      setSearchText('');
+      onSearch('');
+    }
+  }, [showSearch, onSearch]);
+
+  useEffect(() => {
+    if (showSearch && useInputRef.current) {
+      useInputRef.current.focus();
     }
   }, [showSearch]);
 
-  const handleSearch = useCallback(() => {
+  useEffect(() => {
     onSearch(searchText);
   }, [searchText, onSearch]);
 
@@ -94,9 +108,11 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
               placeholder="搜索..."
               placeholderTextColor={currentTheme.inactiveTint}
               value={searchText}
-              onChangeText={setSearchText}
+              onChangeText={(text) => {
+                setSearchText(text);
+                // debouncedSearch(text);
+              }}
               autoFocus={showSearch}
-              onSubmitEditing={handleSearch}
             />
           </Animated.View>
         </View>
@@ -184,4 +200,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight:2,
   },
-}); 
+});

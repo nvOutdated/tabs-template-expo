@@ -91,12 +91,11 @@ export default function EboxScreen() {
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
-
     searchTimerRef.current = setTimeout(() => {
       setCurrentPage(1);
       endReachedRef.current = false;
       loadEleBoxList(1, true);
-    }, 300);
+    }, 100);
 
     return () => {
       if (searchTimerRef.current) {
