@@ -1,5 +1,5 @@
+import { DEFAULT_BASE_WS } from "@/constants/defaultConfig";
 import { getToken } from "@/utils/useStorageState";
-
 export interface WebSocketMessage {
   code: number;
   service_name: string;
@@ -26,7 +26,8 @@ export class WebSocketManager {
   
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `http://182.99.177.29:38400`;
+    const returnUrl = DEFAULT_BASE_WS
+    return returnUrl;
   }
 
   private async initWebSocket() {

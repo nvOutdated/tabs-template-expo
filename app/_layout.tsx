@@ -4,7 +4,6 @@ import { Stack } from "expo-router";
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { AMapSdk } from 'react-native-amap3d';
-
 export default function RootLayout() {
   useEffect(() => {
     // 初始化高德地图SDK
@@ -19,6 +18,7 @@ export default function RootLayout() {
   return (
     // <GluestackUIProvider mode="light">
       <ThemeProvider>
+      
         <Stack
           screenOptions={{
             headerShown: false,
@@ -27,6 +27,7 @@ export default function RootLayout() {
         <Stack.Screen name="is-login" options={{ headerShown: false }} />
         <Stack.Screen name="(logging-in)" options={{ headerShown: false }} />
       </Stack>
+     
       </ThemeProvider>
     // </GluestackUIProvider>
   );

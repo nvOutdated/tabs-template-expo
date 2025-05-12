@@ -1,12 +1,13 @@
+import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { useScannerStore } from '@/store/scannerStore';
 import { Ionicons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Dimensions, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+const { width } = Dimensions.get('window');
 const Tab = createMaterialTopTabNavigator();
 
 // 电箱表单组件
@@ -21,9 +22,9 @@ function EboxForm() {
     // };
   }, [scanResult]);
   return (
-    <ScrollView className="flex-1 p-4 bg-background-50">
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
+    <ScrollView className="flex-1 px-4 py-2 bg-background-50">
+      <View className="mb-3">
+        <View className="flex-row items-center mb-1">
           <Text className="text-base text-tertiary-900 w-20">设备名称</Text>
           <TextInput
             className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
@@ -32,8 +33,8 @@ function EboxForm() {
           />
         </View>
       </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
+      <View className="mb-3">
+        <View className="flex-row items-center mb-1">
           <Text className="text-base text-tertiary-900 w-20">设备编号</Text>
           <TextInput
             className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
@@ -42,8 +43,8 @@ function EboxForm() {
           />
         </View>
       </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
+      <View className="mb-3">
+        <View className="flex-row items-center mb-1">
           <Text className="text-base text-tertiary-900 w-20">安装位置</Text>
           <TextInput
             className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
@@ -52,8 +53,8 @@ function EboxForm() {
           />
         </View>
       </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
+      <View className="mb-3">
+        <View className="flex-row items-center mb-1">
           <Text className="text-base text-tertiary-900 w-20">所属区域</Text>
           <Pressable className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 flex-row items-center justify-between">
             <Text className="text-base text-tertiary-400">请选择所属区域</Text>
@@ -61,8 +62,8 @@ function EboxForm() {
           </Pressable>
         </View>
       </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
+      <View className="mb-3">
+        <View className="flex-row items-center mb-1">
           <Text className="text-base text-tertiary-900 w-20">扫码结果</Text>
           {
            ( scanResult&&scanResult.length>0)?
@@ -124,7 +125,7 @@ function SmartLampForm() {
 export default function AddDeviceModal() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
-   
+  const { showWarning } = useCustomToast();
   const handleScanPress = () => {
     // router.push('/(logging-in)/(modal)/scan');
     router.push('/(logging-in)/(modal)/scannerModal');
@@ -135,21 +136,21 @@ export default function AddDeviceModal() {
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
       {/* 顶部导航栏 */}
-      <View className="flex-row items-center justify-between p-3 border-b border-tertiary-200" style={{backgroundColor:currentTheme.headerBg}}>
-        <Pressable
+      <View className="flex-row items-center justify-between px-3 py-1 border-b border-tertiary-200" style={{backgroundColor:currentTheme.headerBg}}>
+        <TouchableOpacity
           onPress={() => router.back()}
           className="p-2"
         >
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
-        </Pressable>
+        </TouchableOpacity>
         <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>Add Device</Text>
-        <Pressable
+        <TouchableOpacity
           onPress={handleScanPress}
           className="p-2"
         >
           <Ionicons name="scan-outline" size={24} color={currentTheme.textColor} />
           {/* <ScannerComponent onScanResult={handleScanResult} /> */}
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
       {/* 设备类型选择 */}
@@ -159,20 +160,31 @@ export default function AddDeviceModal() {
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
             backgroundColor: currentTheme.activeTint,
-            height: 3,
-            borderRadius: 1.5,
+            // height: 3,
+            // borderRadius: 1.5,
           },
           tabBarStyle: {
             backgroundColor: currentTheme.drawerBg,
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
+            padding:0,
+            height:40,
           },
           tabBarLabelStyle: {
             fontSize: 16,
             fontWeight: '500',
             textTransform: 'none',
+            padding:0,
+            margin:0,
           },
+          tabBarItemStyle:{
+            width: width * 0.3, // 两个标签各占40%总宽度
+            height: 40,
+            padding: 0,
+            margin: 0,
+           
+          }
         }}
       >
         <Tab.Screen
@@ -189,12 +201,18 @@ export default function AddDeviceModal() {
 
       {/* 底部提交按钮 */}
       <View className="p-4 bg-secondary-200 border-t text-center border-outline-100">
-        <Pressable 
+        <TouchableOpacity 
           className="h-11  rounded-lg items-center justify-center bg-primary-100"
           // style={{ backgroundColor: currentTheme.activeTint }}
+          onPress={()=>{
+            showWarning({
+              message:"提交失败",
+              
+            })
+          }}
         >
           <Text className="text-base font-semibold text-tertiary-100">提交</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </View>
   );
