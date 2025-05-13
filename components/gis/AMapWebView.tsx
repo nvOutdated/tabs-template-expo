@@ -1,8 +1,8 @@
+import { lampIcons } from '@/utils/mapIconBase64';
 import React, { useRef } from 'react';
 import { Dimensions, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useCustomToast } from '../public/UIComponents/ToastComponent';
-
 export interface MarkerIcon {
   size: [number, number];
   image: string;
@@ -33,13 +33,13 @@ interface AMapWebViewProps {
 const AMapWebView: React.FC<AMapWebViewProps> = ({
   markers = [],
   center = { latitude: 30.67626, longitude: 103.96613 },
-  zoom = 15,
+  zoom = 19,
   onMarkerPress,
   onMapPress,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const { showError } = useCustomToast();
-
+  const lightImage = lampIcons.singleLight
   const injectedJavaScript = `
     (function() {
       let map;
@@ -51,7 +51,6 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
         const markers = ${JSON.stringify(markers)};
         // 转换为高德地图需要的格式
         const points = markers.map(marker => ({
-         
           lnglat: [marker.position.longitude.toString(), marker.position.latitude.toString()],
           extData: marker // 保存原始数据用于点击事件
         }));
@@ -66,15 +65,31 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
       map = new AMap.Map('container', {
         zoom: ${zoom},
         center: [${center.longitude}, ${center.latitude}],
-        viewMode: '3D'
+        zooms:[13,19],
+        viewMode: '3D',
       });
+      var _renderMarker = function(context) {
+        var extData = context.data.extData;
+        var icon = extData && extData.icon;
+        var size = icon && icon.size ? icon.size : [40, 80];
+        var imgSrc = icon && icon.image ? icon.image : '';
 
+        var amapIcon = new AMap.Icon({
+          image: '${lightImage}',
+          size: new AMap.Size(size[0], size[1]),
+          imageSize: new AMap.Size(size[0], size[1]),
+          imageOffset: new AMap.Pixel(0, 0)
+        });
+
+        context.marker.setIcon(amapIcon);
+        context.marker.setOffset(new AMap.Pixel(-size[0]/2, -size[1]));
+      }
       // 加载点聚合插件
       map.plugin(["AMap.MarkerCluster"], function() {
         // 创建聚合对象
         cluster = new AMap.MarkerCluster(map, [], {
-          gridSize: 80, // 聚合网格像素大小
-         
+          gridSize: 200, // 聚合网格像素大小
+          renderMarker: _renderMarker,
         });
 
         // 添加点击事件
@@ -92,7 +107,7 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
         // 创建标记点
         createMarkers();
       });
-
+     
       // 地图点击事件
       // map.on('click', (e) => {
       //   window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -121,7 +136,7 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
     try {
       const data = JSON.parse(event.nativeEvent.data);
       console.log(data);
-      
+
       switch (data.type) {
         case 'markerPress':
           onMarkerPress?.(data.marker);
@@ -179,6 +194,7 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
           width: Dimensions.get('window').width,
           height: Dimensions.get('window').height * 0.6,
         }}
+       
       />
     </View>
   );

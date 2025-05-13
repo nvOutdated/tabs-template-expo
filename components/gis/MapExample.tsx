@@ -1,10 +1,11 @@
+import { lampIcons } from '@/utils/mapIconBase64';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useCustomToast } from '../public/UIComponents/ToastComponent';
 import type { Marker } from './AMapWebView';
 import AMapWebView from './AMapWebView';
 // import eleBoxImage from "@/assets/icons/ebox.png"
-const eleBoxImage = require("@/assets/icons/ebox.png")
+
 const MapExample: React.FC = () => {
   const { showInfo } = useCustomToast();
   const [markers] = useState<Marker[]>([
@@ -14,8 +15,8 @@ const MapExample: React.FC = () => {
       title: '成都市中心',
       info: '这是成都市中心',
       icon: {
-        size: [32, 32] as [number, number],
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png'
+        size: [40, 80] as [number, number],
+        image: lampIcons.singleLight
       }
     },
     {
@@ -24,8 +25,8 @@ const MapExample: React.FC = () => {
       title: '天府广场',
       info: '这是天府广场',
       icon: {
-        size: [32, 32] as [number, number],
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png'
+        size: [40, 80] as [number, number],
+        image: lampIcons.singleLight
       }
     },
     {
@@ -34,8 +35,8 @@ const MapExample: React.FC = () => {
       title: '春熙路',
       info: '这是春熙路',
       icon: {
-        size: [32, 32] as [number, number],
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_g.png'
+        size: [40, 80] as [number, number],
+        image: lampIcons.singleLight
       }
     },
     // 可以添加更多标记点
