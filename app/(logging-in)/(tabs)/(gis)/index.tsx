@@ -1,11 +1,10 @@
-import MapComponent from '@/components/gis/MapComponent';
+import MapExample from "@/components/gis/MapExample";
 import MapMessage from '@/components/gis/MapMessage';
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 const { width, height } = Dimensions.get('window');
 
 export default function GisIndexScreen() {
@@ -36,7 +35,8 @@ export default function GisIndexScreen() {
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <View style={{ height: height * 0.6 }}>
-        <MapComponent />
+        {/* <MapComponent /> */}
+        <MapExample/>
         <View className="absolute top-2 right-2 z-10">
           <TouchableOpacity
             className="p-2 rounded-full bg-white/80"

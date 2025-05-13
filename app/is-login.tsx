@@ -134,7 +134,6 @@ export default function LoginIndex() {
       const formBody = Object.keys(loginForm)
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(loginForm[key as keyof typeof loginForm]))
         .join('&');
-      
       const response = await fetch(`${DEFAULT_BASE_URL}/smart/auth/token`, {
         method: 'POST',
         headers: {

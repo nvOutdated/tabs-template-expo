@@ -33,8 +33,8 @@ export default function MapComponent() {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
     } : {
-      latitude: 39.91095,
-      longitude: 116.37296,
+      latitude: 30.67626,
+      longitude: 103.96613,
     },
     zoom: 15,
     tilt: 0,
