@@ -1,8 +1,10 @@
+import { gis_SmartLight_Details } from '@/api/street/streetCommon';
 import { lampIcons } from '@/utils/mapIconBase64';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Dimensions, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useCustomToast } from '../public/UIComponents/ToastComponent';
+
 export interface MarkerIcon {
   size: [number, number];
   image: string;
@@ -39,16 +41,35 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
 }) => {
   const webViewRef = useRef<WebView>(null);
   const { showError } = useCustomToast();
-  const lightImage = lampIcons.singleLight
+  const lightImage = lampIcons.eleBoxKatong;
+
+  useEffect(() => {
+    if (webViewRef.current) {
+      console.log(markers,'markers数据');
+      
+      const updateMarkersScript = `
+        (function() {
+          window.markers = ${JSON.stringify(markers)};
+          if (typeof updateMarkers === 'function') {
+            updateMarkers();
+          }
+        })();
+      `;
+      webViewRef.current.injectJavaScript(updateMarkersScript);
+    }
+  }, [markers]);
+
   const injectedJavaScript = `
     (function() {
       let map;
       let cluster;
       let amapMarkers = [];
+      let infoWindow;
+      window.markers = ${JSON.stringify(markers)};
 
       // 创建标记点的函数
       function createMarkers() {
-        const markers = ${JSON.stringify(markers)};
+        const markers = window.markers;
         // 转换为高德地图需要的格式
         const points = markers.map(marker => ({
           lnglat: [marker.position.longitude.toString(), marker.position.latitude.toString()],
@@ -61,29 +82,54 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
         }
       }
 
+      // 更新标记点的函数
+      window.updateMarkers = function() {
+        if (cluster) {
+          createMarkers();
+        }
+      };
+
       // 初始化地图
       map = new AMap.Map('container', {
         zoom: ${zoom},
         center: [${center.longitude}, ${center.latitude}],
-        zooms:[13,19],
+        zooms:[8,19],
         viewMode: '3D',
       });
+
+      // 创建信息窗体
+      infoWindow = new AMap.InfoWindow({
+        isCustom: true,
+        autoMove: true,
+        offset: new AMap.Pixel(0, -30)
+      });
+
       var _renderMarker = function(context) {
         var extData = context.data.extData;
         var icon = extData && extData.icon;
-        var size = icon && icon.size ? icon.size : [40, 80];
-        var imgSrc = icon && icon.image ? icon.image : '';
+        var size = icon && icon.size ? icon.size : [30, 30];
+        var imgSrc = icon && icon.image ? icon.image : '${lightImage}';
 
         var amapIcon = new AMap.Icon({
-          image: '${lightImage}',
+          image: imgSrc,
           size: new AMap.Size(size[0], size[1]),
           imageSize: new AMap.Size(size[0], size[1]),
           imageOffset: new AMap.Pixel(0, 0)
         });
-
+        
         context.marker.setIcon(amapIcon);
         context.marker.setOffset(new AMap.Pixel(-size[0]/2, -size[1]));
+
+        // 使用箭头函数，保持作用域
+        context.marker.on('click', () => {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'getMarkerDetails',
+            // marker: extData,
+            Container: extData.id
+          }));
+        });
       }
+
       // 加载点聚合插件
       map.plugin(["AMap.MarkerCluster"], function() {
         // 创建聚合对象
@@ -94,31 +140,38 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
 
         // 添加点击事件
         cluster.on('click', function(e) {
-          const marker = e.target;
-          const extData = marker.getExtData();
-          if (extData) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
+          // const marker = e.target;
+          // const extData = marker
+          // if (extData) {
+          //   window.ReactNativeWebView.postMessage(JSON.stringify({
+          //     type: 'markerPress',
+          //     marker: extData
+          //   }));
+          // }
+              window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'markerPress',
-              marker: extData
+              marker:'123'
             }));
-          }
         });
 
         // 创建标记点
         createMarkers();
       });
-     
-      // 地图点击事件
-      // map.on('click', (e) => {
-      //   window.ReactNativeWebView.postMessage(JSON.stringify({
-      //     type: 'mapPress',
-      //     position: {
-      //       latitude: e.lnglat.getLat(),
-      //       longitude: e.lnglat.getLng()
-      //     }
-      //   }));
-      // });
 
+      // 处理从React Native接收到的消息
+      window.handleMarkerDetails = function(details) {
+        if (details && details.data) {
+          const content = \`
+            <div style="padding: 10px;">
+              <div style="margin-bottom: 5px;"><b>名称：</b>\${details.data.name || ''}</div>
+              <div><b>编号：</b>\${details.data.device_code || ''}</div>
+            </div>
+          \`;
+          infoWindow.setContent(content);
+          infoWindow.open(map, details.position);
+        }
+      };
+     
       // 错误处理
       map.on('error', (e) => {
         window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -132,14 +185,39 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
   `;
 
   // 处理 WebView 消息
-  const handleMessage = (event: any) => {
+  const handleMessage = async (event: any) => {
     try {
+      console.log('收到消息:', event.nativeEvent.data);
       const data = JSON.parse(event.nativeEvent.data);
-      console.log(data);
+      
 
       switch (data.type) {
         case 'markerPress':
-          onMarkerPress?.(data.marker);
+          console.log(data,"触发点击1");
+          // onMarkerPress?.(data.marker);
+          break;
+        case 'getMarkerDetails':
+          console.log(data,"触发点击2");
+          try {
+            const res = await gis_SmartLight_Details({ container_id: data.Container });
+            if (res.code === 200) {
+              const updateDetailsScript = `
+                (function() {
+                  window.handleMarkerDetails({
+                    data: ${JSON.stringify(res.data)},
+                    position: [${data.marker.position.longitude}, ${data.marker.position.latitude}]
+                  });
+                })();
+              `;
+              webViewRef.current?.injectJavaScript(updateDetailsScript);
+            }
+          } catch (error) {
+            console.error('获取标记点详情失败:', error);
+            showError({
+              title: '获取详情失败',
+              message: '请稍后重试'
+            });
+          }
           break;
         case 'mapPress':
           onMapPress?.(data.position);
@@ -180,6 +258,14 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
               </head>
               <body>
                 <div id="container"></div>
+                <script>
+                  // 确保 ReactNativeWebView 对象存在
+                  window.ReactNativeWebView = window.ReactNativeWebView || {
+                    postMessage: function(message) {
+                      window.webkit.messageHandlers.ReactNativeWebView.postMessage(message);
+                    }
+                  };
+                </script>
               </body>
             </html>
           `
@@ -194,7 +280,13 @@ const AMapWebView: React.FC<AMapWebViewProps> = ({
           width: Dimensions.get('window').width,
           height: Dimensions.get('window').height * 0.6,
         }}
-       
+        // onLoadEnd={() => {
+        //   console.log('WebView loaded');
+        // }}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.warn('WebView error: ', nativeEvent);
+        }}
       />
     </View>
   );
