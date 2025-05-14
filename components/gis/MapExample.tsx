@@ -4,38 +4,48 @@ import { useCustomToast } from '../public/UIComponents/ToastComponent';
 import type { Marker } from './AMapWebView';
 import AMapWebView from './AMapWebView';
 // import eleBoxImage from "@/assets/icons/ebox.png"
-type continerItem={
-   container_id:number,
-   container_type:string,
-   device_code:string,
-   device_type:string,
-   lat:number,
-   lng:number,
-   name:string,
-   online:boolean,
-   open:boolean,
-   warn:boolean,
+
+type continerItem = {
+   container_id: number,
+   container_type: string,
+   device_code: string,
+   device_type: string,
+   lat: number,
+   lng: number,
+   name: string,
+   online: boolean,
+   open: boolean,
+   warn: boolean,
+   id: number,
 }
+
 type props = {
-  containerList:continerItem[]
+  containerList: continerItem[],
+  selectedMarker?: continerItem | null
 }
-export default function MapExample({containerList}:props){
+
+const MapExample = ({ containerList, selectedMarker }: props) => {
   const { showInfo } = useCustomToast();
   const [markers, setMarkers] = useState<Marker[]>([]);
 
   useEffect(() => {
-    const newMarkers = containerList.map(item => ({
-      id: item.container_id.toString(),
+    const newMarkers = containerList.map((item, index) => ({
+      id: `${item.id}_${index}`,
       position: { latitude: item.lat, longitude: item.lng },
-      title: item.device_code,
-      info: `Container: ${item.name}`,
+      title: item.name,
+      info: item.device_code,
       icon: {
-        size: [40, 80] as [number, number],
+        size: [40, 40] as [number, number],
         image: ''
       }
     }));
     setMarkers(newMarkers);
   }, [containerList]);
+
+  // 生成moveTo对象
+  const moveTo = selectedMarker
+    ? { position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng }, zoom: 16 }
+    : null;
 
   const handleMarkerPress = (marker: any) => {
     showInfo({
@@ -56,6 +66,7 @@ export default function MapExample({containerList}:props){
       <AMapWebView
         markers={markers}
         zoom={13}
+        moveTo={moveTo}
         onMarkerPress={handleMarkerPress}
         onMapPress={handleMapPress}
       />
@@ -63,4 +74,4 @@ export default function MapExample({containerList}:props){
   );
 };
 
-// export default MapExample; 
+export default MapExample;
