@@ -1,4 +1,4 @@
-const BASE_URL = "http://182.99.177.29"
+const BASE_URL = "http://192.168.1.180"
 export const DEFAULT_BASE_URL:string = `${BASE_URL}:48099`;
 // export const DEFAULT_BASE_WS:string = `${BASE_URL}:38400`;
 

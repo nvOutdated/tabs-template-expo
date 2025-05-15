@@ -1,8 +1,8 @@
-import { lampIcons } from '@/utils/mapIconBase64';
-import React, { useEffect, useRef } from 'react';
-import { Dimensions, View } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { useCustomToast } from '../public/UIComponents/ToastComponent';
+import { lampIcons } from "@/utils/mapIconBase64";
+import React, { useEffect, useRef } from "react";
+import { Dimensions, View } from "react-native";
+import { WebView } from "react-native-webview";
+import { useCustomToast } from "../public/UIComponents/ToastComponent";
 
 export interface MarkerIcon {
   size: [number, number];
@@ -29,12 +29,17 @@ export interface AMapWebViewProps {
   zoom?: number;
   onMarkerPress?: (marker: Marker) => void;
   onMapPress?: (position: { latitude: number; longitude: number }) => void;
-  moveTo?: { position: { latitude: number; longitude: number }; zoom: number } | null;
-}
+  moveTo?: {
+    position: { latitude: number; longitude: number };
+    zoom: number;
+    title:string;
 
+  } | null;
+}
+// center = { latitude: 27.151157, longitude: 114.99911 },
 const AMapWebView = ({
   markers = [],
-  center = { latitude: 27.151157, longitude: 114.99911 },
+  center = { latitude: 30.858307, longitude: 104.42053 },
   zoom = 19,
   onMarkerPress,
   onMapPress,
@@ -43,7 +48,6 @@ const AMapWebView = ({
   const webViewRef = useRef<WebView>(null);
   const { showError } = useCustomToast();
   const lightImage = lampIcons.eleBoxKatong;
-
   useEffect(() => {
     if (webViewRef.current) {
       const updateMarkersScript = `
@@ -57,16 +61,17 @@ const AMapWebView = ({
       webViewRef.current.injectJavaScript(updateMarkersScript);
     }
   }, [markers]);
+  // console.log(lampIcons['singleLightNormal']);
 
   useEffect(() => {
     if (moveTo && webViewRef.current) {
       const message = JSON.stringify({
-        type: 'getMarkerDetails',
+        type: "getMarkerDetails",
         Container: {
-          title: moveTo.position.latitude.toString(),
+          title: moveTo.title,
           info: moveTo.position.longitude.toString(),
-          position: moveTo.position
-        }
+          position: moveTo.position,
+        },
       });
       webViewRef.current.injectJavaScript(`
         window.ReactNativeWebView.postMessage('${message}');
@@ -81,7 +86,7 @@ const AMapWebView = ({
       let amapMarkers = [];
       let infoWindow;
       window.markers = ${JSON.stringify(markers)};
-
+      window.lampIcons = ${JSON.stringify(lampIcons)};
       // 创建标记点的函数
       function createMarkers() {
         const markers = window.markers;
@@ -129,8 +134,9 @@ const AMapWebView = ({
         var extData = context.data[0].extData;
         var icon = extData && extData.icon;
         var size = icon && icon.size ? icon.size : [30, 30];
-        var imgSrc = icon && icon.image ? icon.image : '${lightImage}';
-
+        var imgSrc = icon && icon.image && window.lampIcons && window.lampIcons[icon.image]
+        ? window.lampIcons[icon.image]
+        : '${lightImage}';
         var amapIcon = new AMap.Icon({
           image: imgSrc,
           size: new AMap.Size(size[0], size[1]),
@@ -155,7 +161,7 @@ const AMapWebView = ({
       map.plugin(["AMap.MarkerCluster"], function() {
         // 创建聚合对象
         cluster = new AMap.MarkerCluster(map, [], {
-          gridSize: 200, // 聚合网格像素大小
+          gridSize: 120, // 聚合网格像素大小
           renderMarker: _renderMarker,
         });
         // 创建标记点
@@ -237,45 +243,47 @@ const AMapWebView = ({
     try {
       const data = JSON.parse(event.nativeEvent.data);
       switch (data.type) {
-        case 'markerPress':
+        case "markerPress":
           // console.log(data,"触发点击1");
           // onMarkerPress?.(data.marker);
           break;
-        case 'getMarkerDetails':
-          console.log(data,"触发点击2");
+        case "getMarkerDetails":
+          // console.log(data,"触发点击2");
           try {
             const updateDetailsScript = `
               (function() {
                 window.handleMarkerDetails({
                   data: {
-                    name: '${data.Container.title || ''}',
-                    device_code: '${data.Container.info || ''}'
+                    name: '${data.Container.title || ""}',
+                    device_code: '${data.Container.info || ""}'
                   },
-                  position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
+                  position: [${data.Container.position.longitude}, ${
+              data.Container.position.latitude
+            }]
                 });
               })();
             `;
             webViewRef.current?.injectJavaScript(updateDetailsScript);
           } catch (error) {
-            console.error('获取标记点详情失败:', error);
+            console.error("获取标记点详情失败:", error);
             showError({
-              title: '获取详情失败',
-              message: '请稍后重试'
+              title: "获取详情失败",
+              message: "请稍后重试",
             });
           }
           break;
-        case 'mapPress':
+        case "mapPress":
           onMapPress?.(data.position);
           break;
-        case 'mapError':
+        case "mapError":
           showError({
-            title: '地图加载错误',
-            message: data.error
+            title: "地图加载错误",
+            message: data.error,
           });
           break;
       }
     } catch (error) {
-      console.error('处理地图消息失败:', error);
+      console.error("处理地图消息失败:", error);
     }
   };
 
@@ -313,7 +321,7 @@ const AMapWebView = ({
                 </script>
               </body>
             </html>
-          `
+          `,
         }}
         injectedJavaScript={injectedJavaScript}
         onMessage={handleMessage}
@@ -322,15 +330,15 @@ const AMapWebView = ({
         startInLoadingState={true}
         scalesPageToFit={true}
         style={{
-          width: Dimensions.get('window').width,
-          height: Dimensions.get('window').height * 0.6,
+          width: Dimensions.get("window").width,
+          height: Dimensions.get("window").height * 0.6,
         }}
         // onLoadEnd={() => {
         //   console.log('WebView loaded');
         // }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          console.warn('WebView error: ', nativeEvent);
+          console.warn("WebView error: ", nativeEvent);
         }}
       />
     </View>

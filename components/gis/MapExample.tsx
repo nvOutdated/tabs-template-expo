@@ -4,7 +4,6 @@ import { useCustomToast } from '../public/UIComponents/ToastComponent';
 import type { Marker } from './AMapWebView';
 import AMapWebView from './AMapWebView';
 // import eleBoxImage from "@/assets/icons/ebox.png"
-
 type continerItem = {
    container_id: number,
    container_type: string,
@@ -17,34 +16,111 @@ type continerItem = {
    open: boolean,
    warn: boolean,
    id: number,
+   model_name?: string,
+   direction?: number,
+   state?: number,
 }
 
 type props = {
   containerList: continerItem[],
-  selectedMarker?: continerItem | null
+  selectedMarker?: continerItem | null,
+  lightList?: any[],
+  onMapBoundsChange?: (bounds: any, zoom: number) => void,
+  mapZoom?: number
 }
 
-const MapExample = ({ containerList, selectedMarker }: props) => {
+// const lightSprite = RNImage.resolveAssetSource(require('@/assets/images/map/mapLampsSprite.png')).uri;
+const lightSprite = require("@/assets/images/map/mapLampsSprite.png")
+function getLampIconParams(data: any) {
+  let singleLampDirection = '';
+  let offsetY = 0, offsetX = 0, offsetIcon = 0, iconType = '';
+  if (data.model_name == '1') {
+    iconType = "single";
+    offsetIcon = -30;
+    switch (data.direction) {
+      case 1: singleLampDirection = 'singleLampEast'; offsetX = 0; break;
+      case 2: singleLampDirection = 'singleLampSouth'; offsetX = 220; break;
+      case 3: singleLampDirection = 'singleLampWest'; offsetX = 330; break;
+      case 4: singleLampDirection = 'singleLampNorth'; offsetX = 110; break;
+      default: break;
+    }
+    switch (data.state) {
+      case 1: singleLampDirection += 'open'; offsetY = 0; break;
+      case 2: singleLampDirection += 'close'; offsetY = 210; break;
+      case 3: singleLampDirection += 'warn'; offsetY = 420; break;
+      default: break;
+    }
+  } else if (data.model_name == '2') {
+    iconType = "double";
+    offsetIcon = -30;
+    switch (data.direction) {
+      case 1: singleLampDirection = 'doubleLampEast'; offsetX = 0; break;
+      case 2: singleLampDirection = 'doubleLampSouth'; offsetX = 220; break;
+      case 3: singleLampDirection = 'doubleLampWest'; offsetX = 330; break;
+      case 4: singleLampDirection = 'doubleLampNorth'; offsetX = 110; break;
+      default: break;
+    }
+    switch (data.state) {
+      case 1: offsetY = 630; singleLampDirection += 'open'; break;
+      case 2: offsetY = 840; singleLampDirection += 'close'; break;
+      case 3: offsetY = 1050; singleLampDirection += 'warn'; break;
+      default: break;
+    }
+  } else if (["3", "4", "5"].includes(data.model_name)) {
+    iconType = "yulan";
+    offsetY = 1260;
+    offsetIcon = -30;
+    switch (data.state) {
+      case 1: offsetX = 0; singleLampDirection = 'yulanLampOpen'; break;
+      case 2: offsetX = 220; singleLampDirection = 'yulanLampClose'; break;
+      case 3: offsetX = 110; singleLampDirection = 'yulanLampWarn'; break;
+      default: break;
+    }
+  }
+  return { key: singleLampDirection, offsetX, offsetY, iconType, offsetIcon };
+}
+
+const MapExample = ({ 
+  containerList, 
+  selectedMarker, 
+  lightList = [], 
+  onMapBoundsChange,
+  mapZoom = 13 
+}: props) => {
   const { showInfo } = useCustomToast();
   const [markers, setMarkers] = useState<Marker[]>([]);
-
   useEffect(() => {
-    const newMarkers = containerList.map((item, index) => ({
-      id: `${item.id}_${index}`,
-      position: { latitude: item.lat, longitude: item.lng },
-      title: item.name,
-      info: item.device_code,
-      icon: {
-        size: [40, 40] as [number, number],
-        image: ''
-      }
-    }));
-    setMarkers(newMarkers);
-  }, [containerList]);
+    async function buildMarkers() {
+      const containerMarkers = containerList.map((item, index) => ({
+        id: `container_${item.id}_${index}`,
+        position: { latitude: item.lat, longitude: item.lng },
+        title: item.name,
+        info: item.device_code,
+        icon: {
+          size: [40, 40] as [number, number],
+          image: ''
+        }
+      }));
+      const lightMarkers = lightList.map((item,index)=>{
+        return {
+              id: `light_${item.id}_${index}`,
+              position: { latitude: item.lat, longitude: item.lng },
+              title: item.name || '单灯',
+              info: item.sn,
+              icon: {
+                size: [40, 80] as [number, number],
+                image: 'singleLightNormal'
+              }
+            };
+      })
+      setMarkers([...containerMarkers, ...lightMarkers]);
+    }
+    buildMarkers();
+  }, [containerList, lightList]);
 
   // 生成moveTo对象
   const moveTo = selectedMarker
-    ? { position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng }, zoom: 16 }
+    ? { position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng }, zoom: 16,title:selectedMarker.name }
     : null;
 
   const handleMarkerPress = (marker: any) => {
@@ -61,14 +137,16 @@ const MapExample = ({ containerList, selectedMarker }: props) => {
     });
   };
 
+
   return (
     <View className="flex-1">
       <AMapWebView
         markers={markers}
-        zoom={13}
+        zoom={mapZoom}
         moveTo={moveTo}
         onMarkerPress={handleMarkerPress}
         onMapPress={handleMapPress}
+        // onMapBoundsChange={handleMapBoundsChange}
       />
     </View>
   );
