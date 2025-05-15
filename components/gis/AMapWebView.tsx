@@ -18,6 +18,13 @@ export interface Marker {
   title?: string;
   icon?: MarkerIcon;
   info?: string;
+  container_type?: string;
+  state?: number;
+  direction?: number;
+  online?: boolean;
+  open?: boolean;
+  warn?: boolean;
+  single_lamp_status?: string[];
 }
 
 export interface AMapWebViewProps {
@@ -27,21 +34,26 @@ export interface AMapWebViewProps {
     longitude: number;
   };
   zoom?: number;
-  onMarkerPress?: (marker: Marker) => void;
   onMapPress?: (position: { latitude: number; longitude: number }) => void;
   moveTo?: {
     position: { latitude: number; longitude: number };
     zoom: number;
-    title:string;
-
+    title: string;
+    info?: string;
+    container_type?: string;
+    state?: number;
+    direction?: number;
+    online?: boolean;
+    open?: boolean;
+    warn?: boolean;
   } | null;
 }
 // center = { latitude: 27.151157, longitude: 114.99911 },
 const AMapWebView = ({
   markers = [],
-  center = { latitude: 30.858307, longitude: 104.42053 },
+  // center = { latitude: 30.858307, longitude: 104.42053 },
+  center = { latitude: 27.151157, longitude: 114.99911 },
   zoom = 19,
-  onMarkerPress,
   onMapPress,
   moveTo,
 }: AMapWebViewProps) => {
@@ -69,8 +81,14 @@ const AMapWebView = ({
         type: "getMarkerDetails",
         Container: {
           title: moveTo.title,
-          info: moveTo.position.longitude.toString(),
+          info: moveTo.info,
           position: moveTo.position,
+          container_type: moveTo.container_type,
+          online: moveTo.online,
+          open: moveTo.open,
+          warn: moveTo.warn,
+          state: moveTo.state,
+          direction: moveTo.direction
         },
       });
       webViewRef.current.injectJavaScript(`
@@ -117,17 +135,11 @@ const AMapWebView = ({
         viewMode: '3D',
       });
 
-      // 创建信息窗体
-      infoWindow = new AMap.InfoWindow({
-        isCustom: true,
-        autoMove: true,
-        offset: new AMap.Pixel(0, -50),
-        closeWhenClickMap: true
-      });
-
       // 添加地图点击事件
       map.on('click', function() {
-        infoWindow.close();
+        if (infoWindow) {
+          infoWindow.close();
+        }
       });
 
       var _renderMarker = function(context) {
@@ -151,7 +163,6 @@ const AMapWebView = ({
         context.marker.on('click', () => {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'getMarkerDetails',
-            // marker: extData,
             Container: extData
           }));
         });
@@ -171,6 +182,28 @@ const AMapWebView = ({
       // 处理从React Native接收到的消息
       window.handleMarkerDetails = function(details) {
         if (details && details.data) {
+          const isLamp = details.data.container_type === 'lamp';
+          
+          // 获取配电箱状态
+          const getEboxStatus = (data) => {
+            if (!data.online && !data.open && !data.warn) return { label: '离线', color: '#999999' };
+            if (data.online && !data.open && !data.warn) return { label: '在线', color: '#52c41a' };
+            if (data.online && data.open && !data.warn) return { label: '打开', color: '#1890ff' };
+            if (data.online && data.warn) return { label: '报警', color: '#f5222d' };
+            return { label: '未知', color: '#999999' };
+          };
+
+          // 获取单灯控制器状态
+          const getLampStatus = (data) => {
+            if (!data.single_lamp_status || !data.single_lamp_status.length) return '';
+            return data.single_lamp_status.map((status, index) => 
+              '<span style="color: ' + (status === 'open' ? '#52c41a' : '#999999') + '">控制器' + (index + 1) + ':' + (status === 'open' ? '开' : '关') + '</span>'
+            ).join('，');
+          };
+          
+          const eboxStatus = !isLamp ? getEboxStatus(details.data) : null;
+          const lampStatus = isLamp ? getLampStatus(details.data) : null;
+          
           const content = \`
             <div style="
               background: white;
@@ -181,7 +214,7 @@ const AMapWebView = ({
               position: relative;
             ">
               <div style="
-                background: #1890ff;
+                background: \${isLamp ? '#52c41a' : eboxStatus.color};
                 color: white;
                 padding: 8px 12px;
                 border-radius: 8px 8px 0 0;
@@ -192,18 +225,36 @@ const AMapWebView = ({
                 font-weight: bold;
               ">
                 <span>\${details.data.name || ''}</span>
-              
               </div>
               <div style="
-                padding: 12px;
+                padding: 8px 4px;
                 font-size: 13px;
                 color: #333;
                 border-bottom: 1px solid #f0f0f0;
               ">
-                <div style="margin-bottom: 8px;">
+                <div style="margin-bottom: 4px;">
                   <span style="color: #666;">编号：</span>
                   <span>\${details.data.device_code || ''}</span>
                 </div>
+                \${isLamp ? \`
+                  <div style="margin-bottom: 4px;">
+                    <span style="color: #666;">状态：</span>
+                    <span>\${lampStatus}</span>
+                  </div>
+                  <div style="margin-bottom: 4px;">
+                    <span style="color: #666;">方向：</span>
+                    <span>\${details.data.direction === 1 ? '东' : details.data.direction === 2 ? '南' : details.data.direction === 3 ? '西' : '北'}</span>
+                  </div>
+                \` : \`
+                  <div style="margin-bottom: 4px;">
+                    <span style="color: #666;">类型：</span>
+                    <span>配电箱</span>
+                  </div>
+                  <div style="margin-bottom: 4px;">
+                    <span style="color: #666;">状态：</span>
+                    <span style="color: \${eboxStatus.color}">\${eboxStatus.label}</span>
+                  </div>
+                \`}
               </div>
               <div style="
                 position: absolute;
@@ -218,9 +269,22 @@ const AMapWebView = ({
               "></div>
             </div>
           \`;
+
+          // 关闭已存在的信息窗口
+          if (infoWindow) {
+            infoWindow.close();
+          }
+
+          // 创建新的信息窗口
+          infoWindow = new AMap.InfoWindow({
+            isCustom: true,
+            autoMove: true,
+            offset: new AMap.Pixel(0, isLamp ? -80 : -50),
+            closeWhenClickMap: true
+          });
+
           infoWindow.setContent(content);
           infoWindow.open(map, details.position);
-          // 设置地图中心点为传入的坐标点
           map.setCenter(details.position);
           map.setZoom(19);
         }
@@ -248,18 +312,21 @@ const AMapWebView = ({
           // onMarkerPress?.(data.marker);
           break;
         case "getMarkerDetails":
-          // console.log(data,"触发点击2");
           try {
             const updateDetailsScript = `
               (function() {
                 window.handleMarkerDetails({
                   data: {
                     name: '${data.Container.title || ""}',
-                    device_code: '${data.Container.info || ""}'
+                    device_code: '${data.Container.info || ""}',
+                    container_type: '${data.Container.container_type || ""}',
+                    direction: ${data.Container.direction || 0},
+                    online: ${data.Container.online || false},
+                    open: ${data.Container.open || false},
+                    warn: ${data.Container.warn || false},
+                    single_lamp_status: ${JSON.stringify(data.Container.single_lamp_status || [])}
                   },
-                  position: [${data.Container.position.longitude}, ${
-              data.Container.position.latitude
-            }]
+                  position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
                 });
               })();
             `;

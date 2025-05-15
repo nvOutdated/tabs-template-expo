@@ -19,7 +19,6 @@ type CustomHeaderProps = {
   title: string;
 };
 
-const seaImage = require('@/assets/images/background/birdBgc.png');
 
 export function CustomHeader({ title }: CustomHeaderProps) {
   const navigation = useNavigation();
@@ -51,16 +50,7 @@ export function CustomHeader({ title }: CustomHeaderProps) {
     router.push('/(logging-in)/(modal)/messageModal')
   }
 
-  return (
-   /*  <ImageBackground 
-      source={seaImage}
-      resizeMode="cover"
-      style={{
-        paddingTop: insets.top,
-        backgroundColor:currentTheme.headerBg,
-      }}
-    > */
-     
+  return (     
       <View style={{ 
         padding: 12,
         flexDirection: 'row',

@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { useCustomToast } from '../public/UIComponents/ToastComponent';
 import type { Marker } from './AMapWebView';
 import AMapWebView from './AMapWebView';
-// import eleBoxImage from "@/assets/icons/ebox.png"
 type continerItem = {
    container_id: number,
    container_type: string,
@@ -19,18 +18,16 @@ type continerItem = {
    model_name?: string,
    direction?: number,
    state?: number,
+   sn: string,
+   single_lamp_status?: string[]
 }
 
 type props = {
   containerList: continerItem[],
   selectedMarker?: continerItem | null,
   lightList?: any[],
-  onMapBoundsChange?: (bounds: any, zoom: number) => void,
   mapZoom?: number
 }
-
-// const lightSprite = RNImage.resolveAssetSource(require('@/assets/images/map/mapLampsSprite.png')).uri;
-const lightSprite = require("@/assets/images/map/mapLampsSprite.png")
 function getLampIconParams(data: any) {
   let singleLampDirection = '';
   let offsetY = 0, offsetX = 0, offsetIcon = 0, iconType = '';
@@ -80,13 +77,12 @@ function getLampIconParams(data: any) {
   return { key: singleLampDirection, offsetX, offsetY, iconType, offsetIcon };
 }
 
-const MapExample = ({ 
+const MapExample: React.FC<props> = ({ 
   containerList, 
   selectedMarker, 
   lightList = [], 
-  onMapBoundsChange,
   mapZoom = 13 
-}: props) => {
+}) => {
   const { showInfo } = useCustomToast();
   const [markers, setMarkers] = useState<Marker[]>([]);
   useEffect(() => {
@@ -96,6 +92,10 @@ const MapExample = ({
         position: { latitude: item.lat, longitude: item.lng },
         title: item.name,
         info: item.device_code,
+        container_type:item.container_type,
+        online:item.online,
+        open:item.open,
+        warn:item.warn,
         icon: {
           size: [40, 40] as [number, number],
           image: ''
@@ -107,6 +107,9 @@ const MapExample = ({
               position: { latitude: item.lat, longitude: item.lng },
               title: item.name || '单灯',
               info: item.sn,
+              container_type: item.container_type,
+              single_lamp_status: item.single_lamp_status || [],
+              direction: item.direction,
               icon: {
                 size: [40, 80] as [number, number],
                 image: 'singleLightNormal'
@@ -120,15 +123,19 @@ const MapExample = ({
 
   // 生成moveTo对象
   const moveTo = selectedMarker
-    ? { position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng }, zoom: 16,title:selectedMarker.name }
+    ? { 
+        position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng }, 
+        zoom: 16,
+        title: selectedMarker.name,
+        info: selectedMarker.device_code || selectedMarker.sn,
+        container_type: selectedMarker.container_type,
+        online: selectedMarker.online,
+        open: selectedMarker.open,
+        warn: selectedMarker.warn,
+        direction: selectedMarker.direction,
+        single_lamp_status: selectedMarker.single_lamp_status
+      }
     : null;
-
-  const handleMarkerPress = (marker: any) => {
-    showInfo({
-      title: marker.title,
-      message: marker.info || '点击了标记点'
-    });
-  };
 
   const handleMapPress = (position: { latitude: number; longitude: number }) => {
     showInfo({
@@ -137,14 +144,12 @@ const MapExample = ({
     });
   };
 
-
   return (
     <View className="flex-1">
       <AMapWebView
         markers={markers}
         zoom={mapZoom}
         moveTo={moveTo}
-        onMarkerPress={handleMarkerPress}
         onMapPress={handleMapPress}
         // onMapBoundsChange={handleMapBoundsChange}
       />

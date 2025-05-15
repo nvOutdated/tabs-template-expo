@@ -6,14 +6,14 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 const devices = [
   {
     id: '1',
-    name: '电箱A',
+    name: '集中器',
     type: 'ebox',
     status: '正常',
     lastUpdate: '2024-03-20 10:30',
   },
   {
     id: '2',
-    name: '智能灯B',
+    name: '灯杆',
     type: 'smartLamp',
     status: '正常',
     lastUpdate: '2024-03-20 10:30',
@@ -26,7 +26,7 @@ export default function MapMessage() {
   return (
     <View className="flex-1 bg-white rounded-t-3xl shadow-lg">
       <View className="p-4 border-b border-tertiary-200">
-        <Text className="text-lg font-medium text-tertiary-900">设备列表</Text>
+        <Text className="text-lg font-medium text-tertiary-900">设备信息</Text>
       </View>
       <ScrollView className="flex-1">
         {devices.map((device) => (
@@ -47,7 +47,7 @@ export default function MapMessage() {
                     {device.name}
                   </Text>
                   <Text className="text-sm text-tertiary-500">
-                    类型: {device.type === 'ebox' ? '电箱' : '智能灯'}
+                    类型: {device.type === 'ebox' ? '配电箱' : '单灯'}
                   </Text>
                 </View>
               </View>

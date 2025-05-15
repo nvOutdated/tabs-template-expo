@@ -13,8 +13,7 @@
       "bitcode": false,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "需要获取您的位置信息以显示地图",
-        "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图",
-        "AMapApiKey": "您的iOS API Key"
+        "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图"
       }
     },
     "android": {
@@ -35,12 +34,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.xdd11.tabscomponentapp",
-      "config": {
-        "amap": {
-          "apiKey": "46706639eb0fcf93547033af8ea5b079"
-        }
-      }
+      "package": "com.xdd11.tabscomponentapp"
     },
     "web": {
       "bundler": "metro",
@@ -68,7 +62,7 @@
       ],
       "expo-secure-store",
       "@config-plugins/react-native-webrtc",
-     [
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."

@@ -15,24 +15,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { width, height } = Dimensions.get("window");
-
-type SearchType = '配电箱' | '单灯';
-
-type ElectricItem = {
-  id: number;
-  sn: string;
-  name: string;
-  addr: string;
-  device_info: {
-    device_code: string;
-    online: boolean;
-    open: boolean;
-    warn: boolean;
-    loops: boolean[];
-    images?: string[];
-  };
-};
-
 export default function GisIndexScreen() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
@@ -42,8 +24,6 @@ export default function GisIndexScreen() {
   const [searchText, setSearchText] = useState("");
   const [containerList, setContainerList] = useState<any[]>([]);
   const [lightList, setLightList] = useState<any[]>([]);
-  const [searchType, setSearchType] = useState<SearchType>('配电箱');
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<any>(null);
@@ -69,9 +49,10 @@ export default function GisIndexScreen() {
   const fetchContainerList = async() => {
     try {
       const res = await get_container_list({});
-      if(res.code == 200) {
+      if(res.code === 200) {
         const convertedData = res.data.map((item: any) => ({
           ...item,
+          searchName:'集中器: '+`${item.device_code}`+`,(${item.name})`,
           ...bdToGaoDe(item.lat, item.lng)
         }));
         setContainerList(convertedData);
@@ -99,6 +80,7 @@ export default function GisIndexScreen() {
         if (res.code === 200 && res.data && res.data.length > 0) {
           const convertedData = res.data.map((item: any) => ({
             ...item,
+            searchName:'单灯: '+`${item.name}`+`,(${item.container_id})`,
             ...bdToGaoDe(item.lat, item.lng)
           }));
           allLights = [...allLights, ...convertedData];
@@ -135,16 +117,12 @@ export default function GisIndexScreen() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    if (searchType === '配电箱' && text) {
-      const filtered = containerList.filter(item => 
-        item.device_code.toLowerCase().includes(text.toLowerCase())
-      ).slice(0, 5);
-      setSearchResults(filtered);
-      setShowSearchResults(true);
-    } else if (searchType === '单灯' && text) {
-      const filtered = lightList.filter(item =>
-        item.name && item.name.toLowerCase().includes(text.toLowerCase())
-      ).slice(0, 5);
+    console.log(containerList[0],lightList[0]);
+    
+    if(text.length>0){
+      const filtered = [...containerList,...lightList].filter(item =>
+        item.searchName && item.searchName.toLowerCase().includes(text.toLowerCase())
+      ).slice(0, 10);
       setSearchResults(filtered);
       setShowSearchResults(true);
     } else {
@@ -169,7 +147,7 @@ export default function GisIndexScreen() {
   };
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-      <View style={{ height: height * 0.6 }}>
+      <View style={{ height: height * 0.7 }}>
         {/* 蒙层 */}
         {loadingLight && (
           <View
@@ -178,7 +156,7 @@ export default function GisIndexScreen() {
               top: 0,
               left: 0,
               width: '100%',
-              height: height * 0.6,
+              height: height * 0.7,
               backgroundColor: 'rgba(0,0,0,0.5)',
               zIndex: 100,
               justifyContent: 'center',
@@ -215,32 +193,7 @@ export default function GisIndexScreen() {
           style={{
             transform: [{ translateX: searchTranslateX }],
           }}
-        >
-          <TouchableOpacity 
-            className="flex-row items-center mr-2"
-            onPress={() => setShowTypeDropdown(!showTypeDropdown)}
-          >
-            <Text className="text-[#1890ff] font-medium mr-1">{searchType}</Text>
-            <Ionicons name="chevron-down" size={16} color="#1890ff" />
-          </TouchableOpacity>
-          {showTypeDropdown && (
-            <View className="absolute top-12 left-0 bg-white rounded-lg shadow-lg z-20">
-              {['配电箱', '单灯'].map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  className="px-4 py-2 border-b border-blue-500"
-                  onPress={() => {
-                    setSearchType(type as SearchType);
-                    setShowTypeDropdown(false);
-                    setSearchText('');
-                    setShowSearchResults(false);
-                  }}
-                >
-                  <Text className="text-typography-900">{type}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+        >      
           <View className="flex-1 flex-row items-center">
             <TextInput
               ref={useInputRef}
@@ -265,13 +218,14 @@ export default function GisIndexScreen() {
             <View className="absolute top-12 left-0 right-0 bg-white rounded-lg shadow-lg z-20">
               <FlatList
                 data={searchResults}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.container_id.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     className="px-4 py-2 border-b border-gray-100"
                     onPress={() => handleSelectResult(item)}
                   >
-                    <Text className="text-typography-900">{item.device_code||item.name}</Text>
+                    <Text className="text-typography-900">{item.searchName.split(',')[0]}</Text>
+                    <Text className="text-typography-900">{item.searchName.split(',')[1]}</Text>
                   </TouchableOpacity>
                 )}
               />

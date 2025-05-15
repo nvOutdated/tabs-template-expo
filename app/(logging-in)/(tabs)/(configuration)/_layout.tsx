@@ -8,11 +8,8 @@ import EleBoxScreen from "./ebox";
 import SmartLampScreen from "./smartLamp";
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get('window');
-const seaImage = require('@/assets/images/background/birdBgc.png');
 
 export default function TabConfigurationLayout() {
-  // const { theme } = useTheme();
-  // const currentTheme = themeColors[theme as keyof typeof themeColors];
   const currentTheme = useCurrentTheme()
   const insets = useSafeAreaInsets();
 
