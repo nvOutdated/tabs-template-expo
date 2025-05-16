@@ -1,9 +1,9 @@
+import { container_query_details } from "@/api/gis/index";
 import { lampIcons } from "@/utils/mapIconBase64";
 import React, { useEffect, useRef } from "react";
-import { Dimensions, View } from "react-native";
+import { View } from "react-native";
 import { WebView } from "react-native-webview";
 import { useCustomToast } from "../public/UIComponents/ToastComponent";
-
 export interface MarkerIcon {
   size: [number, number];
   image: string;
@@ -46,13 +46,14 @@ export interface AMapWebViewProps {
     online?: boolean;
     open?: boolean;
     warn?: boolean;
+    container_id: number;
+    single_lamp_status?: string[];
   } | null;
 }
 // center = { latitude: 27.151157, longitude: 114.99911 },
 const AMapWebView = ({
   markers = [],
-  // center = { latitude: 30.858307, longitude: 104.42053 },
-  center = { latitude: 27.151157, longitude: 114.99911 },
+  center = { latitude: 30.858307, longitude: 104.42053 },
   zoom = 19,
   onMapPress,
   moveTo,
@@ -73,7 +74,6 @@ const AMapWebView = ({
       webViewRef.current.injectJavaScript(updateMarkersScript);
     }
   }, [markers]);
-  // console.log(lampIcons['singleLightNormal']);
 
   useEffect(() => {
     if (moveTo && webViewRef.current) {
@@ -88,7 +88,8 @@ const AMapWebView = ({
           open: moveTo.open,
           warn: moveTo.warn,
           state: moveTo.state,
-          direction: moveTo.direction
+          direction: moveTo.direction,
+          container_id:moveTo.container_id
         },
       });
       webViewRef.current.injectJavaScript(`
@@ -200,75 +201,176 @@ const AMapWebView = ({
               '<span style="color: ' + (status === 'open' ? '#52c41a' : '#999999') + '">控制器' + (index + 1) + ':' + (status === 'open' ? '开' : '关') + '</span>'
             ).join('，');
           };
-          
-          const eboxStatus = !isLamp ? getEboxStatus(details.data) : null;
-          const lampStatus = isLamp ? getLampStatus(details.data) : null;
-          
-          const content = \`
-            <div style="
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-              min-width: 200px;
-              overflow: visible;
-              position: relative;
-            ">
+
+          // 渲染灯杆信息窗口内容
+          const renderLampContent = (data) => {
+            return \`
               <div style="
-                background: \${isLamp ? '#52c41a' : eboxStatus.color};
-                color: white;
-                padding: 8px 12px;
-                border-radius: 8px 8px 0 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 14px;
-                font-weight: bold;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                min-width: 280px;
+                overflow: visible;
+                position: relative;
               ">
-                <span>\${details.data.name || ''}</span>
-              </div>
-              <div style="
-                padding: 8px 4px;
-                font-size: 13px;
-                color: #333;
-                border-bottom: 1px solid #f0f0f0;
-              ">
-                <div style="margin-bottom: 4px;">
-                  <span style="color: #666;">编号：</span>
-                  <span>\${details.data.device_code || ''}</span>
+                <div style="
+                  background: #52c41a;
+                  color: white;
+                  padding: 8px 12px;
+                  border-radius: 8px 8px 0 0;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  font-size: 14px;
+                  font-weight: bold;
+                ">
+                  <span>\${data.name || data.device_name || ''}</span>
                 </div>
-                \${isLamp ? \`
-                  <div style="margin-bottom: 4px;">
-                    <span style="color: #666;">状态：</span>
-                    <span>\${lampStatus}</span>
+                <div style="
+                  padding: 12px;
+                  font-size: 13px;
+                  color: #333;
+                ">
+                  <div style="margin-bottom: 8px;">
+                    <span style="color: #666;">设备编号：</span>
+                    <span>\${data.sn || ''}</span>
                   </div>
-                  <div style="margin-bottom: 4px;">
-                    <span style="color: #666;">方向：</span>
-                    <span>\${details.data.direction === 1 ? '东' : details.data.direction === 2 ? '南' : details.data.direction === 3 ? '西' : '北'}</span>
+                  <div style="margin-bottom: 8px;">
+                    <span style="color: #666;">设备名称：</span>
+                    <span>\${data.name || data.device_name || ''}</span>
                   </div>
-                \` : \`
-                  <div style="margin-bottom: 4px;">
+                  <div style="margin-bottom: 8px;">
+                    <span style="color: #666;">设备纬度：</span>
+                    <span>\${data.lat || ''}</span>
+                  </div>
+                  <div style="margin-bottom: 8px;">
+                    <span style="color: #666;">设备经度：</span>
+                    <span>\${data.lng || ''}</span>
+                  </div>
+                  \${data.lamp_holders ? \`
+                    \${Object.entries(data.lamp_holders).map(([key, holder]) => \`
+                      <div style="margin-bottom: 8px;">
+                        <span style="color: #666;">\${holder.name}状态：</span>
+                        <span style="margin-left: 3px;">
+                          \${holder.state === 'close' ? 
+                            '<span style="color: #909399;">关灯</span>' : 
+                            holder.state === 'open' ? 
+                            '<span style="color: #67C23A">开灯</span>' : 
+                            '<span style="color: #F56C6C">异常</span>'
+                          }
+                        </span>
+                      </div>
+                    \`).join('')}
+                  \` : ''}
+                </div>
+                <div style="
+                  position: absolute;
+                  bottom: -8px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 0;
+                  height: 0;
+                  border-left: 8px solid transparent;
+                  border-right: 8px solid transparent;
+                  border-top: 8px solid white;
+                "></div>
+              </div>
+            \`;
+          };
+
+          // 渲染集中器信息窗口内容
+          const renderEboxContent = (data) => {
+            const eboxStatus = getEboxStatus(data);
+            return \`
+              <div style="
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                min-width: 280px;
+                overflow: visible;
+                position: relative;
+              ">
+                <div style="
+                  background: \${eboxStatus.color};
+                  color: white;
+                  padding: 8px 12px;
+                  border-radius: 8px 8px 0 0;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  font-size: 14px;
+                  font-weight: bold;
+                ">
+                  <span>\${data.name || ''}</span>
+                </div>
+                <div style="
+                  padding: 12px;
+                  font-size: 13px;
+                  color: #333;
+                ">
+                  <div style="margin-bottom: 8px;">
+                    <span style="color: #666;">编号：</span>
+                    <span>\${data.device_code || ''}</span>
+                  </div>
+                  <div style="margin-bottom: 8px;">
                     <span style="color: #666;">类型：</span>
                     <span>配电箱</span>
                   </div>
-                  <div style="margin-bottom: 4px;">
+                  <div style="margin-bottom: 8px;">
                     <span style="color: #666;">状态：</span>
                     <span style="color: \${eboxStatus.color}">\${eboxStatus.label}</span>
                   </div>
-                \`}
+                  \${data.meta_data ? \`
+                    <div style="margin-bottom: 8px;">
+                      <span style="color: #666;">设备时间：</span>
+                      <span>\${data.meta_data.deviceTime || ''}</span>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                      <span style="color: #666;">温度：</span>
+                      <span>\${data.meta_data.temperature || 0}°C</span>
+                    </div>
+                  \` : ''}
+                  <div style="margin-bottom: 8px;display: flex;flex-direction: row;align-items: center;">
+                    <span style="color: #666;">回路：</span>
+                    <div style="display: flex; gap: 4px; margin-top: 4px;">
+                      \${data.meta_data && data.meta_data.jinfo ? 
+                        data.meta_data.jinfo.map((loop, index) => \`
+                          <div style="
+                            width: 16px;
+                            height: 16px;
+                            border-radius: 8px;
+                            background-color: \${loop ? '#409eff' : '#d9d9d9'};
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                          ">
+                            <span style="
+                              font-size: 10px;
+                              color: #666;
+                              text-align: center;
+                            ">\${index + 1}</span>
+                          </div>
+                        \`).join('') : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style="
+                  position: absolute;
+                  bottom: -8px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 0;
+                  height: 0;
+                  border-left: 8px solid transparent;
+                  border-right: 8px solid transparent;
+                  border-top: 8px solid white;
+                "></div>
               </div>
-              <div style="
-                position: absolute;
-                bottom: -8px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 8px solid transparent;
-                border-right: 8px solid transparent;
-                border-top: 8px solid white;
-              "></div>
-            </div>
-          \`;
+            \`;
+          };
+
+          // 根据类型选择渲染内容
+          const content = isLamp ? renderLampContent(details.data) : renderEboxContent(details.data);
 
           // 关闭已存在的信息窗口
           if (infoWindow) {
@@ -285,7 +387,9 @@ const AMapWebView = ({
 
           infoWindow.setContent(content);
           infoWindow.open(map, details.position);
-          map.setCenter(details.position);
+          const offsetLat = 0.0002; // 大约20米的偏移
+          const newCenter = [details.position[0], details.position[1] + offsetLat]
+          map.setCenter(newCenter);
           map.setZoom(19);
         }
       };
@@ -307,34 +411,74 @@ const AMapWebView = ({
     try {
       const data = JSON.parse(event.nativeEvent.data);
       switch (data.type) {
-        case "markerPress":
-          // console.log(data,"触发点击1");
-          // onMarkerPress?.(data.marker);
-          break;
         case "getMarkerDetails":
           try {
-            const updateDetailsScript = `
-              (function() {
-                window.handleMarkerDetails({
-                  data: {
-                    name: '${data.Container.title || ""}',
-                    device_code: '${data.Container.info || ""}',
-                    container_type: '${data.Container.container_type || ""}',
-                    direction: ${data.Container.direction || 0},
-                    online: ${data.Container.online || false},
-                    open: ${data.Container.open || false},
-                    warn: ${data.Container.warn || false},
-                    single_lamp_status: ${JSON.stringify(data.Container.single_lamp_status || [])}
-                  },
-                  position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
-                });
-              })();
-            `;
-            webViewRef.current?.injectJavaScript(updateDetailsScript);
+          
+            if (data.Container.container_id) {
+              const res = await container_query_details({ container_id: data.Container.container_id });
+              if (res.code === 200) {
+                let updateDetailsScript = '';
+                if(res.data.container_type === 'lamp'){
+                   updateDetailsScript = `
+                  (function() {
+                    window.handleMarkerDetails({
+                      data: {
+                        name: '${res.data.name || ""}',
+                        device_name: '${res.data.device_name || ""}',
+                        sn: '${res.data.sn || ""}',
+                        lat: ${res.data.lat || 0},
+                        lng: ${res.data.lng || 0},
+                        container_type: '${res.data.container_type || ""}',
+                        lamp_holders: ${JSON.stringify(res.data.lamp_holders || {})},
+                        single_lamp_status: ${JSON.stringify(res.data.single_lamp_status || [])}
+                      },
+                      position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
+                    });
+                  })();
+                `;
+                webViewRef.current?.injectJavaScript(updateDetailsScript);
+                }else{
+                   updateDetailsScript = `
+                  (function() {
+                    window.handleMarkerDetails({
+                      data: {
+                        name: '${res.data.name || ""}',
+                        device_code: '${res.data.device_code || ""}',
+                        container_type: '${res.data.container_type || ""}',
+                        online: ${res.data.online || false},
+                        open: ${res.data.open || false},
+                        warn: ${res.data.warn || false},
+                        meta_data: ${JSON.stringify(res.data.meta_data || {})},
+                      },
+                      position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
+                    });
+                  })();
+                `;
+                webViewRef.current?.injectJavaScript(updateDetailsScript);
+                }
+                }
+            } else {
+              // 处理单灯点击（没有container_id的情况）
+              const updateDetailsScript = `
+                (function() {
+                  window.handleMarkerDetails({
+                    data: {
+                      name: '${data.Container.title || ""}',
+                      device_code: '${data.Container.info || ""}',
+                      container_type: '${data.Container.container_type || ""}',
+                      direction: ${data.Container.direction || 0},
+                      single_lamp_status: ${JSON.stringify(data.Container.single_lamp_status || [])}
+                    },
+                    position: [${data.Container.position.longitude}, ${data.Container.position.latitude}]
+                  });
+                })();
+              `;
+              webViewRef.current?.injectJavaScript(updateDetailsScript);
+            }
           } catch (error) {
-            console.error("获取标记点详情失败:", error);
+            console.error("获取站点详情失败:", error);
             showError({
-              title: "获取详情失败",
+              title: "获取站点详情失败",
               message: "请稍后重试",
             });
           }
@@ -350,7 +494,7 @@ const AMapWebView = ({
           break;
       }
     } catch (error) {
-      console.error("处理地图消息失败:", error);
+      console.log("处理地图消息失败:", error);
     }
   };
 
@@ -359,8 +503,7 @@ const AMapWebView = ({
       <WebView
         ref={webViewRef}
         source={{
-          html: `
-            <!DOCTYPE html>
+          html: `            <!DOCTYPE html>
             <html>
               <head>
                 <meta charset="utf-8">
@@ -397,12 +540,9 @@ const AMapWebView = ({
         startInLoadingState={true}
         scalesPageToFit={true}
         style={{
-          width: Dimensions.get("window").width,
-          height: Dimensions.get("window").height * 0.6,
+          width: '100%',
+          height: '100%',
         }}
-        // onLoadEnd={() => {
-        //   console.log('WebView loaded');
-        // }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.warn("WebView error: ", nativeEvent);
@@ -413,3 +553,4 @@ const AMapWebView = ({
 };
 
 export default AMapWebView;
+

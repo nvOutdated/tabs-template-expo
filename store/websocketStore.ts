@@ -30,13 +30,13 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
 
     // 添加消息处理器
     websocketManager.addMessageHandler((message: WebSocketMessage) => {
-      // console.log(message);
+      // console.log(message,"消息推送");
       
       switch (message.service_name) {
         case "smart-light":
           if(message.message_type==='device'){
             set({ smartLight: message.device_content || {} });
-            console.log(message);
+            // console.log(message);
           }
           
           break;

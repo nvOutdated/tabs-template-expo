@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, Modal, TouchableOpacity, Text, Alert, Platform } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import Carousel, { ICarouselInstance, Pagination } from 'react-native-reanimated-carousel';
-import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
+import React, { useEffect, useState } from 'react';
+import { Alert, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Carousel, { ICarouselInstance, Pagination } from 'react-native-reanimated-carousel';
 // import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { Extrapolation,interpolate, useSharedValue } from 'react-native-reanimated';
+import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
+import { Extrapolation, interpolate, useSharedValue } from 'react-native-reanimated';
 const { width, height } = Dimensions.get('window');
 
 const DEFAULT_COLORS = [
@@ -38,7 +39,7 @@ export default function EboxImageModal({
   const [localImages, setLocalImages] = useState<string[]>(images);
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const progress = useSharedValue<number>(0);
-
+  const {showError,showSuccess} = useCustomToast()
   useEffect(() => {
     // console.log('Images prop changed:', images);
     if (images && images.length > 0) {
@@ -67,7 +68,11 @@ export default function EboxImageModal({
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('需要相册权限', '请允许访问相册以选择图片');
+        // Alert.alert('需要相册权限', '请允许访问相册以选择图片');
+        showError({
+          title:"权限错误",
+          message:"请允许访问相册"
+        })
         return;
       }
 
@@ -96,8 +101,10 @@ export default function EboxImageModal({
         }
       }
     } catch (error) {
-      console.error('选择图片失败:', error);
-      Alert.alert('选择失败', '选择图片时发生错误');
+      showError({
+        title:"错误信息",
+        message:"选择图片错误"
+      })
     }
   };
 
@@ -133,7 +140,6 @@ export default function EboxImageModal({
         }
       }
     } catch (error) {
-      console.error('拍照失败:', error);
       Alert.alert('拍照失败', '拍照时发生错误');
     }
   };
@@ -155,9 +161,11 @@ export default function EboxImageModal({
       // 保存到相册
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
-      Alert.alert('保存成功', '图片已保存到相册');
+      showSuccess({
+        title:"成功",
+        message:"保存图片成功"
+      })
     } catch (error) {
-      console.error('保存图片失败:', error);
       Alert.alert('保存失败', '保存图片时发生错误');
     }
   };
@@ -194,7 +202,7 @@ export default function EboxImageModal({
                     source={{ uri: item }}
                     style={styles.image}
                     contentFit="contain"
-                    onError={(error) => console.error('Image loading error:', error)}
+                    onError={(error) => console.log('Image loading error:', error)}
                   />
                 </View>
               );

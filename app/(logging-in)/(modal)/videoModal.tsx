@@ -1,5 +1,6 @@
 import VideoController from '@/components/camera/VideoController';
 import VideoPlayer from '@/components/camera/VideoPlayer';
+import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { themeColors } from '@/constants/themeColors';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +9,6 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 type CameraItem = {
   id: number;
   name: string;
@@ -26,6 +26,7 @@ type CameraItem = {
 };
 
 export default function VideoModal() {
+  const {showError} = useCustomToast()
   const router = useRouter();
   const params = useLocalSearchParams();
   const cameraParam = params.video as string;
@@ -53,7 +54,11 @@ export default function VideoModal() {
   try {
     camera = JSON.parse(cameraParam);
   } catch (error) {
-    console.error('Failed to parse camera data:', error);
+    showError({
+      title:"错误信息",
+      message:'获取摄像头信息失败'
+    })
+    // console.error('Failed to parse camera data:', error);
     router.back();
     return null;
   }

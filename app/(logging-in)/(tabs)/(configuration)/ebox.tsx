@@ -36,7 +36,7 @@ export default function EboxScreen() {
         setAreaList(treeList)
       }
     } catch (error) {
-      console.error('获取区域列表失败:', error);
+      console.log('获取区域列表失败:', error);
     }
   }
 
@@ -71,7 +71,7 @@ export default function EboxScreen() {
         endReachedRef.current = !hasMoreData;
       }
     } catch (error) {
-      console.error('加载电箱列表失败:', error);
+      console.log('加载电箱列表失败:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

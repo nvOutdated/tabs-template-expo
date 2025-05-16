@@ -17,20 +17,22 @@ import {
   View,
 } from "react-native";
 // import { useAuthStore } from "@/store/auther";
-import { DEFAULT_BASE_URL } from "@/constants/defaultConfig";
-import { useWebSocketStore } from '@/store/websocketStore';
+import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
+import { getBaseUrl } from "@/constants/defaultConfig";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
 // const md5 = require('md5');
 // const default_url = 'http://182.99.177.29:48099'
 export default function LoginIndex() {
-  const {init}  = useWebSocketStore()
+  // const {init}  = useWebSocketStore()
+  const {showError} = useCustomToast()
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const DEFAULT_BASE_URL = getBaseUrl()
   const loginForm ={
     username: '',
     password: '',
@@ -168,12 +170,15 @@ export default function LoginIndex() {
           router.replace("/(logging-in)/(tabs)/(configuration)/ebox");
         }, 500);
       } else {
-        console.log("登录失败",response);
+        showError({
+          title:'登录失败',
+          message:"密码错误"
+        })
         setLoginFailed(true);
-        Alert.alert('登录失败', '用户名或密码错误！');
+        // Alert.alert('登录失败', '用户名或密码错误！');
       }
     } catch (error) {
-      console.error("登录请求出错:", error);
+      // console.error("登录请求出错:", error);
       setLoginFailed(true);
       Alert.alert('登录失败', '网络请求错误，请稍后再试！');
     }

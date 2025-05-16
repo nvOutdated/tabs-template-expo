@@ -131,38 +131,13 @@ export default function ConfigurationPage() {
         setError(response.msg || "获取配置失败");
       }
     } catch (err) {
-      console.error("获取配置失败:", err);
+      console.log("获取配置失败:", err);
       setError("获取配置失败，请检查网络连接");
     } finally {
       setLoading(false);
     }
   };
   useEffect(() => {
-    // const fetchConfig = async () => {
-    //   try {
-    //     setLoading(true);
-    //     const item = JSON.parse(params.item as string);
-    //     const response = await getElectricCfg({
-    //       cfg_type: "ebox",
-    //       cfg_id: item.id,
-    //     });
-    //     if (response.code === 200) {
-    //       setConfig(response.data);
-    //       const nodes = flattenTree(response.data.node);
-    //       setNodes(nodes);
-    //       // console.log(nodes);
-          
-    //     } else {
-    //       setError(response.msg || "获取配置失败");
-    //     }
-    //   } catch (err) {
-    //     console.error("获取配置失败:", err);
-    //     setError("获取配置失败，请检查网络连接");
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-
     fetchConfig();
   }, [params.item]);
   useEffect(()=>{

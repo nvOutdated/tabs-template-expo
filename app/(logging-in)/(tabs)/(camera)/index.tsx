@@ -9,6 +9,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FlipInEasyX, FlipOutEasyX } from 'react-native-reanimated';
+
 export type CameraItem = {
   id: number;
   name: string;
@@ -81,7 +82,7 @@ export default function CameraIndexScreen() {
       }
     } catch (error) {
       setError('加载摄像头列表失败，请稍后重试');
-      console.error(error);
+      // console.error(error);
     } finally {
       setRefreshing(false);
     }

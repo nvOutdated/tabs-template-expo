@@ -77,7 +77,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
           setLoading(false);
         },
         (error) => {
-          console.error('WebRTC error:', error);
+          console.log('WebRTC error:', error);
           setLoading(false);
         }
       );

@@ -21,7 +21,6 @@ export class WebRTCManager {
 
   public async startStream() {
     if (!this.isMounted) return;
-
     try {
       console.log('开始获取流地址...');
       const data = await getCameraPlayUrl({ channel_id: this.channelId, play_type: 2 });
@@ -32,11 +31,11 @@ export class WebRTCManager {
         console.log('流地址:', streamUrl);
         await this.setupWebRTC(streamUrl);
       } else {
-        console.error('获取流地址失败:', data);
+        console.log('获取流地址失败:', data);
         this.onError(new Error('获取流地址失败'));
       }
     } catch (error) {
-      console.error('获取流地址错误:', error);
+      console.log('获取流地址错误:', error);
       this.onError(error as Error);
     }
   }
@@ -148,7 +147,7 @@ export class WebRTCManager {
         throw new Error('Invalid server response');
       }
     } catch (error) {
-      console.error('WebRTC setup error:', error);
+      console.log('WebRTC setup error:', error);
       this.stopStream();
       this.onError(error as Error);
     }

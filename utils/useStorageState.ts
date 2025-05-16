@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useReducer } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { useCallback, useEffect, useReducer } from 'react';
+import { Platform } from 'react-native';
 // 定义一个泛型类型 UseStateHook，用于表示异步状态的类型
 // 它是一个数组，第一个元素是一个包含布尔值和泛型类型 T 或 null 的数组
 // 第二个元素是一个函数，用于更新状态，接受一个 T 或 null 类型的参数
@@ -23,6 +23,7 @@ function useAsyncState<T>(initialValue: [boolean, T | null] = [true, null],): Us
 const TOKEN_KEY = 'token';
 const USER_INFO_KEY = 'userInfo';
 const DEFAULT_URL = 'defaultUrl';
+const ACCESS_ADDRESS_KEY = 'accessAddress';
 /**
  * 异步函数，用于设置存储项
  * @param key - 存储项的键
@@ -37,7 +38,7 @@ async function setStorageItem(key: string, value: string | null) {
         localStorage.setItem(key, value);
       }
     } catch (e) {
-      console.error('Local storage is unavailable:', e);
+      console.log('Local storage is unavailable:', e);
     }
   } else {
     if (value === null) {
@@ -58,7 +59,7 @@ async function getStorageItem(key: string): Promise<string | null> {
     try {
       return localStorage.getItem(key);
     } catch (e) {
-      console.error('Local storage is unavailable:', e);
+      console.log('Local storage is unavailable:', e);
       return null;
     }
   } else {
@@ -160,7 +161,7 @@ export const saveTokenAsyncStorage = async (token: string) => {
   try {
     await AsyncStorage.setItem('token', token);
   } catch (error) {
-    console.error('保存token失败:', error);
+    console.log('保存token失败:', error);
   }
 };
 
@@ -168,7 +169,7 @@ export const saveUserInfoAsyncStorage = async (userInfo: { name: string; passwor
   try {
     await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
   } catch (error) {
-    console.error('保存用户信息失败:', error);
+    console.log('保存用户信息失败:', error);
   }
 };
 
@@ -180,7 +181,49 @@ export const getStoredUserInfoAsyncStorage = async () => {
     }
     return null;
   } catch (error) {
-    console.error('获取用户信息失败:', error);
+    console.log('获取用户信息失败:', error);
     return null;
   }
 };
+
+/**
+ * 存储访问地址到本地
+ * @param address - 要存储的访问地址
+ */
+export async function saveAccessAddress(address: string | null) {
+  await setStorageItem(ACCESS_ADDRESS_KEY, address);
+}
+
+/**
+ * 从本地获取访问地址
+ * @returns 存储的访问地址，如果不存在则返回 null
+ */
+export async function getAccessAddress(): Promise<string | null> {
+  return getStorageItem(ACCESS_ADDRESS_KEY);
+}
+
+/**
+ * 自定义 Hook，用于管理存储在本地存储中的访问地址状态
+ * @returns 一个数组，包含访问地址状态和更新访问地址的函数
+ */
+export function useAccessAddressState(): UseStateHook<string> {
+  const [state, setState] = useAsyncState<string>();
+
+  useEffect(() => {
+    const fetchAddress = async () => {
+      const address = await getAccessAddress();
+      setState(address);
+    };
+    fetchAddress();
+  }, []);
+
+  const setAddress = useCallback(
+    async (address: string | null) => {
+      setState(address);
+      await saveAccessAddress(address);
+    },
+    []
+  );
+
+  return [state, setAddress];
+}

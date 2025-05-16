@@ -1,9 +1,12 @@
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { getUserInfo, saveToken } from "@/utils/useStorageState";
+import { SERVER_ADDRESSES } from "@/constants/defaultConfig";
+import { getUserInfo, saveToken, useAccessAddressState } from "@/utils/useStorageState";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from '@react-native-picker/picker';
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -27,9 +30,12 @@ const themes: { name: Theme; color: string }[] = [
 
 export default function PersonIndex() {
   const [userInfo, setUserInfo] = useState<string>("");
+  const [selectedServer, setSelectedServer] = useState<string>(SERVER_ADDRESSES[0].name);
   const { theme, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
+  const [accessAddressState, setAccessAddressState] = useAccessAddressState();
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       const info = await getUserInfo();
@@ -40,6 +46,28 @@ export default function PersonIndex() {
     };
     fetchUserInfo();
   }, []);
+
+  useEffect(() => {
+    if (accessAddressState[1]) {
+      setSelectedServer(accessAddressState[1]);
+    }
+  }, [accessAddressState]);
+
+  const handleSaveAddress = async () => {
+    if (!selectedServer) {
+      Alert.alert("错误", "请选择服务器地址");
+      return;
+    }
+    
+    await setAccessAddressState(selectedServer);
+    await saveToken("");
+    Alert.alert("成功", "服务器地址已更新，请重新登录", [
+      {
+        text: "确定",
+        onPress: () => router.replace("/is-login")
+      }
+    ]);
+  };
 
   const logout = async () => {
     await saveToken("");
@@ -65,6 +93,34 @@ export default function PersonIndex() {
         <Text className={`text-xl font-bold text-typography-700`}>
           {userInfo}
         </Text>
+      </View>
+
+      {/* 访问地址设置区域 */}
+      <View className="mb-8">
+        <Text className="text-lg font-semibold mb-4 text-typography-800">服务器地址设置</Text>
+        <View className="mb-4">
+          <View className="bg-background-200 rounded-lg overflow-hidden">
+            <Picker
+              selectedValue={selectedServer}
+              onValueChange={(value) => setSelectedServer(value)}
+              style={{ color: currentTheme.textColor }}
+            >
+              {SERVER_ADDRESSES.map((server) => (
+                <Picker.Item 
+                  key={server.name} 
+                  label={server.name} 
+                  value={server.name}
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={handleSaveAddress}
+          className="bg-primary-500 p-3 rounded-lg items-center"
+        >
+          <Text className="text-white text-lg">保存</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 主题选择区域 */}

@@ -8,6 +8,7 @@
     "scheme": "tabscomponentapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "bitcode": false,

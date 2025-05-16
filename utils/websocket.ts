@@ -1,5 +1,6 @@
-import { DEFAULT_BASE_WS } from "@/constants/defaultConfig";
+import { getBaseWs } from "@/constants/defaultConfig";
 import { getToken } from "@/utils/useStorageState";
+// const DEFAULT_BASE_WS = getBaseWs()
 export interface WebSocketMessage {
   code: number;
   service_name: string;
@@ -24,10 +25,9 @@ export class WebSocketManager {
     this.initWebSocket();
   }
   
-  private getWebSocketUrl(): string {
+  private async getWebSocketUrl(): Promise<string> {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const returnUrl = DEFAULT_BASE_WS
-    return returnUrl;
+    return await getBaseWs();
   }
 
   private async initWebSocket() {
@@ -37,14 +37,14 @@ export class WebSocketManager {
         console.log("[WebSocket] 未登录，无法建立连接");
         return;
       }
-      console.log("重新示例化websocket");
-      this.ws = new WebSocket(this.getWebSocketUrl());
+      console.log("重新实例化websocket");
+      this.ws = new WebSocket(await this.getWebSocketUrl());
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);
       this.ws.onerror = this.handleError.bind(this);
       this.ws.onclose = this.handleClose.bind(this);
     } catch (error) {
-      console.error("[WebSocket] 初始化连接失败:", error);
+      console.log("[WebSocket] 初始化连接失败:", error);
       this.handleError(error);
     }
   }
@@ -73,12 +73,12 @@ export class WebSocketManager {
       // 通知所有消息处理器
       this.messageHandlers.forEach(handler => handler(message));
     } catch (error) {
-      console.error("[WebSocket] 消息处理错误:", error);
+      console.log("[WebSocket] 消息处理错误:", error);
     }
   }
 
   private handleError(error: any) {
-    console.error("[WebSocket] 连接错误:", error);
+    console.log("[WebSocket] 连接错误:", error);
     this.notifyStatusChange(false);
     
     if (this.retries < this.maxRetries) {
