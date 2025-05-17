@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useReducer } from 'react';
 import { Platform } from 'react-native';
@@ -22,7 +22,6 @@ function useAsyncState<T>(initialValue: [boolean, T | null] = [true, null],): Us
 // 定义存储键的常量
 const TOKEN_KEY = 'token';
 const USER_INFO_KEY = 'userInfo';
-const DEFAULT_URL = 'defaultUrl';
 const ACCESS_ADDRESS_KEY = 'accessAddress';
 /**
  * 异步函数，用于设置存储项
@@ -153,39 +152,6 @@ export function useUserInfoState(): UseStateHook<any> {
   return [state, setUserInfo];
 }
 
-export async function getStorageDefaultUrl():Promise<string | null> {
-  return await getStorageItem(DEFAULT_URL);
-}
-
-export const saveTokenAsyncStorage = async (token: string) => {
-  try {
-    await AsyncStorage.setItem('token', token);
-  } catch (error) {
-    console.log('保存token失败:', error);
-  }
-};
-
-export const saveUserInfoAsyncStorage = async (userInfo: { name: string; password: string }) => {
-  try {
-    await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
-  } catch (error) {
-    console.log('保存用户信息失败:', error);
-  }
-};
-
-export const getStoredUserInfoAsyncStorage = async () => {
-  try {
-    const userInfoString = await AsyncStorage.getItem('userInfo');
-    if (userInfoString) {
-      return JSON.parse(userInfoString);
-    }
-    return null;
-  } catch (error) {
-    console.log('获取用户信息失败:', error);
-    return null;
-  }
-};
-
 /**
  * 存储访问地址到本地
  * @param address - 要存储的访问地址
@@ -227,3 +193,4 @@ export function useAccessAddressState(): UseStateHook<string> {
 
   return [state, setAddress];
 }
+

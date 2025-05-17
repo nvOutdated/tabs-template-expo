@@ -3,24 +3,6 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-// 示例设备数据
-const devices = [
-  {
-    id: '1',
-    name: '集中器',
-    type: 'ebox',
-    status: '正常',
-    lastUpdate: '2024-03-20 10:30',
-  },
-  {
-    id: '2',
-    name: '灯杆',
-    type: 'smartLamp',
-    status: '正常',
-    lastUpdate: '2024-03-20 10:30',
-  },
-];
-
 interface DeviceQuantity {
   total: number;
   singleArmLampNum: number;
@@ -66,50 +48,50 @@ export default function MapMessage({ deviceQuantity, containerList }: MapMessage
         <View className="flex-row">
           <View className="w-1/2">
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">设备总数</Text>
-              <Text className="text-sm font-semibold text-blue-500">{deviceQuantity.total}</Text>
+              <Text className="text-xs font-semibold text-typography-900">设备总数</Text>
+              <Text className="text-sm font-semibold text-info-500">{deviceQuantity.total}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">集中器总数</Text>
-              <Text className="text-sm font-semibold text-blue-500">{totalContainers}</Text>
+              <Text className="text-xs font-semibold text-typography-900">集中器总数</Text>
+              <Text className="text-sm font-semibold text-info-500">{totalContainers}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">配电箱</Text>
-              <Text className="text-sm font-semibold text-blue-500">{containerStats.cabinetNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">配电箱</Text>
+              <Text className="text-sm font-semibold text-info-500">{containerStats.cabinetNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">箱变</Text>
-              <Text className="text-sm font-semibold text-blue-500">{containerStats.transformerNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">箱变</Text>
+              <Text className="text-sm font-semibold text-info-500">{containerStats.transformerNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">其他</Text>
-              <Text className="text-sm font-semibold text-blue-500">{containerStats.otherNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">其他</Text>
+              <Text className="text-sm font-semibold text-info-500">{containerStats.otherNum}</Text>
             </View>
           </View>
           <View className="w-1/2 pl-5">
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">单挑臂</Text>
-              <Text className="text-sm font-semibold text-amber-500">{deviceQuantity.singleArmLampNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">单挑臂</Text>
+              <Text className="text-sm font-semibold text-warning-500">{deviceQuantity.singleArmLampNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">双挑臂</Text>
-              <Text className="text-sm font-semibold text-amber-500">{deviceQuantity.doubleArmLampNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">双挑臂</Text>
+              <Text className="text-sm font-semibold text-warning-500">{deviceQuantity.doubleArmLampNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">玉兰灯</Text>
-              <Text className="text-sm font-semibold text-amber-500">{deviceQuantity.yulanLampNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">玉兰灯</Text>
+              <Text className="text-sm font-semibold text-warning-500">{deviceQuantity.yulanLampNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">庭院灯</Text>
-              <Text className="text-sm font-semibold text-amber-500">{deviceQuantity.gardenLampNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">庭院灯</Text>
+              <Text className="text-sm font-semibold text-warning-500">{deviceQuantity.gardenLampNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">其他</Text>
-              <Text className="text-sm font-semibold text-amber-500">{deviceQuantity.otherLampNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">其他</Text>
+              <Text className="text-sm font-semibold text-warning-500">{deviceQuantity.otherLampNum}</Text>
             </View>
             <View className="flex-row justify-between mb-4">
-              <Text className="text-xs font-semibold text-black">灯头数量</Text>
-              <Text className="text-sm font-semibold text-blue-500">{deviceQuantity.lampHolderNum}</Text>
+              <Text className="text-xs font-semibold text-typography-900">灯头数量</Text>
+              <Text className="text-sm font-semibold text-info-500">{deviceQuantity.lampHolderNum}</Text>
             </View>
           </View>
         </View>
@@ -120,28 +102,28 @@ export default function MapMessage({ deviceQuantity, containerList }: MapMessage
   const renderChart = () => {
     return (
       <View className="flex-1 p-4">
-        <Text className="text-center text-gray-500">图表内容将在这里显示</Text>
+        <Text className="text-center text-typography-500">图表内容将在这里显示</Text>
       </View>
     );
   };
 
   return (
-    <View className="flex-1 bg-white rounded-t-3xl shadow-lg">
+    <View className="flex-1 bg-background-0 rounded-t-3xl shadow-lg">
       {/* Tabs */}
-      <View className="flex-row border-b border-tertiary-200">
+      <View className="flex-row border-b border-outline-200">
         <Pressable
-          className={`flex-1 py-3 ${activeTab === 'basic' ? 'border-b-2 border-blue-500' : ''}`}
+          className={`flex-1 py-3 ${activeTab === 'basic' ? 'border-b-2 border-info-500' : ''}`}
           onPress={() => setActiveTab('basic')}
         >
-          <Text className={`text-center font-medium ${activeTab === 'basic' ? 'text-blue-500' : 'text-gray-500'}`}>
+          <Text className={`text-center font-medium ${activeTab === 'basic' ? 'text-info-500' : 'text-typography-500'}`}>
             基本信息
           </Text>
         </Pressable>
         <Pressable
-          className={`flex-1 py-3 ${activeTab === 'chart' ? 'border-b-2 border-blue-500' : ''}`}
+          className={`flex-1 py-3 ${activeTab === 'chart' ? 'border-b-2 border-info-500' : ''}`}
           onPress={() => setActiveTab('chart')}
         >
-          <Text className={`text-center font-medium ${activeTab === 'chart' ? 'text-blue-500' : 'text-gray-500'}`}>
+          <Text className={`text-center font-medium ${activeTab === 'chart' ? 'text-info-500' : 'text-typography-500'}`}>
             图表
           </Text>
         </Pressable>

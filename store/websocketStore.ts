@@ -36,7 +36,7 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
         case "smart-light":
           if(message.message_type==='device'){
             set({ smartLight: message.device_content || {} });
-            // console.log(message);
+            console.log(message);
           }
           
           break;

@@ -35,7 +35,10 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.xdd11.tabscomponentapp"
+      "package": "com.xdd11.tabscomponentapp",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResources": true,
+      "enableR8": true
     },
     "web": {
       "bundler": "metro",
@@ -77,7 +80,8 @@
       "router": {},
       "eas": {
         "projectId": "751ef87f-7da2-4c26-940d-f3c42e960ef7"
-      }
+      },
+      "enableDevTools": true
     },
     "owner": "xdd11"
   }

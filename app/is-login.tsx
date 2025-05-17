@@ -18,7 +18,7 @@ import {
 } from "react-native";
 // import { useAuthStore } from "@/store/auther";
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
-import { getBaseUrl } from "@/constants/defaultConfig";
+import { getCurrentBaseUrl } from "@/store/globalStateStore";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
@@ -32,7 +32,9 @@ export default function LoginIndex() {
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const DEFAULT_BASE_URL = getBaseUrl()
+  const DEFAULT_BASE_URL = getCurrentBaseUrl()
+  console.log(DEFAULT_BASE_URL,"请求地址");
+  
   const loginForm ={
     username: '',
     password: '',
@@ -187,6 +189,10 @@ export default function LoginIndex() {
   // 在组件顶部添加 ref
   const passwordInputRef = useRef<TextInput>(null);
 
+  const handleLongPressLogo = () => {
+    router.push('/change-ip');
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -219,17 +225,23 @@ export default function LoginIndex() {
             />
           </Animated.View>
         ) : (
-          <Animated.View 
-            style={[
-              styles.logoContainer,
-              { transform: [{ rotateY: flipInterpolate }] }
-            ]}
+          <TouchableOpacity
+            onLongPress={handleLongPressLogo}
+            delayLongPress={2000}
+            activeOpacity={0.7}
           >
-            <Image
-              source={require("@/assets/images/images/qishui.png")}
-              style={styles.logo}
-            />
-          </Animated.View>
+            <Animated.View 
+              style={[
+                styles.logoContainer,
+                { transform: [{ rotateY: flipInterpolate }] }
+              ]}
+            >
+              <Image
+                source={require("@/assets/images/images/qishui.png")}
+                style={styles.logo}
+              />
+            </Animated.View>
+          </TouchableOpacity>
         )}
         <View style={styles.card}>
           <Text style={styles.title}>{loginFailed?'Password Warn!':'Welcome Bro'}</Text>

@@ -15,13 +15,15 @@ export const SERVER_ADDRESSES: ServerAddress[] = [
 
 export const getBaseUrl = async (): Promise<string> => {
   const cachedAddress = await getAccessAddress();
-  const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[0];
+  const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[2];
+  console.log(cachedAddress,server,"缓存地址");
+  
   return `http://${server.ip}:${server.httpPort}`;
 };
 
 export const getBaseWs = async (): Promise<string> => {
   const cachedAddress = await getAccessAddress();
-  const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[0];
+  const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[2];
   return `ws://${server.ip}:${server.wsPort}`;
 };
 

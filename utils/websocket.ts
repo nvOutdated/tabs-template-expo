@@ -1,4 +1,5 @@
 import { getBaseWs } from "@/constants/defaultConfig";
+import { getCurrentBaseWs } from "@/store/globalStateStore";
 import { getToken } from "@/utils/useStorageState";
 // const DEFAULT_BASE_WS = getBaseWs()
 export interface WebSocketMessage {
@@ -37,8 +38,8 @@ export class WebSocketManager {
         console.log("[WebSocket] 未登录，无法建立连接");
         return;
       }
-      console.log("重新实例化websocket");
-      this.ws = new WebSocket(await this.getWebSocketUrl());
+      console.log("实例化websocket");
+      this.ws = new WebSocket(getCurrentBaseWs());
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);
       this.ws.onerror = this.handleError.bind(this);
@@ -50,7 +51,7 @@ export class WebSocketManager {
   }
 
   private async handleOpen() {
-    console.log("[WebSocket] 连接已建立，等待token验证...");
+    console.log("[WebSocket] 连接已建立,等待token验证...");
     if (this.ws) {
       const token = await getToken();
       if (token) {

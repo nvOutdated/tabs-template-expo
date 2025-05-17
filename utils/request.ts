@@ -2,21 +2,8 @@ import { router } from 'expo-router';
 import { getToken, saveToken } from './useStorageState';
 // const DEFAULT_BASE_URL = 'http://182.99.177.29:48099';
 // const DEFAULT_BASE_URL = 'http://192.168.1.197:38099';
-import { getBaseUrl } from "@/constants/defaultConfig";
-const DEFAULT_BASE_URL =getBaseUrl()
-let baseURL = DEFAULT_BASE_URL;
-
-
-// Dynamically update baseURL
-// async function updateBaseURL() {
-//   const storedBaseURL = await getStorageDefaultUrl();
-//   if (storedBaseURL) {
-//     baseURL = storedBaseURL;
-//   }
-// }
-
-// // Initialize and update baseURL
-// updateBaseURL();
+import { getCurrentBaseUrl } from "@/store/globalStateStore";
+const DEFAULT_BASE_URL =getCurrentBaseUrl()
 
 type RequestConfig = {
   method?: string;
