@@ -6,7 +6,6 @@ import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProv
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
   Dimensions,
   FlatList,
   Text,
@@ -14,18 +13,31 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
-  runOnJS,
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 const { width, height } = Dimensions.get("window");
-const MIN_HEIGHT = height * 0.4;
+const MIN_HEIGHT = height * 0.1;
 const MAX_HEIGHT = height * 0.4;
-const MAP_HEIGHT = height * 0.6;
+const MAP_HEIGHT = height * 0.9;
+const MAX_OFFSET = height * 0.25; // 最大偏移量
+
+// 修改 clamp 函数为 worklet
+function clamp(val: number, min: number, max: number): number {
+  'worklet';
+  return Math.min(Math.max(val, min), max);
+}
+
 interface DeviceQuantity {
   total: number;
   singleArmLampNum: number;
@@ -39,7 +51,7 @@ export default function GisIndexScreen() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
   const [showSearch, setShowSearch] = useState(false);
-  const searchAnimation = useRef(new Animated.Value(0)).current;
+  const searchAnimation = useSharedValue(0);
   const useInputRef = useRef<TextInput>(null);
   const [searchText, setSearchText] = useState("");
   const [containerList, setContainerList] = useState<any[]>([]);
@@ -58,80 +70,71 @@ export default function GisIndexScreen() {
     otherLampNum: 0,
     lampHolderNum: 0
   });
-  // 修改底部面板动画相关状态
+
+  // 修改动画相关状态
   const translateY = useSharedValue(0);
-  const context = useSharedValue({ y: 0 });
-  const bottomSheetHeight = useSharedValue(MIN_HEIGHT);
+  const prevTranslateY = useSharedValue(0);
 
-  const updateMapZoom = useCallback((zoom: number) => {
-    setMapZoom(zoom);
-  }, []);
-
-  const gesture = Gesture.Pan()
-    .onStart(() => {
-      console.log(bottomSheetHeight.value,"拖动开始高度");
-      context.value = { y: translateY.value };
-    })
-    .onUpdate((event) => {
-      
-      const newTranslateY = event.translationY + context.value.y;
-      // 限制拖动范围
-      translateY.value = Math.max(Math.min(newTranslateY, 0), -MAX_HEIGHT + MIN_HEIGHT);
-      
-      // 根据拖动位置调整底部面板高度
-      const progress = (translateY.value + MAX_HEIGHT - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT);
-      bottomSheetHeight.value = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * (1 - progress);
-     
-      // 根据拖动位置调整地图缩放级别
-      const newZoom = 19 - Math.floor(progress * 2); // 在19-17之间调整
-      runOnJS(updateMapZoom)(newZoom);
-    })
-    .onEnd(() => {
-      // 根据拖动位置决定是否展开或收起
-      if (translateY.value > -MAX_HEIGHT / 2) {
-        translateY.value = withSpring(0, {
-          damping: 15,
-          stiffness: 150
-        });
-        bottomSheetHeight.value = withSpring(MIN_HEIGHT, {
-          damping: 15,
-          stiffness: 150
-        });
-        console.log(bottomSheetHeight.value, "拖动完成高度");
-        runOnJS(updateMapZoom)(19);
-      } else {
-        translateY.value = withSpring(-MAX_HEIGHT + MIN_HEIGHT, {
-          damping: 15,
-          stiffness: 150
-        });
-        bottomSheetHeight.value = withSpring(MAX_HEIGHT, {
-          damping: 15,
-          stiffness: 150
-        });
-        console.log(bottomSheetHeight.value, "拖动完成高度");
-        runOnJS(updateMapZoom)(17);
-      }
-    });
-
-  const bottomSheetStyle = useAnimatedStyle(() => ({
-       
-      transform: [{ translateY: translateY.value }],
-      height: bottomSheetHeight.value,
-   
-  }));
-
-  const mapContainerStyle = useAnimatedStyle(() => {
+  const animatedStyles = useAnimatedStyle(() => {
+    'worklet';
     return {
-      height: height - bottomSheetHeight.value,
+      transform: [{ translateY: translateY.value }],
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: MAX_HEIGHT,
+      backgroundColor: 'transparent',
+      zIndex: 1000,
     };
   });
 
+  const searchAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: searchAnimation.value }],
+  }));
+
+  const pan = Gesture.Pan()
+    .minDistance(1)
+    .onStart(() => {
+      'worklet';
+      prevTranslateY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      translateY.value = clamp(
+        prevTranslateY.value + event.translationY,
+        0,
+        MAX_OFFSET
+      );
+    })
+    .onEnd(() => {
+      'worklet';
+      if (translateY.value > MAX_OFFSET / 2) {
+        translateY.value = withSpring(MAX_OFFSET, {
+          damping: 20,
+          stiffness: 200,
+          mass: 0.5,
+          velocity: 0,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 0.01,
+        });
+      } else {
+        translateY.value = withSpring(0, {
+          damping: 20,
+          stiffness: 200,
+          mass: 0.5,
+          velocity: 0,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 0.01,
+        });
+      }
+    });
+
+  // 修改搜索动画
   useEffect(() => {
-    Animated.timing(searchAnimation, {
-      toValue: showSearch ? 1 : 0,
+    searchAnimation.value = withTiming(showSearch ? 0 : width, {
       duration: 300,
-      useNativeDriver: true,
-    }).start();
+    });
   }, [showSearch]);
   const bdToGaoDe = (bd_lat: number, bd_lng: number)=>{
     const x_pi = (3.14159265358979324 * 3000.0) / 180.0;
@@ -252,169 +255,166 @@ export default function GisIndexScreen() {
     setSelectedMarker(item);
   };
   return (
-    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-      <View style={{ height: MAP_HEIGHT }}>
-        {/* 蒙层 */}
-        {loadingLight && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              zIndex: 100,
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <Text style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>
-              单灯数据加载中...
-            </Text>
-            <Text style={{ color: '#fff', fontSize: 16 }}>
-              已加载：{lightList.length}
-            </Text>
-          </View>
-        )}
-        <AMapWebView 
-          markers={[
-            ...containerList.map((item, index) => ({
-              id: `container_${item.id}_${index}`,
-              position: { latitude: item.lat, longitude: item.lng },
-              title: item.name,
-              info: item.device_code,
-              container_type: item.container_type,
-              online: item.online,
-              open: item.open,
-              warn: item.warn,
-              icon: {
-                size: [40, 40] as [number, number],
-                image: ''
-              },
-              container_id: item.container_id
-            })),
-            ...lightList.map((item, index) => ({
-              id: `light_${item.id}_${index}`,
-              position: { latitude: item.lat, longitude: item.lng },
-              title: item.name || '单灯',
-              info: item.sn,
-              container_type: item.container_type,
-              single_lamp_status: item.single_lamp_status || [],
-              direction: item.direction,
-              icon: {
-                size: [40, 80] as [number, number],
-                image: 'singleLightNormal'
-              },
-              container_id: item.container_id
-            }))
-          ]}
-          moveTo={selectedMarker ? {
-            position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng },
-            zoom: mapZoom,
-            title: selectedMarker.name,
-            info: selectedMarker.device_code || selectedMarker.sn,
-            container_type: selectedMarker.container_type,
-            online: selectedMarker.online,
-            open: selectedMarker.open,
-            warn: selectedMarker.warn,
-            direction: selectedMarker.direction,
-            single_lamp_status: selectedMarker.single_lamp_status,
-            container_id: selectedMarker.container_id
-          } : null}
-          onMapPress={(position) => {
-            console.log('Map pressed:', position);
-          }}
-        />
-        <View className="absolute top-2 right-2 z-10">
-          <TouchableOpacity
-            className="p-2 rounded-full bg-white/80"
-            onPress={toggleSearch}
-          >
-            <Ionicons
-              name={showSearch ? "close" : "search"}
-              size={24}
-              color={currentTheme.activeTint}
-            />
-          </TouchableOpacity>
-        </View>
-        <Animated.View
-          className="absolute h-12 top-2 left-2 right-12 z-10 bg-background-300 rounded-full px-4 flex-row items-center"
-          style={{
-            transform: [{ translateX: searchAnimation.interpolate({
-              inputRange: [0, 1],
-              outputRange: [width, 0],
-            }) }],
-          }}
-        >      
-          <View className="flex-1 flex-row items-center">
-            <TextInput
-              ref={useInputRef}
-              style={{ flex: 1, lineHeight: 2 }}
-              className="h-10 text-left align-middle text-typography-900"
-              placeholder="搜索..."
-              placeholderTextColor={currentTheme.inactiveTint}
-              value={searchText}
-              onChangeText={handleSearch}
-              autoFocus={showSearch}
-            />
-            {searchText.length > 0 && (
-              <TouchableOpacity
-                onPress={clearSearch}
-                className="p-1"
-              >
-                <Ionicons name="close-circle" size={20} color="#999" />
-              </TouchableOpacity>
-            )}
-          </View>
-          {showSearchResults && searchResults.length > 0 && (
-            <View className="absolute top-12 left-0 right-0 bg-white rounded-lg shadow-lg z-20">
-              <FlatList
-                data={searchResults}
-                keyExtractor={(item) => item.container_id.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    className="px-4 py-2 border-b border-gray-100"
-                    onPress={() => handleSelectResult(item)}
-                  >
-                    <Text className="text-typography-900">{item.searchName.split(',')[0]}</Text>
-                    <Text className="text-typography-900">{item.searchName.split(',')[1]}</Text>
-                  </TouchableOpacity>
-                )}
-              />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className="flex-1" style={{ paddingTop: insets.top }}>
+        <View style={{ height: MAP_HEIGHT }}>
+          {/* 蒙层 */}
+          {loadingLight && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                zIndex: 100,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>
+                单灯数据加载中...
+              </Text>
+              <Text style={{ color: '#fff', fontSize: 16 }}>
+                已加载：{lightList.length}
+              </Text>
             </View>
           )}
-        </Animated.View>
-      </View>
+          <AMapWebView 
+            markers={[
+              ...containerList.map((item, index) => ({
+                id: `container_${item.id}_${index}`,
+                position: { latitude: item.lat, longitude: item.lng },
+                title: item.name,
+                info: item.device_code,
+                container_type: item.container_type,
+                online: item.online,
+                open: item.open,
+                warn: item.warn,
+                icon: {
+                  size: [40, 40] as [number, number],
+                  image: ''
+                },
+                container_id: item.container_id
+              })),
+              ...lightList.map((item, index) => ({
+                id: `light_${item.id}_${index}`,
+                position: { latitude: item.lat, longitude: item.lng },
+                title: item.name || '单灯',
+                info: item.sn,
+                container_type: item.container_type,
+                single_lamp_status: item.single_lamp_status || [],
+                direction: item.direction,
+                icon: {
+                  size: [40, 80] as [number, number],
+                  image: 'singleLightNormal'
+                },
+                container_id: item.container_id
+              }))
+            ]}
+            moveTo={selectedMarker ? {
+              position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng },
+              zoom: mapZoom,
+              title: selectedMarker.name,
+              info: selectedMarker.device_code || selectedMarker.sn,
+              container_type: selectedMarker.container_type,
+              online: selectedMarker.online,
+              open: selectedMarker.open,
+              warn: selectedMarker.warn,
+              direction: selectedMarker.direction,
+              single_lamp_status: selectedMarker.single_lamp_status,
+              container_id: selectedMarker.container_id
+            } : null}
+            onMapPress={(position) => {
+              console.log('Map pressed:', position);
+            }}
+          />
+          <View className="absolute top-2 right-2 z-10">
+            <TouchableOpacity
+              className="p-2 rounded-full bg-white/80"
+              onPress={toggleSearch}
+            >
+              <Ionicons
+                name={showSearch ? "close" : "search"}
+                size={24}
+                color={currentTheme.activeTint}
+              />
+            </TouchableOpacity>
+          </View>
+          <Animated.View
+            className="absolute h-11 top-2 left-2 right-12 z-10 bg-background-300 rounded-full px-3 flex-row items-center"
+            style={searchAnimatedStyle}
+          >      
+            <View className="flex-1 flex-row items-center">
+              <TextInput
+                ref={useInputRef}
+                style={{ flex: 1 }}
+                className="h-10 text-left py-1  align-middle text-typography-900"
+                placeholder="搜索..."
+                placeholderTextColor={currentTheme.inactiveTint}
+                value={searchText}
+                onChangeText={handleSearch}
+                autoFocus={showSearch}
+              />
+              {searchText.length > 0 && (
+                <TouchableOpacity
+                  onPress={clearSearch}
+                  className="p-1"
+                >
+                  <Ionicons name="close-circle" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
+            {showSearchResults && searchResults.length > 0 && (
+              <View className="absolute top-12 left-0 right-0 bg-white rounded-lg shadow-lg z-20">
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item) => item.container_id.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      className="px-4 py-2 border-b border-gray-100"
+                      onPress={() => handleSelectResult(item)}
+                    >
+                      <Text className="text-typography-900">{item.searchName.split(',')[0]}</Text>
+                      <Text className="text-typography-900">{item.searchName.split(',')[1]}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+          </Animated.View>
+        </View>
 
-      <GestureDetector gesture={gesture}>
-        <Animated.View 
-          style={[
-            // bottomSheetStyle, 
-            { 
-              height:MIN_HEIGHT,
-              position: 'absolute', 
-              bottom: 0, 
-              left: 0, 
-              right: 0,
-              backgroundColor: 'white',
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 0,
-                height: -2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 3.84,
-              elevation: 5,
-              zIndex: 1000, // 确保底部面板在最上层
-            }
-          ]}
-        >
-          <MapMessage deviceQuantity={deviceQuantity} containerList={containerList} />
-        </Animated.View>
-      </GestureDetector>
-    </View>
+        <GestureDetector gesture={pan}>
+          <Animated.View 
+            style={animatedStyles}
+          >
+            {/* 添加顶部拖动句柄 */}
+            <View 
+              style={{
+                height: 20,
+                width: '100%',
+                backgroundColor: 'transparent',
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <View 
+                style={{
+                  width: 40,
+                  height: 4,
+                  backgroundColor: currentTheme.activeTint,
+                  borderRadius: 2,
+                }}
+              />
+            </View>
+            <MapMessage deviceQuantity={deviceQuantity} containerList={containerList} />
+          </Animated.View>
+        </GestureDetector>
+      </View>
+    </GestureHandlerRootView>
   );
 }
