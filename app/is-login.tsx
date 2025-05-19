@@ -22,6 +22,8 @@ import { getCurrentBaseUrl } from "@/store/globalStateStore";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
+const kabuda = require("@/assets/images/images/kabuda.png")
+const sharkHot = require("@/assets/images/images/sharkHot.png")
 // const md5 = require('md5');
 // const default_url = 'http://182.99.177.29:48099'
 export default function LoginIndex() {
@@ -32,9 +34,8 @@ export default function LoginIndex() {
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const DEFAULT_BASE_URL = getCurrentBaseUrl()
-  console.log(DEFAULT_BASE_URL,"请求地址");
-  
+  const [iskabuda,setIskabuda] = useState<boolean>(true)
+  const DEFAULT_BASE_URL = getCurrentBaseUrl()  
   const loginForm ={
     username: '',
     password: '',
@@ -44,72 +45,33 @@ export default function LoginIndex() {
   }
   // 创建动画值
   const flipAnimation = useRef(new Animated.Value(0)).current;
-  const shakeAnimation = useRef(new Animated.Value(0)).current;
+
   // 设置翻转动画
   useEffect(() => {
-      const animate = () => {
-        flipAnimation.setValue(0);
-        Animated.timing(flipAnimation, {
-          toValue: 1,
-          duration: 3000, 
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start(() => {
-          // 动画完成后，再次开始
-          setTimeout(animate, 3000); 
-        });
-      };
-      // 开始动画
-      animate();
-      // 组件卸载时清理
-      return () => {
-        flipAnimation.stopAnimation();
-      };
-    }
-  , []);
-
-  // 设置晃动动画
-  useEffect(() => {
-    if (loginFailed) {
-      // 创建晃动序列
-      Animated.sequence([
-        Animated.timing(shakeAnimation, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnimation, {
-          toValue: -1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnimation, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shakeAnimation, {
-          toValue: 0,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // 动画完成后重置登录失败状态
-        setTimeout(() => setLoginFailed(false), 500);
+    const animate = () => {
+      flipAnimation.setValue(0);
+      Animated.timing(flipAnimation, {
+        toValue: 1,
+        duration: 6000, 
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(() => {
+        // 动画完成后，再次开始
+        setTimeout(animate, 6000); 
       });
-    }
-  }, [loginFailed]);
-  
+    };
+    // 开始动画
+    animate();
+    // 组件卸载时清理
+    return () => {
+      flipAnimation.stopAnimation();
+    };
+  }, [flipAnimation]);
+
   // 计算旋转角度
   const flipInterpolate = flipAnimation.interpolate({
-    inputRange: [0, 0],
-    outputRange: ['0deg', '360deg'], // 完整旋转一圈
-  });
-
-  // 计算晃动位移
-  const shakeInterpolate = shakeAnimation.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [-10, 0, 10], // 使用数字而不是带px的字符串
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
   });
 
   // 从存储中获取保存的用户信息
@@ -164,6 +126,8 @@ export default function LoginIndex() {
         
         if (responseData && responseData.access_token) {
           await saveToken(responseData.access_token);
+          console.log(responseData.access_token,"token");
+          
         } else {
           await saveToken('tokenKey');
         }
@@ -192,7 +156,11 @@ export default function LoginIndex() {
   const handleLongPressLogo = () => {
     router.push('/change-ip');
   };
-
+  const handleChangeImage = ()=>{
+   const changeiIskabuda = !iskabuda
+   setIskabuda(changeiIskabuda)
+   
+  }
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -202,7 +170,7 @@ export default function LoginIndex() {
       
       <LinearGradient
         style={[styles.gradient, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}
-        colors={loginFailed ? ["#ff4d4d", "#cc0000"] : ["#0F55A1", "#4ade80"]}
+        colors={iskabuda?["#0F55A1", "#4ade80"]:['#EC407A','#7B1FA2']}
         start={[0, 1]}
         end={[1, 0]}
       >
@@ -212,39 +180,26 @@ export default function LoginIndex() {
          backgroundColor="transparent"
         translucent={true}
       />
-        {loginFailed ? (
+        <TouchableOpacity
+          onLongPress={handleLongPressLogo}
+          onPress={handleChangeImage}
+          delayLongPress={2000}
+          activeOpacity={0.7}
+        >
           <Animated.View 
             style={[
-              styles.logoContainerAmzing,
-              { transform: [{ translateX: shakeInterpolate }] }
+              styles.logoContainer,
+              { transform: [{ rotateY: flipInterpolate }] }
             ]}
           >
             <Image
-              source={require("@/assets/images/images/amzing.png")}
-              style={styles.logoAmazing}
+              source={iskabuda?kabuda:sharkHot}
+              style={styles.logo}
             />
           </Animated.View>
-        ) : (
-          <TouchableOpacity
-            onLongPress={handleLongPressLogo}
-            delayLongPress={2000}
-            activeOpacity={0.7}
-          >
-            <Animated.View 
-              style={[
-                styles.logoContainer,
-                { transform: [{ rotateY: flipInterpolate }] }
-              ]}
-            >
-              <Image
-                source={require("@/assets/images/images/qishui.png")}
-                style={styles.logo}
-              />
-            </Animated.View>
-          </TouchableOpacity>
-        )}
+        </TouchableOpacity>
         <View style={styles.card}>
-          <Text style={styles.title}>{loginFailed?'Password Warn!':'Welcome Bro'}</Text>
+          <Text style={styles.title}>Welcome Bro</Text>
           <View style={styles.inputContainer}>
             <View style={styles.inputWithIcon}>
               <Icon name="user" size={20} color="#fff" style={styles.icon} />
@@ -326,22 +281,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoContainerAmzing:{
-    width: 240,
-    height: 240,
-    marginBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   logo: {
     width: 160,
     height: 160,
     borderRadius: 80,
-  },
-  logoAmazing:{
-    width: 240,
-    height: 240,
-    borderRadius: 120,
   },
   card: {
     borderRadius: 20,

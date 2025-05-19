@@ -3,7 +3,6 @@ import { getToken, saveToken } from './useStorageState';
 // const DEFAULT_BASE_URL = 'http://182.99.177.29:48099';
 // const DEFAULT_BASE_URL = 'http://192.168.1.197:38099';
 import { getCurrentBaseUrl } from "@/store/globalStateStore";
-const DEFAULT_BASE_URL =getCurrentBaseUrl()
 
 type RequestConfig = {
   method?: string;
@@ -100,12 +99,14 @@ const request = async (
 ) => {
   let fullUrl
   const { timeout = 10000, ...config } = options;
+  const currentBaseUrl = getCurrentBaseUrl();
+  
   if(url.startsWith('/xddTest')){
     //  fullUrl = `${testBaseURL}${url.slice('/xddTest'.length)}`
     console.log(33333);
-    fullUrl = `${DEFAULT_BASE_URL}${url.slice('/xddTest'.length)}`
+    fullUrl = `${currentBaseUrl}${url.slice('/xddTest'.length)}`
   }else{
-    fullUrl = url.startsWith('http') ? url : `${DEFAULT_BASE_URL}${url}`;
+    fullUrl = url.startsWith('http') ? url : `${currentBaseUrl}${url}`;
   }
   // 修改为异步获取interceptedConfig
   const interceptedConfig = await requestInterceptor(config, token);
@@ -120,7 +121,6 @@ const request = async (
       delete interceptedConfig.body;
     }
   }
-
   try {
     const response = await Promise.race([
       fetch(fullUrl, interceptedConfig),

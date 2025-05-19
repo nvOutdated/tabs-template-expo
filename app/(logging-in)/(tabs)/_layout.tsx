@@ -1,9 +1,11 @@
+import { AlarmBadge } from '@/components/runlog/AlarmBadge';
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
+
 export default function TabLoggingLayout() {
   const currentTheme = useCurrentTheme();
   const {theme} = useTheme()
@@ -98,6 +100,22 @@ export default function TabLoggingLayout() {
           ),
         }}
       />
+       <Tabs.Screen
+        name="(runlog)"
+        options={{
+          title: 'runLog',
+          tabBarIcon: ({ color, focused }: any) => (
+            <View>
+              <Ionicons
+                name={focused ? "list" : "list-outline"}
+                color={color}
+                size={focused ? 25 : 18}
+              />
+              <AlarmBadge />
+            </View>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="(personal)"
         options={{
@@ -113,6 +131,7 @@ export default function TabLoggingLayout() {
           ),
         }}
       />
+     
     </Tabs>
     
   );
