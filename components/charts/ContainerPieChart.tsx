@@ -13,7 +13,7 @@ interface ContainerPieChartProps {
 }
 
 const { width } = Dimensions.get('window');
-const CHART_SIZE = width * 0.8;
+const CHART_SIZE = width * 0.2;
 
 export default function ContainerPieChart({ data }: ContainerPieChartProps) {
   const currentTheme = useCurrentTheme();
@@ -26,7 +26,7 @@ export default function ContainerPieChart({ data }: ContainerPieChartProps) {
 
   return (
     <Animated.View 
-      className="items-center justify-center py-2" 
+      className="items-center justify-center py-1" 
       style={{ height: CHART_SIZE }}
       entering={FadeIn.duration(500)}
     >
@@ -36,16 +36,16 @@ export default function ContainerPieChart({ data }: ContainerPieChartProps) {
           donut
           showText
           textColor={currentTheme.textColor}
-          textSize={14}
+          textSize={10}
           fontWeight="bold"
-          innerRadius={70}
-          radius={CHART_SIZE / 2 - 20}
+          innerRadius={8}
+          radius={CHART_SIZE / 2 - 15}
           centerLabelComponent={() => (
             <View className="items-center justify-center">
-              <Text className="text-lg font-bold" style={{ color: currentTheme.textColor }}>
+              <Text className="text-sm font-bold" style={{ color: currentTheme.textColor }}>
                 集中器
               </Text>
-              <Text className="text-sm" style={{ color: currentTheme.textColor }}>
+              <Text className="text-xs" style={{ color: currentTheme.textColor }}>
                 分布
               </Text>
             </View>

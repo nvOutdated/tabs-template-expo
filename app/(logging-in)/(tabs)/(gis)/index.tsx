@@ -28,9 +28,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 const MIN_HEIGHT = height * 0.1;
-const MAX_HEIGHT = height * 0.4;
+const MAX_HEIGHT = height * 0.5;
 const MAP_HEIGHT = height * 0.9;
-const MAX_OFFSET = height * 0.3; // 最大偏移量  
+const MAX_OFFSET = height * 0.4; // 最大偏移量  
 
 // 修改 clamp 函数为 worklet
 function clamp(val: number, min: number, max: number): number {
@@ -72,7 +72,7 @@ export default function GisIndexScreen() {
   });
 
   // 修改动画相关状态
-  const translateY = useSharedValue(0);
+  const translateY = useSharedValue(height * 0.2);
   const prevTranslateY = useSharedValue(0);
 
   const animatedStyles = useAnimatedStyle(() => {

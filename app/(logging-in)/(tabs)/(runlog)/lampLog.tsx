@@ -1,5 +1,6 @@
+import { get_container_list } from "@/api/street/streetCommon";
 import LampRunLog from '@/components/runlog/LampRunLog/LampRunLog';
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const LOG_TYPES = [
@@ -10,6 +11,13 @@ const LOG_TYPES = [
   { id: 'system', name: '系统操作日志' },
   { id: 'plan', name: '预案操作日志' },
 ] as const;
+
+interface Container {
+  id: string;
+  device_code: string;
+  name: string;
+  searchName: string;
+}
 
 // 将 TabBar 组件提取出来并使用 memo 优化
 const TabBar = memo(({ 
@@ -61,10 +69,26 @@ const PlaceholderContent = memo(() => (
 PlaceholderContent.displayName = "PlaceholderContent";
 
 // 将内容渲染逻辑提取为独立组件
-const ContentRenderer = memo(({ activeTab }: { activeTab: typeof LOG_TYPES[number]['id'] }) => {
+const ContentRenderer = memo(({ 
+  activeTab,
+  containerList,
+  selectedDevice,
+  setSelectedDevice,
+}: { 
+  activeTab: typeof LOG_TYPES[number]['id'];
+  containerList: Container[];
+  selectedDevice: string;
+  setSelectedDevice: (device: string) => void;
+}) => {
   switch (activeTab) {
     case 'run':
-      return <LampRunLog />;
+      return (
+        <LampRunLog 
+          containerList={containerList}
+          selectedDevice={selectedDevice}
+          setSelectedDevice={setSelectedDevice}
+        />
+      );
     case 'online':
     case 'weather':
     case 'alarm':
@@ -80,6 +104,30 @@ ContentRenderer.displayName = "ContentRenderer";
 
 export default function LogScreen() {
   const [activeTab, setActiveTab] = useState<typeof LOG_TYPES[number]['id']>('run');
+  const [containerList, setContainerList] = useState<Container[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState('');
+
+  // 获取集中器列表
+  const fetchContainerList = async() => {
+    try {
+      const res = await get_container_list({});
+      if(res.code === 200) {
+        const convertedData = res.data.map((item: any) => ({
+          id: item.id,
+          device_code: item.device_code,
+          name: item.name,
+          searchName: `${item.device_code}(${item.name})`
+        }));
+        setContainerList(convertedData);
+      }
+    } catch(error) {
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchContainerList();
+  }, []);
 
   // 使用 useCallback 优化 tab 切换函数
   const handleTabPress = useCallback((id: typeof LOG_TYPES[number]['id']) => {
@@ -89,7 +137,12 @@ export default function LogScreen() {
   return (
     <View style={styles.container} className="bg-background-50">
       <TabBar activeTab={activeTab} onTabPress={handleTabPress} />
-      <ContentRenderer activeTab={activeTab} />
+      <ContentRenderer 
+        activeTab={activeTab} 
+        containerList={containerList}
+        selectedDevice={selectedDevice}
+        setSelectedDevice={setSelectedDevice}
+      />
     </View>
   );
 }

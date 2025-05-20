@@ -3,7 +3,7 @@ import { formatDate } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 // 模拟数据
 const mockDevices = [
   { id: '1', code: 'LD001' },
@@ -11,14 +11,27 @@ const mockDevices = [
   { id: '3', code: 'LD003' },
 ];
 
+interface Container {
+  id: string;
+  device_code: string;
+  name: string;
+  searchName: string;
+}
+
+export interface LampRunLogProps {
+  containerList: Container[];
+  selectedDevice: string;
+  setSelectedDevice: (device: string) => void;
+}
+
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 220; // 添加固定卡片高度常量
 
 // 将搜索条件部分抽离为独立组件
-const SearchSection = memo(({ 
-  isSearchExpanded, 
+const SearchSection = memo(({
+  isSearchExpanded,
   setIsSearchExpanded,
   selectedDevice,
   setSelectedDevice,
@@ -27,7 +40,8 @@ const SearchSection = memo(({
   setShowStartTimePicker,
   setShowEndTimePicker,
   setShowDevicePicker,
-  handleSearch
+  handleSearch,
+  containerList
 }: {
   isSearchExpanded: boolean;
   setIsSearchExpanded: (value: boolean) => void;
@@ -39,69 +53,126 @@ const SearchSection = memo(({
   setShowEndTimePicker: (value: boolean) => void;
   setShowDevicePicker: (value: boolean) => void;
   handleSearch: () => void;
-}) => (
-  <View className="bg-background-100 py-3 px-6 border-b border-tertiary-100">
-    <TouchableOpacity 
-      style={styles.expandButton}
-      onPress={() => setIsSearchExpanded(!isSearchExpanded)}
-      className="flex-row items-center self-end"
-    >
-      <Text className="text-tertiary-900 mr-2 text-sm">搜索条件</Text>
-      <Ionicons 
-        name={isSearchExpanded ? "chevron-up" : "chevron-down"} 
-        size={16} 
-        color="#666" 
-      />
-    </TouchableOpacity>
+  containerList: Container[];
+}) => {
+  const [searchText, setSearchText] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchResults, setSearchResults] = useState<Container[]>([]);
 
-    {isSearchExpanded && (
-      <View style={styles.searchContent}>
+  const handleSearchInput = (text: string) => {
+    setSearchText(text);
+    if(text.length > 0) {
+      const filtered = containerList.filter(item =>
+        item.searchName && item.searchName.toLowerCase().includes(text.toLowerCase())
+      ).slice(0, 10);
+      setSearchResults(filtered);
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchText('');
+    setShowSearchResults(false);
+  };
+
+  const handleSelectResult = (item: Container) => {
+    setSearchText(item.device_code);
+    setShowSearchResults(false);
+    setSelectedDevice(item.device_code);
+  };
+
+  return (
+    <View className="bg-background-100 py-3 px-4 border-b border-tertiary-100">
+      <View className="flex-row justify-between items-center">
         <View style={styles.searchItem}>
           <Text className="text-tertiary-900 text-sm">设备编号：</Text>
-          <TouchableOpacity 
-            style={styles.searchInput}
-            className="bg-background-50 border border-tertiary-200"
-            onPress={() => setShowDevicePicker(true)}
-          >
-            <Text className="text-tertiary-900 text-sm">
-              {selectedDevice || '请选择设备'}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color="#666" />
-          </TouchableOpacity>
+          <View style={[styles.searchInput, { minWidth: 200 }]} className="bg-background-50 border border-tertiary-200">
+            <TextInput
+              style={{ flex: 1 }}
+              className="h-8 text-left py-1 align-middle text-typography-900"
+              placeholder="搜索设备..."
+              placeholderTextColor="#999"
+              value={searchText}
+              onChangeText={handleSearchInput}
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                className="p-1"
+              >
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+          {showSearchResults && searchResults.length > 0 && (
+            <View className="absolute top-12 left-10 right-0 bg-white rounded-lg shadow-lg z-20">
+              <FlatList
+                data={searchResults}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    className="px-4 py-2 border-b border-gray-100"
+                    onPress={() => handleSelectResult(item)}
+                  >
+                    <Text className="text-typography-900">{item.searchName}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          )}
         </View>
-        <View style={styles.searchItem}>
-          <Text className="text-tertiary-900 text-sm">时间范围：</Text>
-          <TouchableOpacity 
-            style={styles.searchInput}
-            className="bg-background-50 border border-tertiary-200"
-            onPress={() => setShowStartTimePicker(true)}
-          >
-            <Text className="text-tertiary-900 text-sm">
-              {startTime ? formatDate(startTime.getTime()) : '开始时间'}
-            </Text>
-          </TouchableOpacity>
-          <Text className="text-tertiary-900 mx-2 text-sm">至</Text>
-          <TouchableOpacity 
-            style={styles.searchInput}
-            className="bg-background-50 border border-tertiary-200"
-            onPress={() => setShowEndTimePicker(true)}
-          >
-            <Text className="text-tertiary-900 text-sm">
-              {endTime ? formatDate(endTime.getTime()) : '结束时间'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity 
-          style={styles.searchButton}
-          className="bg-info-500"
-          onPress={handleSearch}
+        <TouchableOpacity
+          style={styles.expandButton}
+          onPress={() => setIsSearchExpanded(!isSearchExpanded)}
+          className="flex-row items-center"
         >
-          <Text style={styles.searchButtonText} className="text-white text-sm">查询</Text>
+          <Text className="text-tertiary-900 mr-2 text-sm">时间范围</Text>
+          <Ionicons
+            name={isSearchExpanded ? "chevron-up" : "chevron-down"}
+            size={16}
+            color="#666"
+          />
         </TouchableOpacity>
       </View>
-    )}
-  </View>
-));
+
+      {isSearchExpanded && (
+        <View style={styles.searchContent}>
+          <View style={styles.searchItem}>
+            <Text className="text-tertiary-900 text-sm">时间范围：</Text>
+            <TouchableOpacity
+              style={styles.searchInput}
+              className="bg-background-50 border border-tertiary-200"
+              onPress={() => setShowStartTimePicker(true)}
+            >
+              <Text className="text-tertiary-900 text-sm">
+                {startTime ? formatDate(startTime.getTime()) : '开始时间'}
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-tertiary-900 mx-2 text-sm">至</Text>
+            <TouchableOpacity
+              style={styles.searchInput}
+              className="bg-background-50 border border-tertiary-200"
+              onPress={() => setShowEndTimePicker(true)}
+            >
+              <Text className="text-tertiary-900 text-sm">
+                {endTime ? formatDate(endTime.getTime()) : '结束时间'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.searchButton}
+            className="bg-info-500"
+            onPress={handleSearch}
+          >
+            <Text style={styles.searchButtonText} className="text-white text-sm">查询</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+});
 
 SearchSection.displayName = "SearchSection";
 
@@ -201,8 +272,7 @@ const LogItem = memo(({ item }: { item: any }) => {
 
 LogItem.displayName = "LogItem";
 
-export default function LampRunLog(){
-  const [selectedDevice, setSelectedDevice] = useState('');
+const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, setSelectedDevice }) => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -227,7 +297,7 @@ export default function LampRunLog(){
 
   const fetchLogs = useCallback(async (page: number = 1, isRefresh: boolean = false) => {
     if (loadingRef.current) return; // 使用 ref 检查是否正在加载
-    
+
     try {
       loadingRef.current = true;
       setLoading(true);
@@ -240,8 +310,8 @@ export default function LampRunLog(){
       };
 
       const response = await stats_runLog_quey_list(params);
-      if(response.code===200&&response.data){
-        const newLogs = response.data || []; 
+      if (response.code === 200 && response.data) {
+        const newLogs = response.data || [];
         if (isRefresh) {
           setLogs(newLogs);
         } else {
@@ -254,7 +324,7 @@ export default function LampRunLog(){
             return [...prevLogs, ...newLogs];
           });
         }
-        
+
         setHasMore(newLogs.length === 10);
         setCurrent(page);
       }
@@ -286,7 +356,7 @@ export default function LampRunLog(){
 
   const handleLoadMore = useCallback(() => {
     if (loadingRef.current || !hasMore || loading) return;
-    
+
     // 使用 requestAnimationFrame 来优化渲染时机
     requestAnimationFrame(() => {
       fetchLogs(current + 1);
@@ -378,6 +448,7 @@ export default function LampRunLog(){
         setShowEndTimePicker={setShowEndTimePicker}
         setShowDevicePicker={setShowDevicePicker}
         handleSearch={handleSearch}
+        containerList={containerList}
       />
 
       <FlatList
@@ -438,37 +509,6 @@ export default function LampRunLog(){
           }}
         />
       )}
-
-      <Modal
-        visible={showDevicePicker}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent} className="bg-background-50">
-            <View style={styles.modalHeader}>
-              <Text className="text-tertiary-900 text-lg font-bold">选择设备</Text>
-              <TouchableOpacity onPress={() => setShowDevicePicker(false)}>
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
-              {mockDevices.map((device) => (
-                <TouchableOpacity
-                  key={device.id}
-                  style={styles.deviceItem}
-                  onPress={() => {
-                    setSelectedDevice(device.code);
-                    setShowDevicePicker(false);
-                  }}
-                >
-                  <Text className="text-tertiary-900">{device.code}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -481,7 +521,8 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   expandButton: {
-    paddingVertical: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   searchContent: {
     marginTop: 8,
@@ -494,10 +535,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    minWidth: 100,
+    minWidth: 120,
   },
   searchButton: {
     paddingHorizontal: 12,
@@ -633,4 +675,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// export default LampRunLog;
+export default LampRunLog;

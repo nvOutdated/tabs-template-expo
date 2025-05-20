@@ -2,7 +2,6 @@ import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProv
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import ContainerPieChart from '../charts/ContainerPieChart';
 import LampBarChart from '../charts/LampBarChart';
 
 interface DeviceQuantity {
@@ -109,14 +108,16 @@ export default function MapMessage({ deviceQuantity, containerList }: MapMessage
 
     return (
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="p-4">
-          <View className="mb-6">
-            <Text className="text-center text-typography-900 font-semibold mb-2">集中器分布</Text>
-            <ContainerPieChart data={containerStats} />
-          </View>
-          <View>
-            <Text className="text-center text-typography-900 font-semibold mb-2">单灯分布</Text>
-            <LampBarChart data={deviceQuantity} />
+        <View className="p-2">
+          <View className="flex-row items-center">
+           {/*  <View className="flex-1 pr-1">
+              <Text className="text-center text-typography-900 font-semibold mb-1 text-xs">集中器分布</Text>
+              <ContainerPieChart data={containerStats} />
+            </View> */}
+            <View className="flex-1 pl-1">
+             {/*  <Text className="text-center text-typography-900 font-semibold mb-1 text-xs">单灯分布</Text> */}
+              <LampBarChart data={deviceQuantity} />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -126,7 +127,7 @@ export default function MapMessage({ deviceQuantity, containerList }: MapMessage
   return (
     <View className="flex-1 bg-background-0 rounded-t-3xl shadow-lg">
       {/* Tabs */}
-      <View className="flex-row border-b border-outline-200">
+      <View className="flex-row  border-b border-outline-200">
         <Pressable
           className={`flex-1 py-3 ${activeTab === 'basic' ? 'border-b-2 border-info-500' : ''}`}
           onPress={() => setActiveTab('basic')}
