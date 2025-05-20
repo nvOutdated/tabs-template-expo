@@ -42,7 +42,6 @@ export default function EboxScreen() {
 
   const loadEleBoxList = useCallback(async(page: number, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
-    
     try {
       loadingRef.current = true;
       setLoading(true);
@@ -84,7 +83,7 @@ export default function EboxScreen() {
     setCurrentPage(1);
     endReachedRef.current = false;
     loadEleBoxList(1, true);
-  }, [selectedArea.area_id]);
+  }, [loadEleBoxList, selectedArea]);
 
   // 监听搜索文本变化（带防抖）
   useEffect(() => {

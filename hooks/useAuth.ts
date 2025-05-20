@@ -19,6 +19,7 @@ export function useAuth(): UseAuthResult {
       try {
         setIsLoading(true);
         const token = await getToken();
+        console.log(token,"token");
         
         if (token) {
           login(token);

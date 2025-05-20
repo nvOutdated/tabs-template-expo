@@ -4,17 +4,15 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
 import EboxImageModal from "./EboxImageModal";
 type ElectricItem = {
   id: number;
@@ -118,7 +116,7 @@ export default function EboxList({
     // console.log('ElectricItem images:', images);
  
     return (
-      <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
+      <View >
         <Pressable style={styles.card} className="bg-background-50">
           <View style={styles.containerTitle}>
             <Text
@@ -206,7 +204,7 @@ export default function EboxList({
             </View>
           </View>
         </Pressable>
-      </Animated.View>
+      </View>
     );
   });
 
@@ -214,7 +212,8 @@ export default function EboxList({
 
   // Memoized renderItem function
   const renderItem = useCallback(
-    ({ item }: { item: ElectricItem }) => <ElectricItem item={item} />,
+    ({ item }: { item: ElectricItem }) => 
+    <ElectricItem item={item} />,
     []
   );
 
@@ -273,15 +272,7 @@ export default function EboxList({
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         getItemLayout={getItemLayout}
-        removeClippedSubviews={Platform.OS === 'android'}
-        maxToRenderPerBatch={5}
-        windowSize={3}
-        initialNumToRender={8}
-        updateCellsBatchingPeriod={50}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10,
-        }}
+        removeClippedSubviews={true}
       />
       <EboxImageModal
         visible={modalVisible}

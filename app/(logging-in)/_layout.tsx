@@ -11,7 +11,7 @@ export default function AuthLayout(): JSX.Element {
   // console.log(useTheme(),"主题");
   useEffect(() => {
     getToken().then(token => {
-      console.log("重新加载ws",isConnected,token);
+      console.log("加载ws",isConnected);
       
       if(token&&!isConnected) {
         init()
