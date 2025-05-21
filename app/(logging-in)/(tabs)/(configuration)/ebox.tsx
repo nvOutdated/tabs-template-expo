@@ -27,7 +27,7 @@ export default function EboxScreen() {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef(false);
   const endReachedRef = useRef(false);
-
+  
   const fetchAreaList = async() => {
     try {
       const res = await get_area_list()
@@ -53,6 +53,8 @@ export default function EboxScreen() {
       };
       
       const res = await getEboxListApi(params);
+      console.log(res,1111);
+      
       if(res.code === 200 && res.data) {
         const formattedEleBoxList = res.data;
         

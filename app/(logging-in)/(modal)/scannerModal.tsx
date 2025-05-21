@@ -2,9 +2,17 @@ import { useScannerStore } from '@/store/scannerStore';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 const ScannerModal = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -12,26 +20,24 @@ const ScannerModal = () => {
   const {setScanResult } = useScannerStore();
   const insets = useSafeAreaInsets();
   
-  // 动画值
-  const cornerAnimation = useRef(new Animated.Value(0)).current;
+  // 替换原来的动画实现
+  const cornerOpacity = useSharedValue(0);
 
-  // 动画循环
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cornerAnimation, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cornerAnimation, {
-          toValue: 0.3,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    cornerOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1500 }),
+        withTiming(0.3, { duration: 1500 })
+      ),
+      -1,
+      false
+    );
   }, []);
+
+  const cornerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: cornerOpacity.value,
+  }));
+
   useEffect(() => {
     setScanResult('');
   }, []);
@@ -73,14 +79,10 @@ const ScannerModal = () => {
           {/* 扫描框和动画角 */}
           <View style={styles.scanFrameContainer}>
             <View style={styles.scanFrame}>
-              {/* 左上角 */}
-              <Animated.View style={[styles.corner, styles.topLeft, { opacity: cornerAnimation }]} />
-              {/* 右上角 */}
-              <Animated.View style={[styles.corner, styles.topRight, { opacity: cornerAnimation }]} />
-              {/* 左下角 */}
-              <Animated.View style={[styles.corner, styles.bottomLeft, { opacity: cornerAnimation }]} />
-              {/* 右下角 */}
-              <Animated.View style={[styles.corner, styles.bottomRight, { opacity: cornerAnimation }]} />
+              <Animated.View style={[styles.corner, styles.topLeft, cornerAnimatedStyle]} />
+              <Animated.View style={[styles.corner, styles.topRight, cornerAnimatedStyle]} />
+              <Animated.View style={[styles.corner, styles.bottomLeft, cornerAnimatedStyle]} />
+              <Animated.View style={[styles.corner, styles.bottomRight, cornerAnimatedStyle]} />
             </View>
             <Text style={styles.text}>请将二维码对准扫描框</Text>
           </View>

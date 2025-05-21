@@ -23,35 +23,35 @@ export default function LampBarChart({ data }: LampBarChartProps) {
   
   const chartData = [
     { 
-      value: 4321, 
+      value: data.singleArmLampNum, 
       label: '单挑臂', 
       frontColor: '#4CAF50',
       sideColor: '#3B8C3D',
       topColor: '#66BB6A'
     },
     { 
-      value: 3567, 
+      value: data.doubleArmLampNum, 
       label: '双挑臂', 
       frontColor: '#2196F3',
       sideColor: '#1976D2',
       topColor: '#42A5F5'
     },
     { 
-      value: 500, 
+      value: data.yulanLampNum, 
       label: '玉兰灯', 
       frontColor: '#FFC107',
       sideColor: '#FFA000',
       topColor: '#FFCA28'
     },
     { 
-      value: 0, 
+      value: data.gardenLampNum, 
       label: '庭院灯', 
       frontColor: '#9C27B0',
       sideColor: '#7B1FA2',
       topColor: '#AB47BC'
     },
     { 
-      value: 0, 
+      value: data.otherLampNum, 
       frontColor: '#FF5722',
       sideColor: '#E64A19',
       topColor: '#FF7043'

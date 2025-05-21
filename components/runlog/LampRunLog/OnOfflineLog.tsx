@@ -1,9 +1,9 @@
-import { stats_runLog_quey_list } from "@/api/runLog/lampRunLogApi";
+import { stats_onlineOffline_log_list } from '@/api/runLog/lampRunLogApi';
 import { formatDate } from '@/utils/date';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import SearchSection from '../common/SearchSection';
-// 模拟数据
+
 interface Container {
   id: string;
   device_code: string;
@@ -12,7 +12,7 @@ interface Container {
   deviceId: number;
 }
 
-export interface LampRunLogProps {
+export interface OnOfflineLogProps {
   containerList: Container[];
   selectedDevice: number | null;
   setSelectedDevice: (device: number | null) => void;
@@ -21,26 +21,10 @@ export interface LampRunLogProps {
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 220; // 添加固定卡片高度常量
+const CARD_HEIGHT = 80; // 减小卡片高度，因为内容较少
 
 // Move LogItem outside the main component and optimize it
 const LogItem = memo(({ item }: { item: any }) => {
-  const renderLoops = useMemo(() => (
-    <View style={styles.loopsContainer}>
-      {item.loops.map((status: boolean, loopIndex: number) => (
-        <View
-          key={loopIndex}
-          style={[
-            styles.loopBall,
-            status ? styles.loopActive : styles.loopInactive,
-          ]}
-        >
-          <Text style={styles.loopText}>{loopIndex + 1}</Text>
-        </View>
-      ))}
-    </View>
-  ), [item.loops]);
-
   return (
     <View style={styles.logCardWrapper}>
       <View style={styles.logCard} className="bg-background-50">
@@ -51,61 +35,18 @@ const LogItem = memo(({ item }: { item: any }) => {
               <Text className="text-tertiary-900 text-sm">{item.deviceCode}</Text>
             </View>
             <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">操作方式：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.mode}</Text>
-            </View>
-          </View>
-
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">三相电压：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.voltages}V</Text>
-            </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">三相电流：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.currents}A</Text>
-            </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">用电量：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.power}kW·h</Text>
-            </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">设备温度：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.temperature}℃</Text>
-            </View>
-          </View>
-
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">开关灯时间：</Text>
-              <View>
-                <Text className="text-tertiary-900 text-sm">开灯: {item.powerOn}</Text>
-                <Text className="text-tertiary-900 text-sm">关灯: {item.powerOff}</Text>
+              <Text className="text-tertiary-900 font-bold text-sm">设备状态：</Text>
+              <View className={`px-2 py-1 rounded ${item.isOnline ? 'bg-success-100' : 'bg-tertiary-100'}`}>
+                <Text className={`text-sm ${item.isOnline ? 'text-success-600' : 'text-tertiary-600'}`}>
+                  {item.isOnline ? '设备上线' : '设备下线'}
+                </Text>
               </View>
             </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">开关量状态：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.ios}</Text>
-            </View>
-          </View>
-
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">回路状态：</Text>
-              {renderLoops}
-            </View>
-          </View>
-
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">操作时间：</Text>
-              <Text className="text-tertiary-900 text-sm">{formatDate(item.optTime)}</Text>
-            </View>
           </View>
           <View style={styles.logCardGrid}>
             <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">设备时间：</Text>
-              <Text className="text-tertiary-900 text-sm">{formatDate(item.dateTime)}</Text>
+              <Text className="text-tertiary-900 font-bold text-sm">创建时间：</Text>
+              <Text className="text-tertiary-900 text-sm">{formatDate(item.createTime)}</Text>
             </View>
           </View>
         </View>
@@ -113,13 +54,12 @@ const LogItem = memo(({ item }: { item: any }) => {
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function for memo
   return JSON.stringify(prevProps.item) === JSON.stringify(nextProps.item);
 });
 
 LogItem.displayName = "LogItem";
 
-const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, setSelectedDevice }) => {
+const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevice, setSelectedDevice }) => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -128,6 +68,8 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  // 使用 ref 来跟踪 loading 状态，避免触发重渲染
   const loadingRef = useRef(false);
   const flatListRef = useRef<FlatList>(null);
 
@@ -151,7 +93,7 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
         start_time: startTime ? formatDateTime(startTime) : null,
         end_time: endTime ? formatDateTime(endTime, true) : null,
       }; 
-      const response = await stats_runLog_quey_list(params);
+      const response = await stats_onlineOffline_log_list(params);
       if (response.code === 200) {
         const newLogs = response.data || [];
         if (page === 1 || isRefresh) {
@@ -174,26 +116,20 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
     }
   }, [selectedDevice, startTime, endTime, formatDateTime]);
 
-  // 使用 useRef 来跟踪是否是手动刷新
-  const isManualRefresh = useRef(false);
-
-  // 移除对 startTime 和 endTime 的监听，只在设备选择变化时更新
+  // 监听查询条件变化
   useEffect(() => {
     setCurrent(1);
     fetchLogs(1, true);
   }, [selectedDevice, fetchLogs]);
 
   const handleRefresh = useCallback(() => {
-    if (loadingRef.current) return; // 防止重复刷新
-    isManualRefresh.current = true;
+    if (loadingRef.current) return;
     setRefreshing(true);
     fetchLogs(1, true);
   }, [fetchLogs]);
 
   const handleLoadMore = useCallback(() => {
     if (loadingRef.current || !hasMore || loading) return;
-
-    // 使用 requestAnimationFrame 来优化渲染时机
     requestAnimationFrame(() => {
       fetchLogs(current + 1);
     });
@@ -213,8 +149,7 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
   // Optimize keyExtractor with useCallback
   const keyExtractor = useCallback(
     (item: any, index: number) => {
-      // 使用设备编号和时间戳组合作为唯一标识
-      return `${item.deviceCode}_${item.optTime}_${index}`;
+      return `${item.deviceCode}_${item.createTime}_${index}`;
     },
     []
   );
@@ -233,7 +168,7 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
   const ListEmptyComponent = useMemo(
     () => (
       <View style={[styles.emptyContainer, { height: '100%' }]}>
-        <Text style={styles.emptyText}>暂无运行日志数据</Text>
+        <Text style={styles.emptyText}>暂无上下线日志数据</Text>
       </View>
     ),
     []
@@ -343,29 +278,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  loopsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  loopBall: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loopActive: {
-    backgroundColor: '#4CAF50',
-  },
-  loopInactive: {
-    backgroundColor: '#9E9E9E',
-  },
-  loopText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -375,14 +287,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: "#666",
-    flex:1,
+    flex: 1,
   },
   footer: {
     padding: 10,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50, // 确保底部组件有足够的高度
-    marginBottom: 20, // 增加底部间距
+    minHeight: 50,
+    marginBottom: 20,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -402,4 +314,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LampRunLog;
+export default OnOfflineLog;

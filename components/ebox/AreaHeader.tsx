@@ -1,7 +1,14 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
+
 const { width } = Dimensions.get('window');
 
 type AreaHeaderProps = {
@@ -13,35 +20,29 @@ type AreaHeaderProps = {
   };
 };
 
-export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }: AreaHeaderProps) {
+export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea }: AreaHeaderProps) {
   const currentTheme = useCurrentTheme();
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const searchAnimation = useRef(new Animated.Value(0)).current;
   const useInputRef = useRef<TextInput>(null);
 
+  // 替换原来的动画实现
+  const searchAnimation = useSharedValue(0);
+
   useEffect(() => {
-    Animated.timing(searchAnimation, {
-      toValue: showSearch ? 1 : 0,
+    searchAnimation.value = withTiming(showSearch ? 1 : 0, {
       duration: 300,
-      useNativeDriver: true,
-    }).start();
+    });
   }, [showSearch]);
 
-  const searchTranslateX = searchAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [width, 0],
-  });
+  const searchAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(searchAnimation.value, [0, 1], [width, 0]) }],
+  }));
 
-  const titleTranslateX = searchAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -width / 2],
-  });
-
-  const titleOpacity = searchAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  });
+  const titleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(searchAnimation.value, [0, 1], [0, -width / 2]) }],
+    opacity: interpolate(searchAnimation.value, [0, 1], [1, 0]),
+  }));
 
   const toggleSearch = useCallback(() => {
     const newShowSearch = !showSearch;
@@ -84,10 +85,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
             style={[
               styles.areaName,
               { color: currentTheme.activeTint },
-              {
-                transform: [{ translateX: titleTranslateX }],
-                opacity: titleOpacity,
-              },
+              titleAnimatedStyle,
             ]}
           >
             {selectedArea.name}
@@ -96,9 +94,7 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
           <Animated.View
             style={[
               styles.searchContainer,
-              {
-                transform: [{ translateX: searchTranslateX }],
-              },
+              searchAnimatedStyle,
             ]}
           >
             <TextInput
@@ -109,7 +105,6 @@ export default function AreaHeader({ onSearch,handleSetShowDrawer,selectedArea }
               value={searchText}
               onChangeText={(text) => {
                 setSearchText(text);
-                // debouncedSearch(text);
               }}
               autoFocus={showSearch}
             />

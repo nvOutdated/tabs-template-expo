@@ -35,3 +35,8 @@ export const getCurrentBaseWs = () => {
     const server = getCurrentServer()
     return `ws://${server.ip}:${server.wsPort}`
 } 
+
+export const getCurrentFileUrl = () => {
+    const server = getCurrentServer()
+    return `http://${server.ip}:${server.filePort}`
+} 

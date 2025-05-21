@@ -38,6 +38,7 @@ export default function ChangeIp() {
                         <Text className="text-gray-600">IP: {server.ip}</Text>
                         <Text className="text-gray-600">HTTP端口: {server.httpPort}</Text>
                         <Text className="text-gray-600">WS端口: {server.wsPort}</Text>
+                        <Text className="text-gray-600">FILE端口: {server.filePort}</Text>
                     </TouchableOpacity>
                 ))}
             </View>

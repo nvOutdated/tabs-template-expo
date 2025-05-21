@@ -5,23 +5,35 @@ import { getToken } from '@/utils/useStorageState';
 import { Redirect, Stack } from 'expo-router';
 import React, { JSX, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+
 export default function AuthLayout(): JSX.Element {
-  const { init,disconnect,isConnected } = useWebSocketStore();
-  const {showError}  = useCustomToast() 
-  // console.log(useTheme(),"主题");
-  useEffect(() => {
-    getToken().then(token => {
-      console.log("加载ws",isConnected);
-      
-      if(token&&!isConnected) {
-        init()
-      }
-    })
-    return ()=>{
-      disconnect()
-    }
-   },[])
+  const { init, disconnect, isConnected } = useWebSocketStore();
+  const { showError } = useCustomToast();
   const { isLoggedIn, isLoading, error } = useAuth();
+
+  useEffect(() => {
+    const setupWebSocket = async () => {
+      try {
+        const token = await getToken();
+        if (token && token !== 'tokenKey' && !isConnected) {
+          init();
+        }
+      } catch (err) {
+        console.error('Failed to setup WebSocket:', err);
+      }
+    };
+
+    if (isLoggedIn) {
+      setupWebSocket();
+    }
+
+    return () => {
+      if (isConnected) {
+        disconnect();
+      }
+    };
+  }, [isLoggedIn, isConnected]);
+
   // Show loading indicator while checking authentication status
   if (isLoading) {
     return (
@@ -35,9 +47,9 @@ export default function AuthLayout(): JSX.Element {
   if (error) {
     // console.error('认证错误:', error);
     showError({
-      title:"错误信息",
-      message:"认证错误,退出登录"
-    })
+      title: "错误信息",
+      message: "认证错误,退出登录"
+    });
     return <Redirect href="/is-login" />;
   }
 

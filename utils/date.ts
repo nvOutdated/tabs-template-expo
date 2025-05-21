@@ -8,3 +8,13 @@ export const formatDate = (timestamp: number) => {
     const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
+
+  export const transferDate = (date: number) => {
+    const newDate = new Date(date);
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    };
+    return newDate.toLocaleString('zh-CN', options);
+}

@@ -20,10 +20,15 @@ const DEFAULT_COLORS = [
   "#F1F1F1",
 ];
 
+type ImageSource = {
+  uri?: string;
+  default?: any;
+};
+
 type EboxImageModalProps = {
   visible: boolean;
   onClose: () => void;
-  images: string[];
+  images: ImageSource[];
   initialIndex?: number;
   onImageUpload?: (imageUri: string) => void;
 };
@@ -36,7 +41,7 @@ export default function EboxImageModal({
   onImageUpload
 }: EboxImageModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [localImages, setLocalImages] = useState<string[]>(images);
+  const [localImages, setLocalImages] = useState<ImageSource[]>(images);
   const carouselRef = React.useRef<ICarouselInstance>(null);
   const progress = useSharedValue<number>(0);
   const {showError,showSuccess} = useCustomToast()
@@ -93,7 +98,8 @@ export default function EboxImageModal({
         //   { compress: 0.8, format: SaveFormat.JPEG }
         // );
 
-        setLocalImages([result.assets[0].uri, ...localImages]);
+        const newImage = { uri: result.assets[0].uri };
+        setLocalImages([newImage, ...localImages]);
         setCurrentIndex(0);
 
         if (onImageUpload) {
@@ -132,7 +138,8 @@ export default function EboxImageModal({
         //   { compress: 0.8, format: SaveFormat.JPEG }
         // );
 
-        setLocalImages([result.assets[0].uri, ...localImages]);
+        const newImage = { uri: result.assets[0].uri };
+        setLocalImages([newImage, ...localImages]);
         setCurrentIndex(0);
 
         if (onImageUpload) {
@@ -153,18 +160,22 @@ export default function EboxImageModal({
       }
 
       const currentImage = localImages[currentIndex];
+      if (!currentImage.uri) {
+        showError({
+          title:"错误信息",
+          message:"无法保存默认图片"
+        });
+        return;
+      }
+
       const fileUri = FileSystem.cacheDirectory + 'temp_image.jpg';
-
-      // 下载图片到缓存
-      await FileSystem.downloadAsync(currentImage, fileUri);
-
-      // 保存到相册
+      await FileSystem.downloadAsync(currentImage.uri, fileUri);
       await MediaLibrary.saveToLibraryAsync(fileUri);
 
       showSuccess({
         title:"成功",
         message:"保存图片成功"
-      })
+      });
     } catch (error) {
       Alert.alert('保存失败', '保存图片时发生错误');
     }
@@ -199,7 +210,7 @@ export default function EboxImageModal({
               return (
                 <View style={styles.imageContainer}>
                   <Image
-                    source={{ uri: item }}
+                    source={item}
                     style={styles.image}
                     contentFit="contain"
                     onError={(error) => console.log('Image loading error:', error)}

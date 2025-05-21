@@ -1,9 +1,9 @@
-import { stats_runLog_quey_list } from "@/api/runLog/lampRunLogApi";
+import { stats_alarm_log_list } from '@/api/runLog/lampRunLogApi';
 import { formatDate } from '@/utils/date';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Modal, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import SearchSection from '../common/SearchSection';
-// 模拟数据
+
 interface Container {
   id: string;
   device_code: string;
@@ -12,16 +12,31 @@ interface Container {
   deviceId: number;
 }
 
-export interface LampRunLogProps {
+export interface AlarmLogProps {
   containerList: Container[];
   selectedDevice: number | null;
   setSelectedDevice: (device: number | null) => void;
 }
 
+const ALARM_TYPES = [
+  "未知报警",
+  "电压电流恢复正常",
+  "电压超下限报警",
+  "电流超下限报警",
+  "电压电流超下限报警",
+  "关闭线路检测到电流报警",
+  "电压超下限和关闭线路检测到电流报警",
+  "电流超下限和关闭线路检测到电流报警",
+  "输入开关量恢复正常",
+  "输入开关量报警",
+  "烟雾报警",
+  "水浸报警"
+];
+
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 220; // 添加固定卡片高度常量
+const CARD_HEIGHT = 180; // 增加卡片高度以适应更多内容
 
 // Move LogItem outside the main component and optimize it
 const LogItem = memo(({ item }: { item: any }) => {
@@ -51,8 +66,17 @@ const LogItem = memo(({ item }: { item: any }) => {
               <Text className="text-tertiary-900 text-sm">{item.deviceCode}</Text>
             </View>
             <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">操作方式：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.mode}</Text>
+              <Text className="text-tertiary-900 font-bold text-sm">报警类型：</Text>
+              <Text className="text-warning-500 text-sm">{item.alarmType}</Text>
+            </View>
+          </View>
+
+          <View style={styles.logCardGrid}>
+            <View style={styles.logCardGridItem}>
+              <Text className="text-tertiary-900 font-bold text-sm">报警描述：</Text>
+              <Text className={`text-sm ${item.description === '运行正常' ? 'text-success-600' : 'text-error-600'}`}>
+                {item.description}
+              </Text>
             </View>
           </View>
 
@@ -62,27 +86,12 @@ const LogItem = memo(({ item }: { item: any }) => {
               <Text className="text-tertiary-900 text-sm">{item.voltages}V</Text>
             </View>
             <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">三相电流：</Text>
+              <Text className="text-tertiary-900 font-bold text-sm">电流值：</Text>
               <Text className="text-tertiary-900 text-sm">{item.currents}A</Text>
-            </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">用电量：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.power}kW·h</Text>
-            </View>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">设备温度：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.temperature}℃</Text>
             </View>
           </View>
 
           <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">开关灯时间：</Text>
-              <View>
-                <Text className="text-tertiary-900 text-sm">开灯: {item.powerOn}</Text>
-                <Text className="text-tertiary-900 text-sm">关灯: {item.powerOff}</Text>
-              </View>
-            </View>
             <View style={styles.logCardGridItem}>
               <Text className="text-tertiary-900 font-bold text-sm">开关量状态：</Text>
               <Text className="text-tertiary-900 text-sm">{item.ios}</Text>
@@ -98,14 +107,8 @@ const LogItem = memo(({ item }: { item: any }) => {
 
           <View style={styles.logCardGrid}>
             <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">操作时间：</Text>
-              <Text className="text-tertiary-900 text-sm">{formatDate(item.optTime)}</Text>
-            </View>
-          </View>
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
-              <Text className="text-tertiary-900 font-bold text-sm">设备时间：</Text>
-              <Text className="text-tertiary-900 text-sm">{formatDate(item.dateTime)}</Text>
+              <Text className="text-tertiary-900 font-bold text-sm">创建时间：</Text>
+              <Text className="text-tertiary-900 text-sm">{formatDate(item.createTime)}</Text>
             </View>
           </View>
         </View>
@@ -113,21 +116,23 @@ const LogItem = memo(({ item }: { item: any }) => {
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function for memo
   return JSON.stringify(prevProps.item) === JSON.stringify(nextProps.item);
 });
 
 LogItem.displayName = "LogItem";
 
-const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, setSelectedDevice }) => {
+const AlarmLog: React.FC<AlarmLogProps> = ({ containerList, selectedDevice, setSelectedDevice }) => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
+  const [selectedAlarmType, setSelectedAlarmType] = useState<string | null>(null);
+  const [showAlarmTypePicker, setShowAlarmTypePicker] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [current, setCurrent] = useState(1);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
   const loadingRef = useRef(false);
   const flatListRef = useRef<FlatList>(null);
 
@@ -140,7 +145,6 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
 
   const fetchLogs = useCallback(async (page: number = 1, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
-
     try {
       loadingRef.current = true;
       setLoading(true);
@@ -150,13 +154,13 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
         deviceId: selectedDevice || null,
         start_time: startTime ? formatDateTime(startTime) : null,
         end_time: endTime ? formatDateTime(endTime, true) : null,
+        alarmType: selectedAlarmType || null,
       }; 
-      const response = await stats_runLog_quey_list(params);
+      const response = await stats_alarm_log_list(params);
       if (response.code === 200) {
         const newLogs = response.data || [];
         if (page === 1 || isRefresh) {
           setLogs(newLogs);
-          // 重置滚动位置到顶部
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         } else {
           setLogs(prevLogs => [...prevLogs, ...newLogs]);
@@ -172,28 +176,21 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedDevice, startTime, endTime, formatDateTime]);
+  }, [selectedDevice, startTime, endTime, selectedAlarmType, formatDateTime]);
 
-  // 使用 useRef 来跟踪是否是手动刷新
-  const isManualRefresh = useRef(false);
-
-  // 移除对 startTime 和 endTime 的监听，只在设备选择变化时更新
   useEffect(() => {
     setCurrent(1);
     fetchLogs(1, true);
-  }, [selectedDevice, fetchLogs]);
+  }, [selectedDevice,  selectedAlarmType, fetchLogs]);
 
   const handleRefresh = useCallback(() => {
-    if (loadingRef.current) return; // 防止重复刷新
-    isManualRefresh.current = true;
+    if (loadingRef.current) return;
     setRefreshing(true);
     fetchLogs(1, true);
   }, [fetchLogs]);
 
   const handleLoadMore = useCallback(() => {
     if (loadingRef.current || !hasMore || loading) return;
-
-    // 使用 requestAnimationFrame 来优化渲染时机
     requestAnimationFrame(() => {
       fetchLogs(current + 1);
     });
@@ -204,22 +201,27 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
     fetchLogs(1, true);
   }, [fetchLogs]);
 
-  // Optimize renderItem with useCallback
+  const handleAlarmTypeSelect = useCallback((type: string) => {
+    setSelectedAlarmType(type);
+    setShowAlarmTypePicker(false);
+  }, []);
+
+  const handleClearAlarmType = useCallback(() => {
+    setSelectedAlarmType(null);
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: any }) => <LogItem item={item} />,
     []
   );
 
-  // Optimize keyExtractor with useCallback
   const keyExtractor = useCallback(
     (item: any, index: number) => {
-      // 使用设备编号和时间戳组合作为唯一标识
-      return `${item.deviceCode}_${item.optTime}_${index}`;
+      return `${item.deviceCode}_${item.createTime}_${index}`;
     },
     []
   );
 
-  // Optimize getItemLayout with useCallback
   const getItemLayout = useCallback(
     (_: any, index: number) => ({
       length: CARD_HEIGHT,
@@ -229,17 +231,15 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
     []
   );
 
-  // Memoize ListEmptyComponent
   const ListEmptyComponent = useMemo(
     () => (
       <View style={[styles.emptyContainer, { height: '100%' }]}>
-        <Text style={styles.emptyText}>暂无运行日志数据</Text>
+        <Text style={styles.emptyText}>暂无报警日志数据</Text>
       </View>
     ),
     []
   );
 
-  // Memoize ListFooterComponent
   const ListFooterComponent = useMemo(
     () => (
       <View style={styles.footer}>
@@ -258,6 +258,29 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
     [loading, logs.length, hasMore]
   );
 
+  const additionalSearchContent = useMemo(() => (
+    <View style={styles.searchItem}>
+      <Text className="text-tertiary-900 text-sm">报警类型：</Text>
+      <TouchableOpacity
+        style={styles.searchInput}
+        onPress={() => setShowAlarmTypePicker(true)}
+        className="bg-background-100"
+      >
+        <Text className="text-tertiary-900 text-sm">
+          {selectedAlarmType || '请选择报警类型'}
+        </Text>
+      </TouchableOpacity>
+      {selectedAlarmType && (
+        <TouchableOpacity
+          onPress={handleClearAlarmType}
+          className="ml-2"
+        >
+          <Text className="text-error-500 text-sm">清除</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  ), [selectedAlarmType, handleClearAlarmType]);
+
   return (
     <View style={styles.container} className="bg-background-50">
       <SearchSection
@@ -271,6 +294,7 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
         setEndTime={setEndTime}
         // onSearch={handleSearch}
         containerList={containerList}
+        additionalSearchContent={additionalSearchContent}
       />
 
       <FlatList
@@ -300,6 +324,39 @@ const LampRunLog: React.FC<LampRunLogProps> = ({ containerList, selectedDevice, 
           autoscrollToTopThreshold: 10,
         }}
       />
+
+      <Modal
+        visible={showAlarmTypePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAlarmTypePicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent} className="bg-background-50">
+            <View style={styles.modalHeader}>
+              <Text className="text-tertiary-900 text-lg font-bold">选择报警类型</Text>
+              <TouchableOpacity
+                onPress={() => setShowAlarmTypePicker(false)}
+                className="p-2"
+              >
+                <Text className="text-tertiary-500">关闭</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={ALARM_TYPES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.alarmTypeItem}
+                  onPress={() => handleAlarmTypeSelect(item)}
+                >
+                  <Text className="text-tertiary-900">{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -366,6 +423,41 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+  searchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    minWidth: 120,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alarmTypeItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -375,14 +467,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: "#666",
-    flex:1,
+    flex: 1,
   },
   footer: {
     padding: 10,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50, // 确保底部组件有足够的高度
-    marginBottom: 20, // 增加底部间距
+    minHeight: 50,
+    marginBottom: 20,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -402,4 +494,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LampRunLog;
+export default AlarmLog;

@@ -1,4 +1,7 @@
+import { getCurrentBaseUrl } from "@/store/globalStateStore";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,10 +13,20 @@ import {
   Text,
   View
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import EboxImageModal from "./EboxImageModal";
+
+type ImageSource = {
+  uri?: string;
+  default?: any;
+};
+
+type Attachment = {
+  id: number;
+  name: string;
+  url: string;
+  file_type: string;
+};
+
 type ElectricItem = {
   id: number;
   sn: string;
@@ -25,8 +38,8 @@ type ElectricItem = {
     open: boolean;
     warn: boolean;
     loops: boolean[];
-    images?: string[];
   };
+  ebox_attachments?: Attachment[];
 };
 
 type Props = {
@@ -42,7 +55,7 @@ const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120; // 压缩后的卡片高度
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
-
+const DEFAULT_FILE_URL = getCurrentBaseUrl()
 // 添加状态配置常量
 const DEVICE_STATUS = {
   OFFLINE: {
@@ -79,17 +92,16 @@ export default function EboxList({
   hasMore = true,
 }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   // 使用 useRef 存储不需要触发重渲染的值
   const modalRef = useRef({
     setVisible: (visible: boolean) => setModalVisible(visible),
-    setImages: (images: string[]) => setSelectedImages(images),
+    setImages: (images: ImageSource[]) => setSelectedImages(images),
     setIndex: (index: number) => setSelectedIndex(index)
   });
 
-  const handleImagePress = (images: string[], index: number = 0) => {
-    // console.log('handleImagePress called with images:', images);
+  const handleImagePress = (images: ImageSource[], index: number = 0) => {
     setSelectedImages(images);
     setSelectedIndex(index);
     setModalVisible(true);
@@ -108,13 +120,20 @@ export default function EboxList({
 //  },[smartLight])
   // Memoized ebox item component for better performance
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
-    // 使用实际的电箱图片
-    const images = item.device_info.images || [
-      "https://img2.baidu.com/it/u=2278823923,4036155378&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=889",
-      "https://inews.gtimg.com/news_bt/O7ZsQ9IrSfcWAWLPeaRcfeEt5FdyeTfnFYrSGmDSKlU0sAA/1000",
-    ];
-    // console.log('ElectricItem images:', images);
- 
+    const getImages = useCallback(() => {
+      const attachments = item.ebox_attachments || [];
+      if (attachments.length === 0) {
+        return [centralControllerImage];
+      }
+      return attachments.map(attachment => ({
+        uri: `${DEFAULT_FILE_URL}${attachment.url}`
+      }));
+    }, [item.ebox_attachments]);
+    
+    const images = getImages();
+    const thumbnailSource = images[0];
+   console.log(images,thumbnailSource,111);
+   
     return (
       <View >
         <Pressable style={styles.card} className="bg-background-50">
@@ -141,19 +160,11 @@ export default function EboxList({
               style={styles.thumbnailContainer}
               onPress={() => handleImagePress(images)}
             >
-              {images.length > 0 ? (
-                <Image
-                  source={centralControllerImage}
-                  style={styles.thumbnail}
-                  contentFit="contain"
-                />
-              ) : (
-                <Image
-                  source={centralControllerImage}
-                  style={styles.thumbnail}
-                  contentFit="contain"
-                />
-              )}
+              <Image
+                source={thumbnailSource}
+                style={styles.thumbnail}
+                contentFit="contain"
+              />
             </Pressable>
 
             <View style={styles.infoContainer}>
@@ -172,7 +183,7 @@ export default function EboxList({
                 位置: {item.addr}
               </Text>
               <View style={styles.statusContainer}>
-                <Text style={styles.statusText}>状态: </Text>
+                <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
                 {Object.values(DEVICE_STATUS).map((status) => 
                   status.condition(item.device_info) && (
                     <View key={status.label} className=" flex-row items-center">
@@ -185,7 +196,7 @@ export default function EboxList({
                 )}
               </View>
               <View style={styles.loopsContainer}>
-                <Text style={styles.loopsTitle}>回路:</Text>
+                <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
                 <View style={styles.loopsGrid}>
                   {item.device_info.loops.map((loop, index) => (
                     <View key={index} style={styles.loopItem}>

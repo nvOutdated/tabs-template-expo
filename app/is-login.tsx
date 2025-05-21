@@ -3,8 +3,6 @@ import Icon from "@expo/vector-icons/FontAwesome";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Animated,
-  Easing,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -16,6 +14,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
 // import { useAuthStore } from "@/store/auther";
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { getCurrentBaseUrl } from "@/store/globalStateStore";
@@ -43,36 +48,23 @@ export default function LoginIndex() {
     client_id: '6eafe0d2-f2ab-4cdb-b829-6d4555c60b41',
     client_secret: '123456',
   }
-  // 创建动画值
-  const flipAnimation = useRef(new Animated.Value(0)).current;
+  // 替换原来的动画实现
+  const rotation = useSharedValue(0);
 
-  // 设置翻转动画
   useEffect(() => {
-    const animate = () => {
-      flipAnimation.setValue(0);
-      Animated.timing(flipAnimation, {
-        toValue: 1,
-        duration: 6000, 
+    rotation.value = withRepeat(
+      withTiming(360, {
+        duration: 6000,
         easing: Easing.linear,
-        useNativeDriver: true,
-      }).start(() => {
-        // 动画完成后，再次开始
-        setTimeout(animate, 6000); 
-      });
-    };
-    // 开始动画
-    animate();
-    // 组件卸载时清理
-    return () => {
-      flipAnimation.stopAnimation();
-    };
-  }, [flipAnimation]);
+      }),
+      -1, // 无限循环
+      false // 不反向
+    );
+  }, []);
 
-  // 计算旋转角度
-  const flipInterpolate = flipAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
 
   // 从存储中获取保存的用户信息
   useEffect(() => {
@@ -189,7 +181,7 @@ export default function LoginIndex() {
           <Animated.View 
             style={[
               styles.logoContainer,
-              { transform: [{ rotateY: flipInterpolate }] }
+              animatedStyle
             ]}
           >
             <Image
