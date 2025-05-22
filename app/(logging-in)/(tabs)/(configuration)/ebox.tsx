@@ -1,10 +1,11 @@
 import { get_area_list } from "@/api/area/areaApi";
 import { getEboxListApi } from "@/api/street/configuration";
 import AreaDrawer, { Area } from "@/components/ebox/AreaDrawer";
-import AreaHeader from "@/components/ebox/AreaHeader";
 import DeviceDrawer, { AreaWithDevices, Device } from "@/components/ebox/DeviceDrawer";
 import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
+import NormalHeader from "@/components/ebox/NormalHeader";
+import OperationHeader from "@/components/ebox/OperationHeader";
 import { listToTree } from "@/utils/treeUtils";
 import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -226,13 +227,21 @@ export default function EboxScreen() {
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
-        <AreaHeader 
-          onSearch={handleSearch} 
-          handleSetShowDrawer={handleSetShowDrawer}
-          selectedArea={selectedArea}
-          isOperationMode={isOperationMode}
-          onToggleOperationMode={handleToggleOperationMode}
-        />
+        {isOperationMode ? (
+          <OperationHeader
+            handleSetShowDrawer={handleSetShowDrawer}
+            onToggleOperationMode={handleToggleOperationMode}
+            selectedDevicesCount={selectedDevices.size}
+          />
+        ) : (
+          <NormalHeader
+            onSearch={handleSearch}
+            handleSetShowDrawer={handleSetShowDrawer}
+            selectedArea={selectedArea}
+            onToggleOperationMode={handleToggleOperationMode}
+          />
+        )}
+
         {isOperationMode ? (
           <EboxOperationList
             operations={operations}

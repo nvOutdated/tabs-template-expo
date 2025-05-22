@@ -3,19 +3,19 @@ import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProv
 import { Ionicons } from "@expo/vector-icons";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -420,9 +420,9 @@ export default function DeviceDrawer({
       >
         <View style={[styles.header]}>
           <View style={styles.headerContent}>
-            <Text style={[styles.selectedCount, { color: currentTheme.activeTint }]}>
+            {/* <Text style={[styles.selectedCount, { color: currentTheme.activeTint }]}>
               已选择设备: {selectedDevices.size}
-            </Text>
+            </Text> */}
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color={currentTheme.activeTint} />
               <TextInput

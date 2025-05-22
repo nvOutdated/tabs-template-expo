@@ -5,6 +5,7 @@ import { useGlobalStore } from "@/store/globalStateStore";
 import { Stack } from "expo-router";
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Suppress the layout animation warning
 // LogBox.ignoreLogs(['setLayoutAnimationEnabledExperimental']);
@@ -19,17 +20,19 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="is-login" options={{ headerShown: false }} />
-          <Stack.Screen name="(logging-in)" options={{ headerShown: false }} />
-          <Stack.Screen name='change-ip' options={{ headerShown: true,title:'切换访问地址' }}/>
-        </Stack>
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="is-login" options={{ headerShown: false }} />
+            <Stack.Screen name="(logging-in)" options={{ headerShown: false }} />
+            <Stack.Screen name='change-ip' options={{ headerShown: true,title:'切换访问地址' }}/>
+          </Stack>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

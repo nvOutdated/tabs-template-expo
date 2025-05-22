@@ -1,7 +1,14 @@
+import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInLeft, FadeOutRight } from 'react-native-reanimated';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import React, { useCallback, useState } from 'react';
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { FadeInLeft, FadeOutRight, runOnJS } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
+const CIRCLE_SIZE = (width - 48) / 8;
 
 type EboxOperation = {
   id: string;
@@ -11,6 +18,16 @@ type EboxOperation = {
   module: string;
   timestamp: number;
   status: 'pending' | 'processing' | 'completed';
+};
+
+type LoopButton = {
+  id: number;
+  isActive: boolean;
+};
+
+type EboxOperationListProps = {
+  operations: EboxOperation[];
+  onOperationSelect: (operation: EboxOperation) => void;
 };
 
 const formatDate = (timestamp: number) => {
@@ -24,16 +41,79 @@ const formatDate = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
-type EboxOperationListProps = {
-  operations: EboxOperation[];
-  onOperationSelect: (operation: EboxOperation) => void;
-};
-
 const EboxOperationList: React.FC<EboxOperationListProps> = ({
   operations,
   onOperationSelect,
 }) => {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const currentTheme = useCurrentTheme();
   const [selectedOperations, setSelectedOperations] = useState<Set<string>>(new Set());
+  const [loopButtons, setLoopButtons] = useState<LoopButton[]>(
+    Array.from({ length: 8 }, (_, i) => ({ id: i + 1, isActive: false }))
+  );
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastActiveIndex, setLastActiveIndex] = useState<number | null>(null);
+  const [initialTouchIndex, setInitialTouchIndex] = useState<number | null>(null);
+
+  const updateLoopButton = useCallback((index: number, isActive: boolean) => {
+    setLoopButtons(prev => {
+      const newButtons = [...prev];
+      newButtons[index] = { ...newButtons[index], isActive };
+      return newButtons;
+    });
+  }, []);
+
+  const handleLoopPress = useCallback((index: number) => {
+    setLoopButtons(prev => {
+      const newButtons = [...prev];
+      newButtons[index] = { ...newButtons[index], isActive: !newButtons[index].isActive };
+      return newButtons;
+    });
+    setLastActiveIndex(index);
+  }, []);
+
+  const panGesture = Gesture.Pan()
+    .onStart((e) => {
+      runOnJS(setIsDragging)(true);
+      const x = e.absoluteX;
+      const relativeX = x - 12;
+      const index = Math.floor(relativeX / CIRCLE_SIZE);
+      
+      const buttonStartX = index * CIRCLE_SIZE;
+      const buttonEndX = buttonStartX + CIRCLE_SIZE;
+      const touchX = relativeX;
+      
+      if (index >= 0 && index < 8 && touchX >= buttonStartX && touchX <= buttonEndX) {
+        const currentState = loopButtons[index].isActive;
+        runOnJS(setInitialTouchIndex)(index);
+        runOnJS(updateLoopButton)(index, !currentState);
+        runOnJS(setLastActiveIndex)(index);
+      }
+    })
+    .onUpdate((e) => {
+      if (lastActiveIndex === null || initialTouchIndex === null) return;
+      
+      const x = e.absoluteX;
+      const relativeX = x - 12;
+      const index = Math.floor(relativeX / CIRCLE_SIZE);
+      
+      const buttonStartX = index * CIRCLE_SIZE;
+      const buttonEndX = buttonStartX + CIRCLE_SIZE;
+      const touchX = relativeX;
+      
+      if (index >= 0 && index < 8 && index !== lastActiveIndex && 
+          touchX >= buttonStartX && touchX <= buttonEndX) {
+        const isActive = loopButtons[initialTouchIndex].isActive;
+        runOnJS(updateLoopButton)(index, isActive);
+        runOnJS(setLastActiveIndex)(index);
+      }
+    })
+    .onEnd(() => {
+      runOnJS(setIsDragging)(false);
+      runOnJS(setLastActiveIndex)(null);
+      runOnJS(setInitialTouchIndex)(null);
+    });
 
   const toggleSelect = (id: string) => {
     setSelectedOperations(prev => {
@@ -55,6 +135,45 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     }
   };
 
+  const renderLoopButtons = () => (
+    <View style={styles.loopContainer}>
+      {loopButtons.map((button, index) => (
+        <TouchableOpacity
+          key={button.id}
+          style={[
+            styles.loopButton,
+            button.isActive && styles.loopButtonActive
+          ]}
+          onPress={() => handleLoopPress(index)}
+        >
+          <Text style={[
+            styles.loopButtonText,
+            button.isActive && styles.loopButtonTextActive
+          ]}>
+            {button.id}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderOperationButtons = () => (
+    <View style={styles.operationContainer}>
+      <TouchableOpacity style={styles.operationButton} className="bg-success-500">
+        <Ionicons name="sunny" size={20} color="white" />
+        <Text style={styles.operationButtonText}>开灯</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.operationButton} className="bg-error-500">
+        <Ionicons name="moon" size={20} color="white" />
+        <Text style={styles.operationButtonText}>关灯</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.operationButton} className="bg-info-500">
+        <Ionicons name="analytics" size={20} color="white" />
+        <Text style={styles.operationButtonText}>检测状态</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderOperation = ({ item }: { item: EboxOperation }) => (
     <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
       <TouchableOpacity
@@ -69,7 +188,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
           <Ionicons 
             name={selectedOperations.has(item.id) ? "checkbox" : "square-outline"} 
             size={24} 
-            color={selectedOperations.has(item.id) ? "#409eff" : "#909399"}
+            className={selectedOperations.has(item.id) ? "text-primary-500" : "text-tertiary-500"}
           />
         </TouchableOpacity>
         <View style={[styles.typeIndicator, styles[item.type]]} />
@@ -103,7 +222,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="list-outline" size={48} color="#909399" />
+      <Ionicons name="list-outline" size={48} className="text-tertiary-500" />
       <Text style={styles.emptyText} className="text-tertiary-500">暂无操作记录</Text>
     </View>
   );
@@ -120,21 +239,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   return (
     <View style={styles.container} className="bg-background-50">
-      <View style={styles.header} className="bg-background-100 border-b border-tertiary-100">
-        <Text style={styles.headerTitle} className="text-info-500">操作记录</Text>
-        <View style={styles.headerButtons}>
-          {operations.length > 0 && (
-            <TouchableOpacity 
-              style={styles.headerButton} 
-              onPress={toggleSelectAll}
-            >
-              <Text style={styles.selectButton} className="text-info-500">
-                {selectedOperations.size === operations.length ? '取消全选' : '全选'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
       <FlatList
         data={operations}
         renderItem={renderOperation}
@@ -147,6 +251,12 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
       />
+      <GestureDetector gesture={panGesture}>
+        <View style={[styles.operationPanel, { paddingBottom: tabBarHeight + 16 }]} className="bg-background-50 border-t border-outline-200">
+          {renderLoopButtons()}
+          {renderOperationButtons()}
+        </View>
+      </GestureDetector>
     </View>
   );
 };
@@ -155,26 +265,56 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  operationPanel: {
+    padding: 16,
+    paddingBottom: 16,
+  },
+  loopContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  loopButton: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  loopButtonActive: {
+    backgroundColor: '#409EFF',
+    borderColor: '#409EFF',
   },
-  headerButtons: {
+  loopButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  loopButtonTextActive: {
+    color: 'white',
+  },
+  operationContainer: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  headerButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  operationButton: {
+    flex: 1,
+    height: 36,
+    borderRadius: 6,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
   },
-  selectButton: {
+  operationButtonText: {
+    color: 'white',
     fontSize: 14,
+    fontWeight: '500',
   },
   list: {
     padding: 16,
