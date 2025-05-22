@@ -27,3 +27,20 @@ export const getElectricCfg = (params:getElectricCfgParams)=>{
         body:params
     })
 }
+
+// export const  ebox_upload=(params:any)=> {
+//     return request('/smart/file/light/container/upload',{
+//         method:'file',
+//         body:params
+//     })
+// };
+interface lightEboxQuerygetType{
+   id:number
+}
+//指定配电箱信息查询
+export const  light_ebox_query_get=(params:lightEboxQuerygetType)=> {
+    return request('/smart/light/ebox/query/get',{
+        method:'post',
+        body:params
+    })
+};

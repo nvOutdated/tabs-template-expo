@@ -9,9 +9,9 @@ export interface ServerAddress {
 }
 
 export const SERVER_ADDRESSES: ServerAddress[] = [
-  { name: "本地180", ip: "192.168.1.180", httpPort: "48099", wsPort: "38400",filePort:'30086' },
-  { name: "本地197", ip: "192.168.1.197", httpPort: "38099", wsPort: "38400",filePort:'30086' },
-  { name: "吉安", ip: "182.99.177.29", httpPort: "48099", wsPort: "38400",filePort:'30086' }
+  { name: "本地180", ip: "192.168.1.180", httpPort: "48099", wsPort: "38400",filePort:'48095' },
+  { name: "本地197", ip: "192.168.1.197", httpPort: "38099", wsPort: "38400",filePort:'38095' },
+  { name: "吉安", ip: "182.99.177.29", httpPort: "48099", wsPort: "38400",filePort:'48095' }
 ];
 
 export const getBaseUrl = async (): Promise<string> => {

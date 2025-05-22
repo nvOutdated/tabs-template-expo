@@ -13,20 +13,27 @@ const { width } = Dimensions.get('window');
 
 type AreaHeaderProps = {
   onSearch: (text: string) => void;
-  handleSetShowDrawer:()=>void;
-  selectedArea:{
-    area_id:number,
-    name:string,
+  handleSetShowDrawer: () => void;
+  selectedArea: {
+    area_id: number,
+    name: string,
   };
+  isOperationMode: boolean;
+  onToggleOperationMode: () => void;
 };
 
-export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea }: AreaHeaderProps) {
+export default function AreaHeader({ 
+  onSearch, 
+  handleSetShowDrawer, 
+  selectedArea,
+  isOperationMode,
+  onToggleOperationMode 
+}: AreaHeaderProps) {
   const currentTheme = useCurrentTheme();
   const [showSearch, setShowSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const useInputRef = useRef<TextInput>(null);
 
-  // 替换原来的动画实现
   const searchAnimation = useSharedValue(0);
 
   useEffect(() => {
@@ -49,7 +56,6 @@ export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea
     setShowSearch(newShowSearch);
     if (newShowSearch) {
       setSearchText('');
-      // 确保在状态更新后立即聚焦
       setTimeout(() => {
         useInputRef.current?.focus();
       }, 100);
@@ -71,13 +77,15 @@ export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea
 
   return (
     <View style={[styles.container]}>
-      <View style={[styles.header, ]} className="bg-secondary-400">
+      <View style={[styles.header]} className="bg-secondary-400">
         <TouchableOpacity
           style={styles.drawerButton}
           onPress={() => handleSetShowDrawer()}
         >
           <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
-          <Text className="text-tertiary-500 ml-1 align-middle font-medium">区域</Text>
+          <Text className="text-tertiary-500 ml-1 align-middle font-medium">
+          {isOperationMode ? '选择设备' : '区域'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.centerContainer}>
@@ -110,7 +118,7 @@ export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea
             />
           </Animated.View>
         </View>
-
+        
         <View style={styles.rightButtons}>
           <TouchableOpacity
             style={styles.searchButton}
@@ -122,15 +130,14 @@ export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea
               color={currentTheme.activeTint}
             />
           </TouchableOpacity>
-          {/* <TouchableOpacity style={styles.scanButton} onPress={(()=>{
-            router.push("/(logging-in)/(modal)/addDeviceModal")
-          })}>
-            <Ionicons
-              name="add"
-              size={24}
-              color={currentTheme.activeTint}
-            />
-          </TouchableOpacity> */}
+          <TouchableOpacity
+            style={styles.operationButton}
+            onPress={onToggleOperationMode}
+          >
+            <Text style={[styles.operationText, { color: currentTheme.activeTint }]}>
+              {isOperationMode ? '退出操作' : '操作'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -139,17 +146,13 @@ export default function AreaHeader({ onSearch, handleSetShowDrawer, selectedArea
 
 const styles = StyleSheet.create({
   container: {
-    // borderTopWidth: 1,
     margin: 0,
   },
   header: {
     height: 44,
     flexDirection: 'row',
-    // justifyContent:"flex-start",
     alignItems: 'center',
     paddingHorizontal: 5,
-    // borderBottomWidth: 1,
-    // borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   drawerButton: {
     padding: 4,
@@ -176,8 +179,13 @@ const styles = StyleSheet.create({
     padding: 4,
     marginRight: 4,
   },
-  scanButton: {
+  operationButton: {
     padding: 4,
+    marginRight: 4,
+  },
+  operationText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   searchContainer: {
     position: 'absolute',
@@ -192,6 +200,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: 14,
-    lineHeight:2,
+    lineHeight: 2,
   },
 });

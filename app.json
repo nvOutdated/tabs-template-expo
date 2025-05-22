@@ -14,7 +14,10 @@
       "bitcode": false,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "需要获取您的位置信息以显示地图",
-        "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图"
+        "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
@@ -38,7 +41,15 @@
       "package": "com.xdd11.tabscomponentapp",
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResources": true,
-      "enableR8": true
+      "enableR8": true,
+      "networkSecurityConfig": {
+        "cleartextTrafficPermitted": true,
+        "securityConfig": {
+          "trustAnchors": {
+            "certificates": ["system", "user"]
+          }
+        }
+      }
     },
     "web": {
       "bundler": "metro",

@@ -51,7 +51,7 @@ export const useRunLogStore = create<RunLogState & {
     };
 
     set((state) => {
-      const newAlarms = [...state.alarms, newAlarm];
+      const newAlarms = [ newAlarm,...state.alarms];
       const unreadCount = Math.min(
         newAlarms.filter((a) => !a.isRead).length,
         MAX_UNREAD_COUNT

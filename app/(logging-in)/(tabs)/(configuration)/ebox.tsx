@@ -2,28 +2,35 @@ import { get_area_list } from "@/api/area/areaApi";
 import { getEboxListApi } from "@/api/street/configuration";
 import AreaDrawer, { Area } from "@/components/ebox/AreaDrawer";
 import AreaHeader from "@/components/ebox/AreaHeader";
+import DeviceDrawer, { AreaWithDevices, Device } from "@/components/ebox/DeviceDrawer";
 import EboxList from "@/components/ebox/EboxList";
+import EboxOperationList from "@/components/ebox/EboxOperationList";
 import { listToTree } from "@/utils/treeUtils";
+import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 20;
-type AreaHeaderProps = {
-  onSearch: (text: string) => void;
-};
+
 export default function EboxScreen() {
   const [electricBoxes, setElectricBoxes] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
   const [areaList, setAreaList] = useState<Area[]>([]);
+  const [areaWithDevicesList, setAreaWithDevicesList] = useState<AreaWithDevices[]>([]);
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [userInfo, setUserInfo] = useState<string>("");
+  const [isOperationMode, setIsOperationMode] = useState(false);
+  const [operations, setOperations] = useState<any[]>([]);
+  const [selectedDevices, setSelectedDevices] = useState<Set<number>>(new Set());
 
-  // 使用 useRef 存储防抖定时器和加载状态
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef(false);
   const endReachedRef = useRef(false);
@@ -34,11 +41,23 @@ export default function EboxScreen() {
       if(res.code === 200){
         const treeList = listToTree(res.data,'pid','area_id')
         setAreaList(treeList)
+        // 同时设置带设备的区域列表
+        setAreaWithDevicesList(treeList)
       }
     } catch (error) {
       console.log('获取区域列表失败:', error);
     }
   }
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const info = await getUserInfo();
+      if (info) {
+        setUserInfo(info.name || "未登录用户");
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   const loadEleBoxList = useCallback(async(page: number, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
@@ -53,8 +72,6 @@ export default function EboxScreen() {
       };
       
       const res = await getEboxListApi(params);
-      console.log(res,1111);
-      
       if(res.code === 200 && res.data) {
         const formattedEleBoxList = res.data;
         
@@ -138,7 +155,72 @@ export default function EboxScreen() {
   }, []);
 
   const handleSetShowDrawer = useCallback(() => {
-    setShowDrawer(true);
+    if (isOperationMode) {
+      setShowDeviceDrawer(true);
+    } else {
+      setShowDrawer(true);
+    }
+  }, [isOperationMode]);
+
+  const handleEboxUpdate = useCallback((updatedEbox: any) => {
+    setElectricBoxes(prev => 
+      prev.map(ebox => 
+        ebox.id === updatedEbox.id ? updatedEbox : ebox
+      )
+    );
+  }, []);
+
+  const handleToggleOperationMode = useCallback(() => {
+    setIsOperationMode(prev => !prev);
+    // 切换模式时清空选中的设备
+    setSelectedDevices(new Set());
+  }, []);
+
+  const handleOperationSelect = useCallback((operation: any) => {
+    // 处理操作选择
+    console.log('Selected operation:', operation);
+  }, []);
+
+  const handleDeviceSelect = useCallback((deviceId: number) => {
+    setSelectedDevices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(deviceId)) {
+        newSet.delete(deviceId);
+      } else {
+        newSet.add(deviceId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleAreaSelect = useCallback((areaId: number) => {
+    // 获取该区域下的所有设备
+    const getAreaDevices = async () => {
+      try {
+        const res = await getEboxListApi({ area_id: areaId });
+        if (res.code === 200 && res.data) {
+          const devices = res.data;
+          setSelectedDevices(prev => {
+            const newSet = new Set(prev);
+            const allSelected = devices.every((device: Device) => prev.has(device.id));
+            
+            devices.forEach((device: Device) => {
+              if (allSelected) {
+                newSet.delete(device.id);
+              } else {
+                newSet.add(device.id);
+              }
+            });
+            
+            return newSet;
+          });
+        }
+      } catch (error) {
+        console.log('获取区域设备失败:', error);
+      }
+    };
+    
+    getAreaDevices();
   }, []);
 
   return (
@@ -148,19 +230,30 @@ export default function EboxScreen() {
           onSearch={handleSearch} 
           handleSetShowDrawer={handleSetShowDrawer}
           selectedArea={selectedArea}
+          isOperationMode={isOperationMode}
+          onToggleOperationMode={handleToggleOperationMode}
         />
-        <EboxList
-          electricBoxes={electricBoxes}
-          loading={loading}
-          hasMore={hasMore}
-          onEndReached={onEndReached}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-            />
-          }
-        />
+        {isOperationMode ? (
+          <EboxOperationList
+            operations={operations}
+            onOperationSelect={handleOperationSelect}
+          />
+        ) : (
+          <EboxList
+            electricBoxes={electricBoxes}
+            userInfo={userInfo}
+            loading={loading}
+            hasMore={hasMore}
+            onEndReached={onEndReached}
+            onEboxUpdate={handleEboxUpdate}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            }
+          />
+        )}
       </View>
 
       <AreaDrawer
@@ -169,6 +262,15 @@ export default function EboxScreen() {
         areas={areaList}
         selectedArea={selectedArea}
         onSelectArea={handleSelectArea}
+      />
+
+      <DeviceDrawer
+        visible={showDeviceDrawer}
+        onClose={() => setShowDeviceDrawer(false)}
+        areas={areaWithDevicesList}
+        selectedDevices={selectedDevices}
+        onDeviceSelect={handleDeviceSelect}
+        onAreaSelect={handleAreaSelect}
       />
     </GestureHandlerRootView>
   );

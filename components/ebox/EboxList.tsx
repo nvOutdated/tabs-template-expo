@@ -1,4 +1,4 @@
-import { getCurrentBaseUrl } from "@/store/globalStateStore";
+import { useGlobalStore } from '@/store/globalStateStore';
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -39,6 +39,7 @@ type ElectricItem = {
     warn: boolean;
     loops: boolean[];
   };
+  container_id:number;
   ebox_attachments?: Attachment[];
 };
 
@@ -48,6 +49,8 @@ type Props = {
   refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
   hasMore?: boolean;
+  onEboxUpdate?: (updatedEbox: ElectricItem) => void;
+  userInfo:string;
 };
 
 const { width } = Dimensions.get("window");
@@ -55,7 +58,7 @@ const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120; // 压缩后的卡片高度
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
-const DEFAULT_FILE_URL = getCurrentBaseUrl()
+
 // 添加状态配置常量
 const DEVICE_STATUS = {
   OFFLINE: {
@@ -90,10 +93,13 @@ export default function EboxList({
   refreshControl,
   loading,
   hasMore = true,
+  onEboxUpdate,
+  userInfo
 }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const currentServer = useGlobalStore(state => state.currentServer);
   // 使用 useRef 存储不需要触发重渲染的值
   const modalRef = useRef({
     setVisible: (visible: boolean) => setModalVisible(visible),
@@ -126,14 +132,13 @@ export default function EboxList({
         return [centralControllerImage];
       }
       return attachments.map(attachment => ({
-        uri: `${DEFAULT_FILE_URL}${attachment.url}`
+        uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
       }));
-    }, [item.ebox_attachments]);
+    }, [item.ebox_attachments, currentServer]);
     
     const images = getImages();
     const thumbnailSource = images[0];
-   console.log(images,thumbnailSource,111);
-   
+    
     return (
       <View >
         <Pressable style={styles.card} className="bg-background-50">
@@ -290,6 +295,9 @@ export default function EboxList({
         onClose={() => setModalVisible(false)}
         images={selectedImages}
         initialIndex={selectedIndex}
+        containerId={electricBoxes[selectedIndex]?.container_id.toString()}
+        onEboxUpdate={onEboxUpdate}
+        userInfo={userInfo}
       />
     </>
   );
