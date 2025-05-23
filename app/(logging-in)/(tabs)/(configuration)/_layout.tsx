@@ -4,6 +4,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { router } from "expo-router";
 import { Dimensions, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CameraScreen from "./camera";
 import EleBoxScreen from "./ebox";
 import SmartLampScreen from "./smartLamp";
 const Tab = createMaterialTopTabNavigator();
@@ -52,7 +53,7 @@ export default function TabConfigurationLayout() {
             borderBottomWidth: 0,
           },
           tabBarItemStyle: {
-            width: width * 0.2, // 两个标签各占40%总宽度
+            width: width * 0.25, // 两个标签各占40%总宽度
             height: 40,
             padding: 0,
             margin: 0,
@@ -74,6 +75,14 @@ export default function TabConfigurationLayout() {
           }}
           component={SmartLampScreen}
         />
+        <Tab.Screen
+          name="camera"
+          options={{
+            title: "camera",
+          }}
+          component={CameraScreen}
+        />
+
       </Tab.Navigator>
       <View style={{
         position: 'absolute',

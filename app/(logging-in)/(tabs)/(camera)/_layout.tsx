@@ -1,7 +1,7 @@
 import { CustomHeader } from '@/components/public/CustomHeader';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import CameraIndexScreen from './index';
+import PersonalCenterScreen from './index';
 
 export default function CameraLayout() {
   const [isMounted, setIsMounted] = useState(true);
@@ -16,7 +16,7 @@ export default function CameraLayout() {
     <View style={{ flex: 1 }}>
       <CustomHeader title="Camera" />
       <View style={{ flex: 1 }}>
-        <CameraIndexScreen />
+        <PersonalCenterScreen />
       </View>
     </View>
   );
