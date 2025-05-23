@@ -390,7 +390,7 @@ export default function DeviceDrawer({
       );
     }
   }, [isAreaSelected, isAreaPartiallySelected, selectedDevices, currentTheme.activeTint, toggleArea, onAreaSelect, onDeviceSelect]);
-
+  
   const keyExtractor = useCallback((item: any) => {
     return item.type === 'area' ? `area-${item.data.area_id}` : `device-${item.data.id}`;
   }, []);
@@ -419,25 +419,20 @@ export default function DeviceDrawer({
         className="bg-secondary-300"
       >
         <View style={[styles.header]}>
-          <View style={styles.headerContent}>
-            {/* <Text style={[styles.selectedCount, { color: currentTheme.activeTint }]}>
-              已选择设备: {selectedDevices.size}
-            </Text> */}
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color={currentTheme.activeTint} />
-              <TextInput
-                style={[styles.searchInput, { color: currentTheme.activeTint }]}
-                placeholder="搜索设备名称或编号"
-                placeholderTextColor={currentTheme.inactiveTint}
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-              {searchText ? (
-                <TouchableOpacity onPress={() => setSearchText('')}>
-                  <Ionicons name="close-circle" size={20} color={currentTheme.activeTint} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={currentTheme.activeTint} />
+            <TextInput
+              style={[styles.searchInput, { color: currentTheme.activeTint }]}
+              placeholder="搜索设备名称或编号"
+              placeholderTextColor={currentTheme.inactiveTint}
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            {searchText ? (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={20} color={currentTheme.activeTint} />
+              </TouchableOpacity>
+            ) : null}
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons
@@ -490,16 +485,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  headerContent: {
-    flex: 1,
-    flexDirection: 'column',
-    marginRight: 8,
-  },
-  selectedCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -507,6 +492,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 8,
     paddingHorizontal: 8,
+    marginRight: 8,
     height: 36,
   },
   searchInput: {

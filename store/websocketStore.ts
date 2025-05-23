@@ -35,10 +35,14 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
       switch (message.service_name) {
         case "smart-light":
           if(message.message_type==='device'){
-            set({ smartLight: message.device_content || {} });
-            console.log(message);
+            console.log(message.device_content,"消息推送");
+            if(message.device_content?.type==='dataChange'){
+              set({ smartLight: message.device_content || {} });   
+            }
+            
+            // console.log(message);
+
           }
-          
           break;
         default:
           break;

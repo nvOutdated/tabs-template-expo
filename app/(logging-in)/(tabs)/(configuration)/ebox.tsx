@@ -6,12 +6,12 @@ import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { listToTree } from "@/utils/treeUtils";
 import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
 const { width } = Dimensions.get('window');
 const PAGE_SIZE = 20;
 
@@ -35,7 +35,7 @@ export default function EboxScreen() {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef(false);
   const endReachedRef = useRef(false);
-  
+  const { smartLight } = useWebSocketStore();
   const fetchAreaList = async() => {
     try {
       const res = await get_area_list()
@@ -59,7 +59,10 @@ export default function EboxScreen() {
     };
     fetchUserInfo();
   }, []);
-
+  useEffect(()=>{
+    console.log(smartLight,"数据改变");
+    
+  },[smartLight])
   const loadEleBoxList = useCallback(async(page: number, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
     try {
@@ -75,7 +78,7 @@ export default function EboxScreen() {
       const res = await getEboxListApi(params);
       if(res.code === 200 && res.data) {
         const formattedEleBoxList = res.data;
-        
+        // console.log(formattedEleBoxList,"电箱列表");
         setElectricBoxes(prev => {
           if(isRefresh) return formattedEleBoxList;
           const existingIds = new Set(prev.map(eleBox => eleBox.id));
@@ -84,7 +87,7 @@ export default function EboxScreen() {
           );
           return [...prev, ...uniqueNewEleBoxes];
         });
-
+        
         const hasMoreData = formattedEleBoxList.length >= PAGE_SIZE;
         setHasMore(hasMoreData);
         endReachedRef.current = !hasMoreData;

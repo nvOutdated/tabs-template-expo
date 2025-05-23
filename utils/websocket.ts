@@ -5,10 +5,15 @@ import { getToken } from "@/utils/useStorageState";
 export interface WebSocketMessage {
   code: number;
   service_name: string;
-  device_content: object | null;
+  device_content: {
+    type:string;
+    did:number;
+    sn:string;
+  }|null;
   level: string;
   message_type: string;
   system_content: object | null;
+
 }
 
 export class WebSocketManager {
