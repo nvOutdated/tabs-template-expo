@@ -202,7 +202,6 @@ export default function LoginIndex() {
                 value={username}
                 onChangeText={setUsername}
                 returnKeyType="next"
-                blurOnSubmit={false}
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
               />
             </View>

@@ -3,9 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 import { Area } from "./AreaDrawer";
 
@@ -24,6 +24,7 @@ export default function NormalHeader({
 }: NormalHeaderProps) {
   const currentTheme = useCurrentTheme();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const searchWidth = useSharedValue(0);
   const searchOpacity = useSharedValue(0);
 
@@ -35,6 +36,9 @@ export default function NormalHeader({
         stiffness: 100,
       });
       searchOpacity.value = withSpring(0);
+      // 清除搜索内容
+      setSearchValue("");
+      onSearch("");
     } else {
       setIsSearchFocused(true);
       searchWidth.value = withSpring(1, {
@@ -43,6 +47,16 @@ export default function NormalHeader({
       });
       searchOpacity.value = withSpring(1);
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchValue("");
+    onSearch("");
+  };
+
+  const handleSearchChange = (text: string) => {
+    setSearchValue(text);
+    onSearch(text);
   };
 
   const searchAnimatedStyle = useAnimatedStyle(() => {
@@ -76,9 +90,22 @@ export default function NormalHeader({
             style={{ color: currentTheme.activeTint }}
             placeholder="搜索"
             placeholderTextColor={currentTheme.activeTint}
-            onChangeText={onSearch}
+            onChangeText={handleSearchChange}
+            value={searchValue}
             autoFocus={isSearchFocused}
           />
+          {searchValue.length > 0 && (
+            <TouchableOpacity
+              className="p-1"
+              onPress={handleClearSearch}
+            >
+              <Ionicons 
+                name="close-circle" 
+                size={16} 
+                color={currentTheme.activeTint} 
+              />
+            </TouchableOpacity>
+          )}
         </Animated.View>
         <TouchableOpacity
           className={`p-[4px] rounded-md mr-1.5 ${isSearchFocused ? 'bg-background-0' : 'bg-background-100'}`}

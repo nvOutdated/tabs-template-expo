@@ -1,6 +1,5 @@
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { SERVER_ADDRESSES } from "@/constants/defaultConfig";
-import { getUserInfo, saveToken, useAccessAddressState } from "@/utils/useStorageState";
+import { getUserInfo, saveToken } from "@/utils/useStorageState";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -28,11 +27,9 @@ const themes: { name: Theme; color: string }[] = [
 
 export default function PersonIndex() {
   const [userInfo, setUserInfo] = useState<string>("");
-  const [selectedServer, setSelectedServer] = useState<string>(SERVER_ADDRESSES[0].name);
   const { theme, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
-  const [accessAddressState, setAccessAddressState] = useAccessAddressState();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -44,13 +41,6 @@ export default function PersonIndex() {
     };
     fetchUserInfo();
   }, []);
-
-  useEffect(() => {
-    if (accessAddressState[1]) {
-      setSelectedServer(accessAddressState[1]);
-    }
-  }, [accessAddressState]);
-
 
   const logout = async () => {
     await saveToken("");

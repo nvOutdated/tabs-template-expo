@@ -36,7 +36,6 @@ type EboxImageModalProps = {
   initialIndex?: number;
   onImageUpload?: (imageUri: string) => void;
   containerId?: string;
-  onEboxUpdate?: (updatedEbox: any) => void;
   userInfo: string;
 };
 
@@ -47,7 +46,6 @@ export default function EboxImageModal({
   initialIndex = 0,
   onImageUpload,
   containerId,
-  onEboxUpdate,
   userInfo
 }: EboxImageModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -89,7 +87,6 @@ export default function EboxImageModal({
       };
       const response = await light_ebox_query_get(params);
       if (response.code === 200 && response.data) {
-        onEboxUpdate?.(response.data);
         return response.data;
       }
       throw new Error(response.message || '获取更新数据失败');

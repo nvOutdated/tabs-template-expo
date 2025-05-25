@@ -19,13 +19,52 @@ interface ToastOptions {
 const getIcon = (type: ToastType) => {
   switch (type) {
     case 'success':
-      return <MaterialIcons name="check-circle" size={24} color="#fff" />;
+      return <MaterialIcons name="check-circle" size={28} color="#10B981" />;
     case 'error':
-      return <MaterialIcons name="error" size={24} color="#fff" />;
+      return <MaterialIcons name="error-outline" size={28} color="#EF4444" />;
     case 'warning':
-      return <MaterialIcons name="warning" size={24} color="red" />;
+      return <MaterialIcons name="warning-amber" size={28} color="#F59E0B" />;
     case 'info':
-      return <MaterialIcons name="info" size={24} color="#fff" />;
+      return <MaterialIcons name="info-outline" size={28} color="#3B82F6" />;
+  }
+};
+
+const getBackgroundColor = (type: ToastType) => {
+  switch (type) {
+    case 'success':
+      return 'bg-green-50';
+    case 'error':
+      return 'bg-red-50';
+    case 'warning':
+      return 'bg-amber-50';
+    case 'info':
+      return 'bg-blue-50';
+  }
+};
+
+const getBorderColor = (type: ToastType) => {
+  switch (type) {
+    case 'success':
+      return 'border-green-200';
+    case 'error':
+      return 'border-red-200';
+    case 'warning':
+      return 'border-amber-200';
+    case 'info':
+      return 'border-blue-200';
+  }
+};
+
+const getTextColor = (type: ToastType) => {
+  switch (type) {
+    case 'success':
+      return 'text-green-800';
+    case 'error':
+      return 'text-red-800';
+    case 'warning':
+      return 'text-amber-800';
+    case 'info':
+      return 'text-blue-800';
   }
 };
 
@@ -41,13 +80,13 @@ export const useCustomToast = () => {
           <Toast 
             action="success" 
             variant="solid"
-            className="w-40 mt-10 py-1 bg-white border-green-500 border-2"
+            className={`w-80 mt-10 py-2 ${getBackgroundColor('success')} ${getBorderColor('success')} border-2 rounded-lg shadow-lg`}
           >
-            <View className="flex-row items-center gap-1 px-2 py-0">
+            <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('success')}
               <View className="flex-1 flex-col">
-                <ToastTitle className="text-black text-base">{title}</ToastTitle>
-                <ToastDescription className="text-black/80 text-sm">{message}</ToastDescription>
+                <ToastTitle className={`${getTextColor('success')} text-base font-semibold`}>{title}</ToastTitle>
+                <ToastDescription className={`${getTextColor('success')} text-sm opacity-90`}>{message}</ToastDescription>
               </View>
             </View>
           </Toast>
@@ -65,13 +104,13 @@ export const useCustomToast = () => {
           <Toast 
             action="error" 
             variant="solid"
-            className="w-40 mt-10 py-1 bg-white border-red-500 border-2"
+            className={`w-80 mt-10 py-2 ${getBackgroundColor('error')} ${getBorderColor('error')} border-2 rounded-lg shadow-lg`}
           >
-            <View className="flex-row items-center gap-1 px-2 py-0">
+            <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('error')}
               <View className="flex-1 flex-col">
-                <ToastTitle className="text-black text-base">{title}</ToastTitle>
-                <ToastDescription className="text-black/80 text-sm">{message}</ToastDescription>
+                <ToastTitle className={`${getTextColor('error')} text-base font-semibold`}>{title}</ToastTitle>
+                <ToastDescription className={`${getTextColor('error')} text-sm opacity-90`}>{message}</ToastDescription>
               </View>
             </View>
           </Toast>
@@ -80,7 +119,7 @@ export const useCustomToast = () => {
     });
   };
 
-  const showWarning = ({ title = '警告!', message, duration = 3000 }: ToastOptions) => {
+  const showWarning = ({ title = '警告', message, duration = 3000 }: ToastOptions) => {
     toast.show({
       placement: 'top',
       duration,
@@ -89,13 +128,13 @@ export const useCustomToast = () => {
           <Toast 
             action="warning" 
             variant="solid"
-            className="w-40 mt-10 py-1 bg-white border-rose-500 border-2"
+            className={`w-80 mt-10 py-2 ${getBackgroundColor('warning')} ${getBorderColor('warning')} border-2 rounded-lg shadow-lg`}
           >
-            <View className="flex-row items-center gap-1 px-2 py-0">
+            <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('warning')}
               <View className="flex-1 flex-col">
-                <ToastTitle className="text-black text-base">{title}</ToastTitle>
-                <ToastDescription className="text-black/80 text-sm">{message}</ToastDescription>
+                <ToastTitle className={`${getTextColor('warning')} text-base font-semibold`}>{title}</ToastTitle>
+                <ToastDescription className={`${getTextColor('warning')} text-sm opacity-90`}>{message}</ToastDescription>
               </View>
             </View>
           </Toast>
@@ -113,13 +152,13 @@ export const useCustomToast = () => {
           <Toast 
             action="info" 
             variant="solid"
-            className="w-40 mt-10 py-1 bg-white border-blue-500 border-2"
+            className={`w-80 mt-10 py-2 ${getBackgroundColor('info')} ${getBorderColor('info')} border-2 rounded-lg shadow-lg`}
           >
-            <View className="flex-row items-center gap-1 px-2 py-0">
+            <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('info')}
               <View className="flex-1 flex-col">
-                <ToastTitle className="text-black text-base">{title}</ToastTitle>
-                <ToastDescription className="text-black/80 text-sm">{message}</ToastDescription>
+                <ToastTitle className={`${getTextColor('info')} text-base font-semibold`}>{title}</ToastTitle>
+                <ToastDescription className={`${getTextColor('info')} text-sm opacity-90`}>{message}</ToastDescription>
               </View>
             </View>
           </Toast>

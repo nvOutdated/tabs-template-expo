@@ -1,4 +1,7 @@
+import { useCustomToast } from '@/components/public/UIComponents/ToastComponent';
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
+import PasswordModal from '@/components/ui/PasswordModal';
+import { useEboxStore } from '@/store/eboxStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import React, { useCallback, useState } from 'react';
@@ -55,6 +58,12 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [lastActiveIndex, setLastActiveIndex] = useState<number | null>(null);
   const [initialTouchIndex, setInitialTouchIndex] = useState<number | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentOperation, setCurrentOperation] = useState<'open' | 'close' | 'check' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { selectedDevices, allEboxes } = useEboxStore();
+  const toast = useCustomToast();
 
   const updateLoopButton = useCallback((index: number, isActive: boolean) => {
     setLoopButtons(prev => {
@@ -135,6 +144,74 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     }
   };
 
+  const handleOperation = async (type: 'open' | 'close' | 'check') => {
+    if (selectedDevices.size === 0) {
+      toast.showError({
+        message: '请先选择设备',
+      });
+      return;
+    }
+
+    setCurrentOperation(type);
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordConfirm = async (password: string) => {
+    if (!currentOperation) return;
+
+    setIsLoading(true);
+    try {
+      // const deviceIds = Array.from(selectedDevices);
+      // const selectedDevicesInfo = allEboxes.filter(device => deviceIds.includes(device.id));
+      
+      // let response;
+      // if (currentOperation === 'check') {
+      //   response = await fetch('/api/ebox/check-status', {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //     },
+      //     body: JSON.stringify({
+      //       device_ids: deviceIds,
+      //       password,
+      //     }),
+      //   });
+      // } else {
+      //   const loops = loopButtons.map(button => button.isActive);
+      //   response = await fetch(`/api/ebox/${currentOperation === 'open' ? 'open' : 'close'}`, {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //     },
+      //     body: JSON.stringify({
+      //       device_ids: deviceIds,
+      //       loops,
+      //       password,
+      //     }),
+      //   });
+      // }
+
+      // const data = await response.json();
+      // if (data.code === 200) {
+      //   toast.showSuccess({
+      //     message: '操作成功',
+      //   });
+      // } else {
+      //   toast.showError({
+      //     message: data.message || '操作失败',
+      //   });
+      // }
+    } catch (error) {
+      toast.showError({
+        message: '网络错误，请稍后重试',
+      });
+    } finally {
+      setIsLoading(false);
+      setShowPasswordModal(false);
+      setCurrentOperation(null);
+    }
+  };
+
   const renderLoopButtons = () => (
     <View style={styles.loopContainer}>
       {loopButtons.map((button, index) => (
@@ -159,15 +236,27 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   const renderOperationButtons = () => (
     <View style={styles.operationContainer}>
-      <TouchableOpacity style={styles.operationButton} className="bg-success-500">
+      <TouchableOpacity 
+        style={styles.operationButton} 
+        className="bg-success-500"
+        onPress={() => handleOperation('open')}
+      >
         <Ionicons name="sunny" size={20} color="white" />
         <Text style={styles.operationButtonText}>开灯</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.operationButton} className="bg-error-500">
+      <TouchableOpacity 
+        style={styles.operationButton} 
+        className="bg-error-500"
+        onPress={() => handleOperation('close')}
+      >
         <Ionicons name="moon" size={20} color="white" />
         <Text style={styles.operationButtonText}>关灯</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.operationButton} className="bg-info-500">
+      <TouchableOpacity 
+        style={styles.operationButton} 
+        className="bg-info-500"
+        onPress={() => handleOperation('check')}
+      >
         <Ionicons name="analytics" size={20} color="white" />
         <Text style={styles.operationButtonText}>检测状态</Text>
       </TouchableOpacity>
@@ -257,6 +346,17 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
           {renderOperationButtons()}
         </View>
       </GestureDetector>
+
+      <PasswordModal
+        visible={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setCurrentOperation(null);
+        }}
+        onConfirm={handlePasswordConfirm}
+        loading={isLoading}
+        title={currentOperation === 'check' ? '请输入检测密码' : '请输入操作密码'}
+      />
     </View>
   );
 };

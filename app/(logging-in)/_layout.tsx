@@ -32,7 +32,7 @@ export default function AuthLayout(): JSX.Element {
         disconnect();
       }
     };
-  }, [isLoggedIn, isConnected]);
+  }, [isLoggedIn, isConnected, init, disconnect]);
 
   // Show loading indicator while checking authentication status
   if (isLoading) {

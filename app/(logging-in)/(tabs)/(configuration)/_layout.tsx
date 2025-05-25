@@ -64,21 +64,21 @@ export default function TabConfigurationLayout() {
         <Tab.Screen
           name="index"
           options={{
-            title: "ebox",
+            title: "集中器",
           }}
           component={EleBoxScreen}
         />
         <Tab.Screen
           name="smartLamp"
           options={{
-            title: "smart",
+            title: "智慧网关",
           }}
           component={SmartLampScreen}
         />
         <Tab.Screen
           name="camera"
           options={{
-            title: "camera",
+            title: "摄像头",
           }}
           component={CameraScreen}
         />

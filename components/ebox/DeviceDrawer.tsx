@@ -1,7 +1,7 @@
-import { getEboxListApi } from "@/api/street/configuration";
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
+import { useEboxStore } from "@/store/eboxStore";
 import { Ionicons } from "@expo/vector-icons";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -213,8 +213,10 @@ export default function DeviceDrawer({
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
-  const [areaDevices, setAreaDevices] = useState<Map<number, Device[]>>(new Map());
   const [searchText, setSearchText] = useState('');
+  const { allEboxes } = useEboxStore();
+  const flatListRef = useRef<FlatList>(null);
+  const scrollPositionRef = useRef(0);
 
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const opacity = useSharedValue(0);
@@ -232,21 +234,6 @@ export default function DeviceDrawer({
     expandAllAreas(areas);
   }, [areas]);
 
-  // 初始化时获取所有区域的设备
-  useEffect(() => {
-    const fetchAllAreaDevices = async (areas: AreaWithDevices[]) => {
-      for (const area of areas) {
-        await fetchAreaDevices(area.area_id);
-        if (area.children) {
-          await fetchAllAreaDevices(area.children);
-        }
-      }
-    };
-    if (visible) {
-      fetchAllAreaDevices(areas);
-    }
-  }, [areas, visible]);
-
   useEffect(() => {
     if (visible) {
       opacity.value = withTiming(1, {
@@ -257,6 +244,15 @@ export default function DeviceDrawer({
         duration: 250,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
+      // 恢复滚动位置
+      if (scrollPositionRef.current > 0) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToOffset({
+            offset: scrollPositionRef.current,
+            animated: false,
+          });
+        }, 100);
+      }
     } else {
       opacity.value = withTiming(0, {
         duration: 150,
@@ -278,17 +274,6 @@ export default function DeviceDrawer({
     backgroundColor: `rgba(0, 0, 0, ${opacity.value * 0.5})`,
   }));
 
-  const fetchAreaDevices = useCallback(async (areaId: number) => {
-    try {
-      const res = await getEboxListApi({ area_id: areaId });
-      if (res.code === 200 && res.data) {
-        setAreaDevices(prev => new Map(prev).set(areaId, res.data));
-      }
-    } catch (error) {
-      console.log('获取区域设备失败:', error);
-    }
-  }, []);
-
   const toggleArea = useCallback((areaId: number)  => {
     setExpandedAreas(prev => {
       const newSet = new Set(prev);
@@ -302,25 +287,25 @@ export default function DeviceDrawer({
   }, []);
 
   const isAreaSelected = useCallback((area: AreaWithDevices) => {
-    const devices = areaDevices.get(area.area_id) || [];
+    const devices = allEboxes.filter(device => device.area_id === area.area_id);
     if (devices.length === 0) return false;
     return devices.every(device => selectedDevices.has(device.id));
-  }, [areaDevices, selectedDevices]);
+  }, [allEboxes, selectedDevices]);
 
   const isAreaPartiallySelected = useCallback((area: AreaWithDevices) => {
-    const devices = areaDevices.get(area.area_id) || [];
+    const devices = allEboxes.filter(device => device.area_id === area.area_id);
     if (devices.length === 0) return false;
     const hasSelected = devices.some(device => selectedDevices.has(device.id));
     const allSelected = devices.every(device => selectedDevices.has(device.id));
     return hasSelected && !allSelected;
-  }, [areaDevices, selectedDevices]);
+  }, [allEboxes, selectedDevices]);
 
   // 将区域和设备数据扁平化为列表项，并添加搜索过滤
   const listData = useMemo(() => {
     const flattenData = (area: AreaWithDevices, level: number = 0) => {
       const items = [];
       const isExpanded = expandedAreas.has(area.area_id);
-      const devices = areaDevices.get(area.area_id) || [];
+      const devices = allEboxes.filter(device => device.area_id === area.area_id);
       const hasChildren = (area.children && area.children.length > 0) || devices.length > 0;
 
       // 添加区域项
@@ -362,7 +347,7 @@ export default function DeviceDrawer({
     };
 
     return areas.flatMap(area => flattenData(area));
-  }, [areas, expandedAreas, areaDevices, searchText]);
+  }, [areas, expandedAreas, allEboxes, searchText]);
 
   const renderItem = useCallback(({ item }: { item: any }) => {
     if (item.type === 'area') {
@@ -392,7 +377,15 @@ export default function DeviceDrawer({
   }, [isAreaSelected, isAreaPartiallySelected, selectedDevices, currentTheme.activeTint, toggleArea, onAreaSelect, onDeviceSelect]);
   
   const keyExtractor = useCallback((item: any) => {
-    return item.type === 'area' ? `area-${item.data.area_id}` : `device-${item.data.id}`;
+    if (item.type === 'area') {
+      return `area-${item.data.area_id}`;
+    } else {
+      return `device-${item.data.id}-${item.data.sn}`;
+    }
+  }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    scrollPositionRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
   if (!visible) return null;
@@ -443,11 +436,14 @@ export default function DeviceDrawer({
           </TouchableOpacity>
         </View>
         <FlatList
+          ref={flatListRef}
           data={listData}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           removeClippedSubviews={true}
           initialNumToRender={20}
           maxToRenderPerBatch={20}

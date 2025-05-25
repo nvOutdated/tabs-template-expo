@@ -39,7 +39,7 @@ type ElectricItem = {
     warn: boolean;
     loops: boolean[];
   };
-  container_id:number;
+  container_id: number;
   ebox_attachments?: Attachment[];
 };
 
@@ -49,8 +49,7 @@ type Props = {
   refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
   hasMore?: boolean;
-  onEboxUpdate?: (updatedEbox: ElectricItem) => void;
-  userInfo:string;
+  userInfo: string;
 };
 
 const { width } = Dimensions.get("window");
@@ -87,19 +86,19 @@ const DEVICE_STATUS = {
   }
 } as const;
 
-export default function EboxList({
+const EboxList = memo(({
   electricBoxes,
   onEndReached,
   refreshControl,
   loading,
   hasMore = true,
-  onEboxUpdate,
   userInfo
-}: Props) {
+}: Props) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const currentServer = useGlobalStore(state => state.currentServer);
+
   // 使用 useRef 存储不需要触发重渲染的值
   const modalRef = useRef({
     setVisible: (visible: boolean) => setModalVisible(visible),
@@ -107,23 +106,21 @@ export default function EboxList({
     setIndex: (index: number) => setSelectedIndex(index)
   });
 
-  const handleImagePress = (images: ImageSource[], index: number = 0) => {
+  const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
     setSelectedImages(images);
     setSelectedIndex(index);
     setModalVisible(true);
-  };
-  const getConfigurationDetails = (item: ElectricItem) => {
+  }, []);
+
+  const getConfigurationDetails = useCallback((item: ElectricItem) => {
     router.push({
       pathname: "/(logging-in)/(modal)/configuration",
       params: {
         item: JSON.stringify(item),
       },
     });
-  };
-//   useEffect(()=>{
-//     console.log(smartLight,"返回数据");
-    
-//  },[smartLight])
+  }, []);
+
   // Memoized ebox item component for better performance
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
     const getImages = useCallback(() => {
@@ -135,10 +132,10 @@ export default function EboxList({
         uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
       }));
     }, [item.ebox_attachments, currentServer]);
-    
-    const images = getImages();
+
+    const images = useMemo(() => getImages(), [getImages]);
     const thumbnailSource = images[0];
-    
+
     return (
       <View >
         <Pressable style={styles.card} className="bg-background-50">
@@ -189,7 +186,7 @@ export default function EboxList({
               </Text>
               <View style={styles.statusContainer}>
                 <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
-                {Object.values(DEVICE_STATUS).map((status) => 
+                {Object.values(DEVICE_STATUS).map((status) =>
                   status.condition(item.device_info) && (
                     <View key={status.label} className=" flex-row items-center">
                       <View style={[styles.statusDot, styles[status.dotStyle]]} />
@@ -222,14 +219,17 @@ export default function EboxList({
         </Pressable>
       </View>
     );
+  }, (prevProps, nextProps) => {
+    return prevProps.item.id === nextProps.item.id &&
+      prevProps.item.device_info.online === nextProps.item.device_info.online &&
+      prevProps.item.device_info.open === nextProps.item.device_info.open &&
+      prevProps.item.device_info.warn === nextProps.item.device_info.warn;
   });
 
   ElectricItem.displayName = "ElectricItem";
 
-  // Memoized renderItem function
   const renderItem = useCallback(
-    ({ item }: { item: ElectricItem }) => 
-    <ElectricItem item={item} />,
+    ({ item }: { item: ElectricItem }) => <ElectricItem item={item} />,
     []
   );
 
@@ -289,6 +289,14 @@ export default function EboxList({
         ListFooterComponent={ListFooterComponent}
         getItemLayout={getItemLayout}
         removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={10}
+        updateCellsBatchingPeriod={50}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 10
+        }}
       />
       <EboxImageModal
         visible={modalVisible}
@@ -296,12 +304,19 @@ export default function EboxList({
         images={selectedImages}
         initialIndex={selectedIndex}
         containerId={electricBoxes[selectedIndex]?.container_id.toString()}
-        onEboxUpdate={onEboxUpdate}
         userInfo={userInfo}
       />
     </>
   );
-}
+}, (prevProps, nextProps) => {
+  return prevProps.electricBoxes === nextProps.electricBoxes &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.hasMore === nextProps.hasMore;
+});
+
+EboxList.displayName = "EboxList";
+
+export default EboxList;
 
 const styles = StyleSheet.create({
   emptyContainer: {
@@ -405,7 +420,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 2,
-    lineHeight:8,
+    lineHeight: 8,
   },
   online: {
     backgroundColor: "#52c41a",
@@ -422,14 +437,14 @@ const styles = StyleSheet.create({
   onlineText: {
     color: "#52c41a",
   },
-  openText:{
-    color:"#E6A23C"
+  openText: {
+    color: "#E6A23C"
   },
   offlineText: {
     color: "#909399",
   },
-  warnText:{
-     color:"#F56C6C"
+  warnText: {
+    color: "#F56C6C"
   },
   loopsContainer: {
     // marginTop: 4,
