@@ -1,15 +1,22 @@
+import { light_central_detect_status, light_eleBox_ctrl_switch, smart_personal_matchOptCode } from '@/api/street/configuration';
 import { useCustomToast } from '@/components/public/UIComponents/ToastComponent';
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import PasswordModal from '@/components/ui/PasswordModal';
 import { useEboxStore } from '@/store/eboxStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeInLeft, FadeOutRight, runOnJS } from 'react-native-reanimated';
+import Animated, {
+  FadeInLeft,
+  FadeOutRight,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 const { width } = Dimensions.get('window');
 const CIRCLE_SIZE = (width - 48) / 8;
 
@@ -21,6 +28,31 @@ type EboxOperation = {
   module: string;
   timestamp: number;
   status: 'pending' | 'processing' | 'completed';
+  sn: string;
+  deviceName: string;
+  data: {
+    phase3Voltage: number[];
+    phase3Electric: number[];
+    power: number;
+    dateTime: string;
+    powerOff: string;
+    powerOn: string;
+    loops: boolean[];
+    ios: boolean[];
+    enabledWeekly: boolean;
+    enabledAlways: boolean;
+    enabledLocation: boolean;
+    enabledMultiple: boolean;
+    enabledLight: boolean;
+    enabledWater: boolean;
+    enabledOneByOne: boolean;
+    mode: string;
+    optTime: string;
+    eventType: string;
+    reportTime: string;
+    description: string;
+    warn: boolean;
+  };
 };
 
 type LoopButton = {
@@ -31,6 +63,7 @@ type LoopButton = {
 type EboxOperationListProps = {
   operations: EboxOperation[];
   onOperationSelect: (operation: EboxOperation) => void;
+  onWebSocketUpdate?: (data: any) => void;
 };
 
 const formatDate = (timestamp: number) => {
@@ -44,9 +77,35 @@ const formatDate = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
+// 添加模块映射常量
+type ModuleType = '设备状态' | '操作记录' | '报警信息';
+
+const MODULE_MAP: Record<ModuleType, {
+  label: string;
+  color: string;
+  bgColor: string;
+}> = {
+  '设备状态': {
+    label: '设备状态',
+    color: 'text-info-500',
+    bgColor: 'bg-info-50'
+  },
+  '操作记录': {
+    label: '操作记录',
+    color: 'text-success-500',
+    bgColor: 'bg-success-50'
+  },
+  '报警信息': {
+    label: '报警信息',
+    color: 'text-error-500',
+    bgColor: 'bg-error-50'
+  }
+} as const;
+
 const EboxOperationList: React.FC<EboxOperationListProps> = ({
   operations,
   onOperationSelect,
+  onWebSocketUpdate,
 }) => {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -61,10 +120,8 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<'open' | 'close' | 'check' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const { selectedDevices, allEboxes } = useEboxStore();
+  const { selectedDevices } = useEboxStore();
   const toast = useCustomToast();
-
   const updateLoopButton = useCallback((index: number, isActive: boolean) => {
     setLoopButtons(prev => {
       const newButtons = [...prev];
@@ -136,19 +193,40 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selectedOperations.size === operations.length) {
-      setSelectedOperations(new Set());
-    } else {
-      setSelectedOperations(new Set(operations.map(op => op.id)));
-    }
-  };
 
   const handleOperation = async (type: 'open' | 'close' | 'check') => {
     if (selectedDevices.size === 0) {
       toast.showError({
         message: '请先选择设备',
       });
+      return;
+    }
+
+    if (type === 'check') {
+      setIsLoading(true);
+      try {
+        const deviceIds = Array.from(selectedDevices.values()).map(i=>i.device_info.id);
+        const response = await light_central_detect_status({
+          devices: deviceIds
+        });
+
+        if (response.code === 200) {
+          console.log(response);
+          toast.showSuccess({
+            message: '状态检测成功',
+          });
+        } else {
+          toast.showError({
+            message: response.message || '状态检测失败',
+          });
+        }
+      } catch (error) {
+        toast.showError({
+          message: '网络错误，请稍后重试',
+        });
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -161,46 +239,56 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
     setIsLoading(true);
     try {
-      // const deviceIds = Array.from(selectedDevices);
-      // const selectedDevicesInfo = allEboxes.filter(device => deviceIds.includes(device.id));
-      
-      // let response;
-      // if (currentOperation === 'check') {
-      //   response = await fetch('/api/ebox/check-status', {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //     body: JSON.stringify({
-      //       device_ids: deviceIds,
-      //       password,
-      //     }),
-      //   });
-      // } else {
-      //   const loops = loopButtons.map(button => button.isActive);
-      //   response = await fetch(`/api/ebox/${currentOperation === 'open' ? 'open' : 'close'}`, {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //     },
-      //     body: JSON.stringify({
-      //       device_ids: deviceIds,
-      //       loops,
-      //       password,
-      //     }),
-      //   });
-      // }
+      // First verify the password
+      const passwordResponse = await smart_personal_matchOptCode({
+        isCreated: true,
+        optCode: password
+      });
 
-      // const data = await response.json();
-      // if (data.code === 200) {
-      //   toast.showSuccess({
-      //     message: '操作成功',
-      //   });
-      // } else {
-      //   toast.showError({
-      //     message: data.message || '操作失败',
-      //   });
-      // }
+      if (passwordResponse.code !== 200) {
+        toast.showError({
+          message: '密码验证失败',
+        });
+        return;
+      }
+    
+      const deviceIds = Array.from(selectedDevices.values()).map(i=>i.device_info.id);
+      
+      if (currentOperation === 'check') {
+        const response = await light_central_detect_status({
+          devices: deviceIds
+        });
+
+        if (response.code === 200) {
+          console.log(response);
+          toast.showSuccess({
+            message: '状态检测成功',
+          });
+        } else {
+          toast.showError({
+            message: response.message || '状态检测失败',
+          });
+        }
+      } else {
+        const loops = loopButtons.map(button => button.isActive);
+        const response = await light_eleBox_ctrl_switch({
+          deviceIds: deviceIds,
+          isOpen: currentOperation === 'open',
+          loops: loops
+        });
+
+        if (response.code === 200) {
+          console.log(response);
+          
+          toast.showSuccess({
+            message: currentOperation === 'open' ? '开灯成功' : '关灯成功',
+          });
+        } else {
+          toast.showError({
+            message: response.message || (currentOperation === 'open' ? '开灯失败' : '关灯失败'),
+          });
+        }
+      }
     } catch (error) {
       toast.showError({
         message: '网络错误，请稍后重试',
@@ -211,6 +299,8 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       setCurrentOperation(null);
     }
   };
+  
+
 
   const renderLoopButtons = () => (
     <View style={styles.loopContainer}>
@@ -263,51 +353,217 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     </View>
   );
 
-  const renderOperation = ({ item }: { item: EboxOperation }) => (
-    <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
-      <TouchableOpacity
-        style={styles.operationItem}
-        className="bg-background-50"
-        onPress={() => onOperationSelect(item)}
-      >
-        <TouchableOpacity 
-          style={styles.checkbox}
-          onPress={() => toggleSelect(item.id)}
-        >
-          <Ionicons 
-            name={selectedOperations.has(item.id) ? "checkbox" : "square-outline"} 
-            size={24} 
-            className={selectedOperations.has(item.id) ? "text-primary-500" : "text-tertiary-500"}
-          />
-        </TouchableOpacity>
-        <View style={[styles.typeIndicator, styles[item.type]]} />
-        <View style={styles.contentContainer}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title} className="text-error-500" numberOfLines={1}>
-              {item.title}
-            </Text>
-            <Text style={styles.module} className="bg-tertiary-100 text-tertiary-900">
-              {item.module}
-            </Text>
+  const OperationItem: React.FC<{ item: EboxOperation }> = React.memo(({ item }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const animatedHeight = useSharedValue(0);
+    const animatedOpacity = useSharedValue(0);
+    const MAX_HEIGHT = 400;
+    
+    const toggleExpand = useCallback(() => {
+      if (!isExpanded) {
+        animatedHeight.value = withTiming(1, { duration: 300 });
+        animatedOpacity.value = withTiming(1, { duration: 300 });
+      } else {
+        animatedHeight.value = withTiming(0, { duration: 300 });
+        animatedOpacity.value = withTiming(0, { duration: 300 });
+      }
+      setIsExpanded((prev) => !prev);
+    }, [isExpanded, animatedHeight, animatedOpacity]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      height: animatedHeight.value * MAX_HEIGHT,
+      opacity: animatedOpacity.value,
+      overflow: 'hidden',
+    }));
+
+    const moduleStyle = useMemo(() => ({
+      bgColor: MODULE_MAP[item.module as ModuleType]?.bgColor || 'bg-gray-100',
+      color: MODULE_MAP[item.module as ModuleType]?.color || 'text-gray-500',
+      label: MODULE_MAP[item.module as ModuleType]?.label || item.module
+    }), [item.module]);
+
+    const renderLoopButtons = useCallback(() => (
+      <View className="flex-row flex-wrap gap-1">
+        {item.data.loops.map((loop, index) => (
+          <View 
+            key={index} 
+            className={`w-5 h-5 rounded-full justify-center items-center ${
+              loop ? 'bg-blue-500' : 'bg-gray-400'
+            }`}
+          >
+            <Text className="text-white text-xs">{index + 1}</Text>
           </View>
-          <Text style={styles.content} className="text-tertiary-900" numberOfLines={2}>
-            {item.content}
-          </Text>
-          <View style={styles.footerRow}>
-            <Text style={styles.timestamp} className="text-tertiary-500">
-              {formatDate(item.timestamp)}
-            </Text>
-            <View style={[styles.statusBadge, styles[`status_${item.status}`]]}>
-              <Text style={styles.statusText}>
-                {item.status === 'pending' ? '待处理' : 
-                 item.status === 'processing' ? '处理中' : '已完成'}
+        ))}
+      </View>
+    ), [item.data.loops]);
+
+    const renderIOButtons = useCallback(() => (
+      <View className="flex-row flex-wrap gap-2">
+        {item.data.ios.map((io, index) => (
+          <View 
+            key={index} 
+            className={`w-6 h-6 rounded-full justify-center items-center ${
+              io ? 'bg-blue-500' : 'bg-gray-400'
+            }`}
+          >
+            <Text className="text-white text-xs">{index + 1}</Text>
+          </View>
+        ))}
+      </View>
+    ), [item.data.ios]);
+
+    const renderPlanTags = useCallback(() => (
+      <View className="flex-row flex-wrap gap-2">
+        {item.data.enabledWeekly && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">周控</Text>
+        )}
+        {item.data.enabledAlways && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">常亮</Text>
+        )}
+        {item.data.enabledLocation && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">经纬度</Text>
+        )}
+        {item.data.enabledMultiple && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">多时段</Text>
+        )}
+        {item.data.enabledLight && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">本地光控</Text>
+        )}
+        {item.data.enabledWater && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">水浸烟雾</Text>
+        )}
+        {item.data.enabledOneByOne && (
+          <Text className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">逐一送电</Text>
+        )}
+      </View>
+    ), [item.data]);
+
+    return (
+      <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
+        <TouchableOpacity 
+          onPress={toggleExpand}
+          className="bg-background-50 p-4 rounded-lg mb-2 shadow-sm"
+        >
+          {/* 顶部信息：SN和模块 */}
+          <View className="flex-row justify-between items-center mb-2">
+            <View className="flex-row items-center flex-1">
+              <Text className={`text-base font-bold mr-2 ${item.type === 'warning' ? 'text-red-500' : ''}`}>
+                {item.sn}
+              </Text>
+              <Text className="text-base flex-1" numberOfLines={1}>{item.deviceName}</Text>
+            </View>
+            <View className={`px-2 py-1 rounded ${moduleStyle.bgColor}`}>
+              <Text className={moduleStyle.color}>
+                {moduleStyle.label}
               </Text>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
+
+          {/* 输出控制状态 */}
+          <View className="flex-row items-center mb-2">
+            <Text className="text-sm text-gray-500 mr-2">输出控制:</Text>
+            {renderLoopButtons()}
+          </View>
+
+          {/* 当前动作方式及时间 */}
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1">
+              <Text className="text-sm text-gray-500">当前动作: {item.data.mode}</Text>
+              <Text className="text-xs text-gray-500">{item.data.optTime}</Text>
+            </View>
+            <Ionicons 
+              name={isExpanded ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color="#666"
+            />
+          </View>
+
+          {/* 展开的详细信息 */}
+          <Animated.View style={animatedStyle}>
+            <View className="mt-3 pt-3 border-t border-gray-200">
+              {/* 电压电流信息 */}
+              <View className="flex-row justify-between mb-3">
+                <View className="flex-1 mr-2">
+                  <Text className="text-sm text-gray-500 mb-1">三相电压(V)</Text>
+                  <View className="space-y-1">
+                    {item.data.phase3Voltage.map((voltage, index) => (
+                      <View key={index} className="flex-row items-center">
+                        <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                        <Text className="text-sm">{voltage}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View className="flex-1 mx-2">
+                  <Text className="text-sm text-gray-500 mb-1">三相电流(A)</Text>
+                  <View className="space-y-1">
+                    {item.data.phase3Electric.map((current, index) => (
+                      <View key={index} className="flex-row items-center">
+                        <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                        <Text className="text-sm">{current}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View className="flex-1 ml-2">
+                  <Text className="text-sm text-gray-500 mb-1">用电量(Kwh)</Text>
+                  <Text className="text-sm">{item.data.power}</Text>
+                </View>
+              </View>
+
+              {/* 时间信息 */}
+              <View className="flex-row justify-between mb-3">
+                <View className="flex-1 mr-2">
+                  <Text className="text-sm text-gray-500 mb-1">设备时钟</Text>
+                  <Text className="text-sm">{item.data.dateTime}</Text>
+                </View>
+                <View className="flex-1 ml-2">
+                  <Text className="text-sm text-gray-500 mb-1">日出日落</Text>
+                  <View className="space-y-1">
+                    <Text className="text-sm">日出: {item.data.powerOff}</Text>
+                    <Text className="text-sm">日落: {item.data.powerOn}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* I/O状态 */}
+              <View className="mb-3">
+                <View className="flex-row items-center mb-2">
+                  <Text className="text-sm text-gray-500 w-20">输入开关</Text>
+                  {renderIOButtons()}
+                </View>
+              </View>
+
+              {/* 预案启用情况 */}
+              <View className="mb-3">
+                <Text className="text-sm text-gray-500 mb-2">启用预案</Text>
+                {renderPlanTags()}
+              </View>
+
+              {/* 运行描述 */}
+              <View className="border-t border-gray-200 pt-3">
+                <Text className={`text-sm ${item.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
+                  {item.content}
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }, (prevProps, nextProps) => {
+    return prevProps.item.id === nextProps.item.id;
+  });
+
+  OperationItem.displayName = 'OperationItem';
+
+  const renderItem = useCallback(({ item }: { item: EboxOperation }) => (
+    <OperationItem item={item} />
+  ), []);
+
+  const keyExtractor = useCallback((item: EboxOperation) => item.id, []);
 
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>
@@ -330,8 +586,8 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     <View style={styles.container} className="bg-background-50">
       <FlatList
         data={operations}
-        renderItem={renderOperation}
-        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
         contentContainerStyle={[
           styles.list,
           operations.length === 0 && styles.emptyList
@@ -339,6 +595,9 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         ListEmptyComponent={EmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
       />
       <GestureDetector gesture={panGesture}>
         <View style={[styles.operationPanel, { paddingBottom: tabBarHeight + 16 }]} className="bg-background-50 border-t border-outline-200">
@@ -431,86 +690,110 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   operationItem: {
-    flexDirection: 'row',
-    padding: 12,
+    padding: 16,
     borderRadius: 8,
     marginBottom: 8,
-    alignItems: 'center',
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  checkbox: {
-    marginRight: 8,
-    padding: 4,
-  },
-  typeIndicator: {
-    width: 4,
-    borderRadius: 2,
-    marginRight: 12,
-  },
-  alarm: {
-    backgroundColor: '#F56C6C',
-  },
-  warning: {
-    backgroundColor: '#E6A23C',
-  },
-  info: {
-    backgroundColor: '#409EFF',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  titleRow: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  title: {
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deviceId: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginRight: 8,
+  },
+  deviceName: {
+    fontSize: 16,
+    flex: 1,
+  },
+  warningText: {
+    color: '#F56C6C',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  infoColumn: {
     flex: 1,
     marginRight: 8,
   },
-  module: {
+  label: {
     fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  content: {
-    fontSize: 14,
+    color: '#666',
     marginBottom: 4,
-    lineHeight: 20,
   },
-  footerRow: {
+  value: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  subValue: {
+    fontSize: 12,
+    color: '#666',
+  },
+  ioSection: {
+    marginBottom: 12,
+  },
+  ioRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  timestamp: {
+  loopsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  loopBall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loopActive: {
+    backgroundColor: '#409EFF',
+  },
+  loopInactive: {
+    backgroundColor: '#909399',
+  },
+  loopText: {
+    color: 'white',
     fontSize: 12,
   },
-  statusBadge: {
+  planSection: {
+    marginBottom: 12,
+  },
+  planContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  planItem: {
+    fontSize: 12,
+    color: '#409EFF',
+    backgroundColor: '#ecf5ff',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  status_pending: {
-    backgroundColor: '#E6A23C',
+  descriptionSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 12,
   },
-  status_processing: {
-    backgroundColor: '#409EFF',
-  },
-  status_completed: {
-    backgroundColor: '#67C23A',
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#FFFFFF',
+  description: {
+    fontSize: 14,
+    color: '#00D86C',
   },
   emptyContainer: {
     flex: 1,
@@ -521,6 +804,16 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 16,
+  },
+  valueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  phaseLabel: {
+    fontSize: 12,
+    color: '#666',
+    width: 24,
   },
 });
 

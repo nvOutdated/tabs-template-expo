@@ -1,5 +1,5 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { useEboxStore } from "@/store/eboxStore";
+import { ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { Ionicons } from "@expo/vector-icons";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -33,6 +33,7 @@ export type Device = {
     open: boolean;
     warn: boolean;
     loops: boolean[];
+    id:number;
   };
 };
 
@@ -75,7 +76,7 @@ type DeviceDrawerProps = {
   visible: boolean;
   onClose: () => void;
   areas: AreaWithDevices[];
-  selectedDevices: Set<number>;
+  selectedDevices: Map<number, ElectricItem>;
   onDeviceSelect: (deviceId: number) => void;
   onAreaSelect: (areaId: number) => void;
 };

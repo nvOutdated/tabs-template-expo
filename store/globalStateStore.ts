@@ -33,7 +33,8 @@ export const getCurrentBaseUrl = () => {
 // 导出一个同步获取当前服务器WebSocket URL的函数
 export const getCurrentBaseWs = () => {
     const server = getCurrentServer()
-    return `ws://${server.ip}:${server.wsPort}`
+    // return `ws://${server.ip}:${server.wsPort}`
+    return `http://192.168.1.215:38300`
 } 
 
 export const getCurrentFileUrl = () => {

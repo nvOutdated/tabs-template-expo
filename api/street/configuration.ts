@@ -7,6 +7,16 @@ interface getElectricCfgParams{
     cfg_type:string,
     cfg_id:number
 }
+interface lightEleBoxCtrlSwitch{
+    deviceIds:number[],
+    isOpen:boolean,
+    loops:boolean[],
+
+}
+interface smartPersonalMatchOptCode{
+    isCreated:boolean,
+    optCode:string
+}
 export const getContainerListApi =(params:any)=>{
     return request('/smart/light/container/query/list',{
         method:'post',
@@ -44,3 +54,27 @@ export const  light_ebox_query_get=(params:lightEboxQuerygetType)=> {
         body:params
     })
 };
+
+//集中器开关灯
+export const  light_eleBox_ctrl_switch=(params:lightEleBoxCtrlSwitch)=> {
+    return request('/smart/light/devicectrl/sendSwitchCmd',{
+        method:'post',
+        body:params
+    })
+};
+
+//检测集中器状态
+export const  light_central_detect_status=(params:any)=> {
+    return request('/smart/light/central/detectStatus',{
+        method:'post',
+        body:params
+    })
+}
+
+//操作密码检验
+export const  smart_personal_matchOptCode=(params:smartPersonalMatchOptCode)=> {
+    return request('/smart/auth/personal/matchOptCode',{
+        method:'post',
+        body:params
+    })
+}

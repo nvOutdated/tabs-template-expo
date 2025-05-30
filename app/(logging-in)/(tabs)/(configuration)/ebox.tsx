@@ -6,13 +6,13 @@ import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
-import { ElectricItem, useEboxStore } from "@/store/eboxStore";
+import { EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { listToTree } from "@/utils/treeUtils";
 import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
 const { width } = Dimensions.get('window');
 
 export default function EboxScreen() {
@@ -25,7 +25,6 @@ export default function EboxScreen() {
   const [areaWithDevicesList, setAreaWithDevicesList] = useState<AreaWithDevices[]>([]);
   const [userInfo, setUserInfo] = useState<string>("");
   const [isOperationMode, setIsOperationMode] = useState(false);
-  const [operations, setOperations] = useState<any[]>([]);
   const [electricBoxes, setElectricBoxes] = useState<ElectricItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -33,12 +32,16 @@ export default function EboxScreen() {
   const [searchText, setSearchText] = useState("");
   const loadingRef = useRef(false);
   const endReachedRef = useRef(false);
-
+  const {WS_SmartLight_Data} = useWebSocketStore()
   const {
     initializeEboxTree,
     selectedDevices,
     setSelectedDevices,
     toggleDeviceSelection,
+    allEboxes,
+    updateDeviceStatus,
+    operations,
+    addOperation,
   } = useEboxStore();
 
   const fetchAreaList = async() => {
@@ -114,7 +117,62 @@ export default function EboxScreen() {
     };
     fetchUserInfo();
   }, []);
-
+  
+  useEffect(()=>{
+    if (
+     ( WS_SmartLight_Data?.type === 'dataChange'|| WS_SmartLight_Data?.type === 'warning')&& 
+      WS_SmartLight_Data?.did && 
+      WS_SmartLight_Data?.deviceName && 
+      WS_SmartLight_Data?.data?.eventType && 
+      WS_SmartLight_Data?.data?.description && 
+      WS_SmartLight_Data?.data?.mode && 
+      WS_SmartLight_Data?.data?.optTime && 
+      WS_SmartLight_Data?.data?.dateTimeMillis
+    ) {
+      console.log("WebSocket数据更新:", WS_SmartLight_Data);
+      
+      // 更新设备状态
+      updateDeviceStatus(WS_SmartLight_Data.did, WS_SmartLight_Data.data);
+      
+      // 添加操作记录
+      const newOperation: EboxOperation = {
+        id: `${WS_SmartLight_Data.did}_${Date.now()}`,
+        title: `${WS_SmartLight_Data.deviceName} - ${WS_SmartLight_Data.data.eventType}`,
+        content: `设备状态: ${WS_SmartLight_Data.data.description}\n操作模式: ${WS_SmartLight_Data.data.mode}\n操作时间: ${WS_SmartLight_Data.data.optTime}`,
+        type: WS_SmartLight_Data.data.warn ? 'warning' : 'info',
+        module: '设备状态',
+        timestamp: WS_SmartLight_Data.data.dateTimeMillis,
+        status: 'completed',
+        sn: WS_SmartLight_Data.sn || '',
+        deviceName: WS_SmartLight_Data.deviceName,
+        data: {
+          phase3Voltage: WS_SmartLight_Data.data.phase3Voltage || [],
+          phase3Electric: WS_SmartLight_Data.data.phase3Electric || [],
+          power: WS_SmartLight_Data.data.power || 0,
+          dateTime: WS_SmartLight_Data.data.dateTime || '',
+          powerOff: WS_SmartLight_Data.data.powerOff || '',
+          powerOn: WS_SmartLight_Data.data.powerOn || '',
+          loops: WS_SmartLight_Data.data.loops || [],
+          ios: WS_SmartLight_Data.data.ios || [],
+          enabledWeekly: WS_SmartLight_Data.data.enabledWeekly || false,
+          enabledAlways: WS_SmartLight_Data.data.enabledAlways || false,
+          enabledLocation: WS_SmartLight_Data.data.enabledLocation || false,
+          enabledMultiple: WS_SmartLight_Data.data.enabledMultiple || false,
+          enabledLight: WS_SmartLight_Data.data.enabledLight || false,
+          enabledWater: WS_SmartLight_Data.data.enabledWater || false,
+          enabledOneByOne: WS_SmartLight_Data.data.enabledOneByOne || false,
+          mode: WS_SmartLight_Data.data.mode || '',
+          optTime: WS_SmartLight_Data.data.optTime || '',
+          eventType: WS_SmartLight_Data.data.eventType || '',
+          reportTime: WS_SmartLight_Data.data.reportTime || '',
+          description: WS_SmartLight_Data.data.description || '',
+          warn: WS_SmartLight_Data.data.warn || false
+        }
+      };
+      
+      addOperation(newOperation);
+    }
+  },[WS_SmartLight_Data, updateDeviceStatus, addOperation])
   // 初始加载
   useEffect(() => {
     fetchAreaList();
@@ -167,7 +225,7 @@ export default function EboxScreen() {
 
   const handleToggleOperationMode = useCallback(() => {
     setIsOperationMode(prev => !prev);
-    setSelectedDevices(new Set());
+    setSelectedDevices(new Map());
   }, [setSelectedDevices]);
 
   const handleOperationSelect = useCallback((operation: any) => {
@@ -175,24 +233,27 @@ export default function EboxScreen() {
   }, []);
 
   const handleDeviceSelect = useCallback((deviceId: number) => {
-    toggleDeviceSelection(deviceId);
-  }, [toggleDeviceSelection]);
+    const device = allEboxes.find(d => d.id === deviceId);
+    if (device) {
+      toggleDeviceSelection(device);
+    }
+  }, [allEboxes, toggleDeviceSelection]);
 
   const handleAreaSelect = useCallback((areaId: number) => {
-    const areaDevices = electricBoxes.filter(device => device.area_id === areaId);
+    const areaDevices = allEboxes.filter(device => device.area_id === areaId);
     const allSelected = areaDevices.every(device => selectedDevices.has(device.id));
     
-    const newSelectedDevices = new Set(selectedDevices);
+    const newSelectedDevices = new Map(selectedDevices);
     areaDevices.forEach(device => {
       if (allSelected) {
         newSelectedDevices.delete(device.id);
       } else {
-        newSelectedDevices.add(device.id);
+        newSelectedDevices.set(device.id, device);
       }
     });
     
     setSelectedDevices(newSelectedDevices);
-  }, [electricBoxes, selectedDevices, setSelectedDevices]);
+  }, [allEboxes, selectedDevices, setSelectedDevices]);
 
   return (
     <GestureHandlerRootView className="flex-1">

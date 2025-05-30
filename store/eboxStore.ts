@@ -1,6 +1,41 @@
 import { getEboxListApi } from '@/api/street/configuration';
 import { create } from 'zustand';
 
+export type EboxOperation = {
+  id: string;
+  title: string;
+  content: string;
+  type: 'alarm' | 'warning' | 'info';
+  module: string;
+  timestamp: number;
+  status: 'pending' | 'processing' | 'completed';
+  sn: string;
+  deviceName: string;
+  data: {
+    phase3Voltage: number[];
+    phase3Electric: number[];
+    power: number;
+    dateTime: string;
+    powerOff: string;
+    powerOn: string;
+    loops: boolean[];
+    ios: boolean[];
+    enabledWeekly: boolean;
+    enabledAlways: boolean;
+    enabledLocation: boolean;
+    enabledMultiple: boolean;
+    enabledLight: boolean;
+    enabledWater: boolean;
+    enabledOneByOne: boolean;
+    mode: string;
+    optTime: string;
+    eventType: string;
+    reportTime: string;
+    description: string;
+    warn: boolean;
+  };
+};
+
 export type ElectricItem = {
   id: number;
   sn: string;
@@ -13,6 +48,7 @@ export type ElectricItem = {
     open: boolean;
     warn: boolean;
     loops: boolean[];
+    id:number;
   };
   container_id: number;
   ebox_attachments?: {
@@ -27,22 +63,26 @@ interface EboxStore {
   allEboxes: ElectricItem[];
   searchText: string;
   selectedAreaId: number | null;
-  selectedDevices: Set<number>;
+  selectedDevices: Map<number, ElectricItem>;
+  operations: EboxOperation[];
   
   // Actions
   initializeEboxTree: () => Promise<void>;
   updateEboxNode: (updatedEbox: ElectricItem) => void;
   setSearchText: (text: string) => void;
   setSelectedAreaId: (areaId: number | null) => void;
-  setSelectedDevices: (devices: Set<number>) => void;
-  toggleDeviceSelection: (deviceId: number) => void;
+  setSelectedDevices: (devices: Map<number, ElectricItem>) => void;
+  toggleDeviceSelection: (device: ElectricItem) => void;
+  updateDeviceStatus: (deviceId: number, status: any) => void;
+  addOperation: (operation: EboxOperation) => void;
 }
 
 export const useEboxStore = create<EboxStore>((set, get) => ({
   allEboxes: [],
   searchText: '',
   selectedAreaId: null,
-  selectedDevices: new Set(),
+  selectedDevices: new Map(),
+  operations: [],
 
   initializeEboxTree: async () => {
     try {
@@ -71,19 +111,45 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
     set({ selectedAreaId: areaId });
   },
 
-  setSelectedDevices: (devices: Set<number>) => {
+  setSelectedDevices: (devices: Map<number, ElectricItem>) => {
     set({ selectedDevices: devices });
   },
 
-  toggleDeviceSelection: (deviceId: number) => {
+  toggleDeviceSelection: (device: ElectricItem) => {
     set(state => {
-      const newSelectedDevices = new Set(state.selectedDevices);
-      if (newSelectedDevices.has(deviceId)) {
-        newSelectedDevices.delete(deviceId);
+      const newSelectedDevices = new Map(state.selectedDevices);
+      if (newSelectedDevices.has(device.id)) {
+        newSelectedDevices.delete(device.id);
       } else {
-        newSelectedDevices.add(deviceId);
+        newSelectedDevices.set(device.id, device);
       }
       return { selectedDevices: newSelectedDevices };
     });
+  },
+
+  updateDeviceStatus: (deviceId: number, status: any) => {
+    set(state => ({
+      allEboxes: state.allEboxes.map(ebox => {
+        if (ebox.device_info.id === deviceId) {
+          return {
+            ...ebox,
+            device_info: {
+              ...ebox.device_info,
+              online: true,
+              open: status.open,
+              warn: status.warn,
+              loops: status.loops
+            }
+          };
+        }
+        return ebox;
+      })
+    }));
+  },
+
+  addOperation: (operation: EboxOperation) => {
+    set(state => ({
+      operations: [operation, ...state.operations]
+    }));
   }
 })); 

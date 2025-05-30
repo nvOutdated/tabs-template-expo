@@ -42,7 +42,7 @@ export default function ConfigurationPage() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const {smartLight} = useWebSocketStore()
+  const {WS_SmartLight_Data} = useWebSocketStore()
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,11 +143,11 @@ export default function ConfigurationPage() {
   useEffect(()=>{
     
      const item = JSON.parse(params.item as string);
-     console.log(item.device_info.id,smartLight.did);
-     if(item.device_info.id===smartLight.did){
+     console.log(item.device_info.id,WS_SmartLight_Data?.did);
+     if(item.device_info.id===WS_SmartLight_Data?.did){
       fetchConfig();
      }
-  },[smartLight])
+  },[WS_SmartLight_Data])
   const handleBack = () => {
     router.back();
   };

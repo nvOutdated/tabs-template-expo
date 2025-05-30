@@ -6,7 +6,7 @@ export default function WebSocketExample() {
   // 从store中获取WebSocket状态和方法
   const { 
     isConnected, 
-    smartLight, 
+    WS_SmartLight_Data, 
     init, 
     disconnect, 
     sendMessage 
@@ -41,7 +41,7 @@ export default function WebSocketExample() {
       <View className="mb-4">
         <Text className="text-lg">接收到的数据:</Text>
         <Text className="mt-2">
-          {JSON.stringify(smartLight, null, 2)}
+          {JSON.stringify(WS_SmartLight_Data, null, 2)}
         </Text>
       </View>
 
