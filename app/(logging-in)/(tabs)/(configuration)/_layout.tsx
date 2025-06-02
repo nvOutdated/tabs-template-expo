@@ -18,10 +18,13 @@ export default function TabConfigurationLayout() {
     <Text
       style={{
         color,
-        fontSize: focused ? 20 : 16,
-        fontWeight: focused ? '800' : '400',
+        fontSize: focused ? 16 : 14,
+        fontWeight: focused ? '700' : '400',
         textTransform: 'none',
-        lineHeight: 20,
+        lineHeight: 36,
+        height: 36,
+        textAlignVertical: 'center',
+        textAlign: 'center',
       }}
     >
       {children}
@@ -40,25 +43,28 @@ export default function TabConfigurationLayout() {
           tabBarActiveTintColor: currentTheme.activeTint,
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
-            // display: "none"
             borderColor: currentTheme.textColor
           },
           tabBarStyle: {
             backgroundColor: 'transparent',
-            height: 45,
+            height: 40,
             padding: 0,
-            marginTop: insets.top - 5,
+            marginTop: insets.top - 10,
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
+            borderRadius: 1,
           },
           tabBarItemStyle: {
-            width: width * 0.25, // 两个标签各占40%总宽度
+            width: width * 0.25,
             height: 40,
             padding: 0,
             margin: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
           },
           tabBarLabel: renderLabel,
+          tabBarGap: 0,
         }}
       >
         <Tab.Screen
@@ -89,19 +95,19 @@ export default function TabConfigurationLayout() {
         right: 0,
         top: insets.top - 5,
         width: width * 0.1,
-        height: 40,
+        height: 36,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: currentTheme.headerBg,
         zIndex: 1,
       }}>
         <TouchableOpacity
-          className="flex-row items-center w-full h-full justify-center pt-2"
+          className="flex-row items-center w-full h-full justify-center pt-1"
           onPress={() => {router.push("/(logging-in)/(modal)/addDeviceModal") }}
         >
           <Ionicons
               name="add"
-              size={24}
+              size={22}
               color={currentTheme.activeTint}
             />
         </TouchableOpacity>

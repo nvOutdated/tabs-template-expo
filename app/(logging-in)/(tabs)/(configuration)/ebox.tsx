@@ -6,7 +6,7 @@ import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
-import { EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
+import { DEVICE_STATUS, EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { listToTree } from "@/utils/treeUtils";
 import { getUserInfo } from "@/utils/useStorageState";
@@ -119,54 +119,57 @@ export default function EboxScreen() {
   }, []);
   
   useEffect(()=>{
-    if (
-     ( WS_SmartLight_Data?.type === 'dataChange'|| WS_SmartLight_Data?.type === 'warning')&& 
-      WS_SmartLight_Data?.did && 
-      WS_SmartLight_Data?.deviceName && 
-      WS_SmartLight_Data?.data?.eventType && 
-      WS_SmartLight_Data?.data?.description && 
-      WS_SmartLight_Data?.data?.mode && 
-      WS_SmartLight_Data?.data?.optTime && 
-      WS_SmartLight_Data?.data?.dateTimeMillis
-    ) {
+    if (WS_SmartLight_Data?.did &&
+       WS_SmartLight_Data?.deviceName&&
+       (WS_SmartLight_Data.type==='dataChange'||WS_SmartLight_Data.type==='warning')) {
       console.log("WebSocket数据更新:", WS_SmartLight_Data);
-      
       // 更新设备状态
       updateDeviceStatus(WS_SmartLight_Data.did, WS_SmartLight_Data.data);
+      // 获取设备状态
+      const deviceInfo = {
+        online: WS_SmartLight_Data.data?.online ?? true,
+        open: WS_SmartLight_Data.data?.open ?? false,
+        warn: WS_SmartLight_Data.data?.warn ?? false
+      };
+      
+      // 根据状态确定模块
+      const deviceStatus = Object.values(DEVICE_STATUS).find(
+        status => status.condition(deviceInfo)
+      ) || DEVICE_STATUS.ONLINE;
       
       // 添加操作记录
       const newOperation: EboxOperation = {
         id: `${WS_SmartLight_Data.did}_${Date.now()}`,
-        title: `${WS_SmartLight_Data.deviceName} - ${WS_SmartLight_Data.data.eventType}`,
-        content: `设备状态: ${WS_SmartLight_Data.data.description}\n操作模式: ${WS_SmartLight_Data.data.mode}\n操作时间: ${WS_SmartLight_Data.data.optTime}`,
-        type: WS_SmartLight_Data.data.warn ? 'warning' : 'info',
-        module: '设备状态',
-        timestamp: WS_SmartLight_Data.data.dateTimeMillis,
+        title: `${WS_SmartLight_Data.deviceName} - ${WS_SmartLight_Data.data?.eventType || '状态更新'}`,
+        content: `设备状态: ${WS_SmartLight_Data.data?.description || '无描述'}\n操作模式: ${WS_SmartLight_Data.data?.mode || '未知'}\n操作时间: ${WS_SmartLight_Data.data?.optTime || '未知'}`,
+        type: deviceInfo.warn ? 'warning' : 'info',
+        module: deviceStatus.module,
+        timestamp: WS_SmartLight_Data.data?.dateTimeMillis || Date.now(),
         status: 'completed',
         sn: WS_SmartLight_Data.sn || '',
         deviceName: WS_SmartLight_Data.deviceName,
         data: {
-          phase3Voltage: WS_SmartLight_Data.data.phase3Voltage || [],
-          phase3Electric: WS_SmartLight_Data.data.phase3Electric || [],
-          power: WS_SmartLight_Data.data.power || 0,
-          dateTime: WS_SmartLight_Data.data.dateTime || '',
-          powerOff: WS_SmartLight_Data.data.powerOff || '',
-          powerOn: WS_SmartLight_Data.data.powerOn || '',
-          loops: WS_SmartLight_Data.data.loops || [],
-          ios: WS_SmartLight_Data.data.ios || [],
-          enabledWeekly: WS_SmartLight_Data.data.enabledWeekly || false,
-          enabledAlways: WS_SmartLight_Data.data.enabledAlways || false,
-          enabledLocation: WS_SmartLight_Data.data.enabledLocation || false,
-          enabledMultiple: WS_SmartLight_Data.data.enabledMultiple || false,
-          enabledLight: WS_SmartLight_Data.data.enabledLight || false,
-          enabledWater: WS_SmartLight_Data.data.enabledWater || false,
-          enabledOneByOne: WS_SmartLight_Data.data.enabledOneByOne || false,
-          mode: WS_SmartLight_Data.data.mode || '',
-          optTime: WS_SmartLight_Data.data.optTime || '',
-          eventType: WS_SmartLight_Data.data.eventType || '',
-          reportTime: WS_SmartLight_Data.data.reportTime || '',
-          description: WS_SmartLight_Data.data.description || '',
-          warn: WS_SmartLight_Data.data.warn || false
+          phase3Voltage: WS_SmartLight_Data.data?.phase3Voltage || [0, 0, 0],
+          phase3Electric: WS_SmartLight_Data.data?.phase3Electric || [0, 0, 0],
+          power: WS_SmartLight_Data.data?.power || 0,
+          dateTime: WS_SmartLight_Data.data?.dateTime || '',
+          powerOff: WS_SmartLight_Data.data?.powerOff || '',
+          powerOn: WS_SmartLight_Data.data?.powerOn || '',
+          loops: WS_SmartLight_Data.data?.loops || Array(8).fill(false),
+          ios: WS_SmartLight_Data.data?.ios || Array(8).fill(false),
+          enabledWeekly: WS_SmartLight_Data.data?.enabledWeekly || false,
+          enabledAlways: WS_SmartLight_Data.data?.enabledAlways || false,
+          enabledLocation: WS_SmartLight_Data.data?.enabledLocation || false,
+          enabledMultiple: WS_SmartLight_Data.data?.enabledMultiple || false,
+          enabledLight: WS_SmartLight_Data.data?.enabledLight || false,
+          enabledWater: WS_SmartLight_Data.data?.enabledWater || false,
+          enabledOneByOne: WS_SmartLight_Data.data?.enabledOneByOne || false,
+          mode: WS_SmartLight_Data.data?.mode || '未知',
+          optTime: WS_SmartLight_Data.data?.optTime || '未知',
+          eventType: WS_SmartLight_Data.data?.eventType || '状态更新',
+          reportTime: WS_SmartLight_Data.data?.reportTime || '',
+          description: WS_SmartLight_Data.data?.description || '无描述',
+          warn: deviceInfo.warn
         }
       };
       

@@ -2,13 +2,13 @@ import { SERVER_ADDRESSES } from "@/constants/defaultConfig"
 import { useGlobalStore } from "@/store/globalStateStore"
 import { saveAccessAddress, saveToken, saveUserInfo, useAccessAddressState } from "@/utils/useStorageState"
 import { useRouter } from "expo-router"
-import { ScrollView, Text, TouchableOpacity, View } from "react-native"
-
+import { ScrollView, StatusBar, Text, TouchableOpacity, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 export default function ChangeIp() {
     const [currentAddress, setCurrentAddress] = useAccessAddressState()
     const router = useRouter()
     const setCurrentServer = useGlobalStore(state => state.setCurrentServer)
-
+    const insets = useSafeAreaInsets()
     const handleChangeIp = async (address: string) => {
         const newServer = SERVER_ADDRESSES.find(s => s.name === address) || SERVER_ADDRESSES[2]
         await saveAccessAddress(address)
@@ -22,16 +22,17 @@ export default function ChangeIp() {
 
     return (
         <ScrollView className="flex-1 bg-white">
-            <View className="p-4">
+            <StatusBar backgroundColor="transparent"
+                translucent={true} barStyle="dark-content" />
+            <View className="p-4" style={{ paddingTop: insets.top }}>
                 <Text className="text-lg font-bold mb-4">选择服务器地址</Text>
                 {SERVER_ADDRESSES.map((server) => (
                     <TouchableOpacity
                         key={server.name}
-                        className={`p-4 mb-2 rounded-lg border ${
-                            currentAddress[1] === server.name
+                        className={`p-4 mb-2 rounded-lg border ${currentAddress[1] === server.name
                                 ? "bg-blue-100 border-blue-500"
                                 : "bg-gray-50 border-gray-200"
-                        }`}
+                            }`}
                         onPress={() => handleChangeIp(server.name)}
                     >
                         <Text className="font-medium">{server.name}</Text>

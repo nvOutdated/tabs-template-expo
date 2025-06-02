@@ -59,22 +59,26 @@ export type ElectricItem = {
   }[];
 };
 
-interface EboxStore {
+export interface EboxStore {
   allEboxes: ElectricItem[];
   searchText: string;
   selectedAreaId: number | null;
   selectedDevices: Map<number, ElectricItem>;
+  isEditMode: boolean;
+  selectedOperations: Set<string>;
   operations: EboxOperation[];
-  
-  // Actions
-  initializeEboxTree: () => Promise<void>;
-  updateEboxNode: (updatedEbox: ElectricItem) => void;
+  setAllEboxes: (eboxes: ElectricItem[]) => void;
   setSearchText: (text: string) => void;
-  setSelectedAreaId: (areaId: number | null) => void;
+  setSelectedAreaId: (id: number | null) => void;
   setSelectedDevices: (devices: Map<number, ElectricItem>) => void;
   toggleDeviceSelection: (device: ElectricItem) => void;
+  toggleEditMode: () => void;
+  toggleOperationSelect: (operationId: string) => void;
+  clearSelectedOperations: () => void;
   updateDeviceStatus: (deviceId: number, status: any) => void;
   addOperation: (operation: EboxOperation) => void;
+  deleteOperations: (operationIds: Set<string>) => void;
+  initializeEboxTree: () => Promise<void>;
 }
 
 export const useEboxStore = create<EboxStore>((set, get) => ({
@@ -82,41 +86,15 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
   searchText: '',
   selectedAreaId: null,
   selectedDevices: new Map(),
+  isEditMode: false,
+  selectedOperations: new Set(),
   operations: [],
-
-  initializeEboxTree: async () => {
-    try {
-      const res = await getEboxListApi({ page_size: 1000 });
-      if (res.code === 200 && res.data) {
-        set({ allEboxes: res.data });
-      }
-    } catch (error) {
-      console.error('初始化集中器数据失败:', error);
-    }
-  },
-
-  updateEboxNode: (updatedEbox: ElectricItem) => {
-    set(state => ({
-      allEboxes: state.allEboxes.map(ebox => 
-        ebox.id === updatedEbox.id ? updatedEbox : ebox
-      )
-    }));
-  },
-
-  setSearchText: (text: string) => {
-    set({ searchText: text });
-  },
-
-  setSelectedAreaId: (areaId: number | null) => {
-    set({ selectedAreaId: areaId });
-  },
-
-  setSelectedDevices: (devices: Map<number, ElectricItem>) => {
-    set({ selectedDevices: devices });
-  },
-
-  toggleDeviceSelection: (device: ElectricItem) => {
-    set(state => {
+  setAllEboxes: (eboxes) => set({ allEboxes: eboxes }),
+  setSearchText: (text) => set({ searchText: text }),
+  setSelectedAreaId: (id) => set({ selectedAreaId: id }),
+  setSelectedDevices: (devices) => set({ selectedDevices: devices }),
+  toggleDeviceSelection: (device) =>
+    set((state) => {
       const newSelectedDevices = new Map(state.selectedDevices);
       if (newSelectedDevices.has(device.id)) {
         newSelectedDevices.delete(device.id);
@@ -124,32 +102,109 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
         newSelectedDevices.set(device.id, device);
       }
       return { selectedDevices: newSelectedDevices };
-    });
-  },
-
-  updateDeviceStatus: (deviceId: number, status: any) => {
-    set(state => ({
-      allEboxes: state.allEboxes.map(ebox => {
-        if (ebox.device_info.id === deviceId) {
-          return {
-            ...ebox,
-            device_info: {
-              ...ebox.device_info,
-              online: true,
-              open: status.open,
-              warn: status.warn,
-              loops: status.loops
-            }
-          };
-        }
-        return ebox;
-      })
+    }),
+  toggleEditMode: () =>
+    set((state) => {
+      if (state.isEditMode) {
+        return { isEditMode: false, selectedOperations: new Set() };
+      }
+      return { isEditMode: true };
+    }),
+  toggleOperationSelect: (operationId) =>
+    set((state) => {
+      const newSelectedOperations = new Set(state.selectedOperations);
+      if (newSelectedOperations.has(operationId)) {
+        newSelectedOperations.delete(operationId);
+      } else {
+        newSelectedOperations.add(operationId);
+      }
+      return { selectedOperations: newSelectedOperations };
+    }),
+  clearSelectedOperations: () => set({ selectedOperations: new Set() }),
+  updateDeviceStatus: (deviceId, status) => {
+    set((state) => ({
+      allEboxes: state.allEboxes.map((ebox) =>
+        ebox.id === deviceId ? { ...ebox, status } : ebox
+      ),
     }));
   },
-
-  addOperation: (operation: EboxOperation) => {
-    set(state => ({
-      operations: [operation, ...state.operations]
+  addOperation: (operation) => {
+    set((state) => ({
+      operations: [operation, ...state.operations],
     }));
+  },
+  deleteOperations: (operationIds) => {
+    set((state) => ({
+      operations: state.operations.filter(op => !operationIds.has(op.id))
+    }));
+  },
+  initializeEboxTree: async () => {
+    try {
+      const res = await getEboxListApi({ page_size: 1000 });
+      
+      if (res.code === 200 && res.data) {
+        set({ allEboxes: res.data });
+      }
+    } catch (error) {
+      console.error('初始化集中器数据失败:', error);
+    }
+  },
+  updateEboxNode: (updatedEbox: ElectricItem) => {
+    set(state => ({
+      allEboxes: state.allEboxes.map(ebox => 
+        ebox.id === updatedEbox.id ? updatedEbox : ebox
+      )
+    }));
+  },
+}));
+
+// 设备状态映射
+export const DEVICE_STATUS = {
+  OFFLINE: {
+    condition: (info: any) => !info?.online && !info?.open && !info?.warn,
+    label: '离线',
+    dotStyle: 'offline',
+    textStyle: 'offlineText',
+    module: '设备离线'
+  },
+  ONLINE: {
+    condition: (info: any) => info?.online && !info?.open && !info?.warn,
+    label: '在线',
+    dotStyle: 'online',
+    textStyle: 'onlineText',
+    module: '设备在线'
+  },
+  OPEN: {
+    condition: (info: any) => info?.online && info?.open && !info?.warn,
+    label: '打开',
+    dotStyle: 'open',
+    textStyle: 'openText',
+    module: '回路打开'
+  },
+  WARN: {
+    condition: (info: any) => info?.online && info?.warn,
+    label: '报警',
+    dotStyle: 'warn',
+    textStyle: 'warnText',
+    module: '设备报警'
   }
-})); 
+} as const;
+
+// // 模块映射
+// export const MODULE_MAP = {
+//   '设备状态': {
+//     label: '设备状态',
+//     color: 'text-info-500',
+//     bgColor: 'bg-info-50'
+//   },
+//   '操作记录': {
+//     label: '操作记录',
+//     color: 'text-success-500',
+//     bgColor: 'bg-success-50'
+//   },
+//   '报警信息': {
+//     label: '报警信息',
+//     color: 'text-error-500',
+//     bgColor: 'bg-error-50'
+//   }
+// } as const; 

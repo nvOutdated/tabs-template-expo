@@ -1,14 +1,14 @@
 import { light_central_detect_status, light_eleBox_ctrl_switch, smart_personal_matchOptCode } from '@/api/street/configuration';
 import { useCustomToast } from '@/components/public/UIComponents/ToastComponent';
-import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import PasswordModal from '@/components/ui/PasswordModal';
-import { useEboxStore } from '@/store/eboxStore';
+import { DEVICE_STATUS, useEboxStore } from '@/store/eboxStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   FadeInLeft,
   FadeOutRight,
   runOnJS,
@@ -16,7 +16,6 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const CIRCLE_SIZE = (width - 48) / 8;
 
@@ -77,40 +76,10 @@ const formatDate = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
-// 添加模块映射常量
-type ModuleType = '设备状态' | '操作记录' | '报警信息';
-
-const MODULE_MAP: Record<ModuleType, {
-  label: string;
-  color: string;
-  bgColor: string;
-}> = {
-  '设备状态': {
-    label: '设备状态',
-    color: 'text-info-500',
-    bgColor: 'bg-info-50'
-  },
-  '操作记录': {
-    label: '操作记录',
-    color: 'text-success-500',
-    bgColor: 'bg-success-50'
-  },
-  '报警信息': {
-    label: '报警信息',
-    color: 'text-error-500',
-    bgColor: 'bg-error-50'
-  }
-} as const;
-
 const EboxOperationList: React.FC<EboxOperationListProps> = ({
   operations,
-  onOperationSelect,
-  onWebSocketUpdate,
 }) => {
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const currentTheme = useCurrentTheme();
-  const [selectedOperations, setSelectedOperations] = useState<Set<string>>(new Set());
   const [loopButtons, setLoopButtons] = useState<LoopButton[]>(
     Array.from({ length: 8 }, (_, i) => ({ id: i + 1, isActive: false }))
   );
@@ -120,8 +89,35 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<'open' | 'close' | 'check' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { selectedDevices } = useEboxStore();
+  const { selectedDevices, isEditMode, selectedOperations, toggleEditMode, toggleOperationSelect, clearSelectedOperations, deleteOperations } = useEboxStore();
   const toast = useCustomToast();
+
+  // 统计信息
+  const stats = useMemo(() => {
+    const total = operations.length;
+    const warning = operations.filter(op => op.type === 'warning').length;
+    const info = operations.filter(op => op.type === 'info').length;
+    return { total, warning, info };
+  }, [operations]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedOperations.size === 0) {
+      toast.showError({
+        message: '请先选择要删除的记录',
+      });
+      return;
+    }
+
+    // 删除选中的操作记录
+    deleteOperations(selectedOperations);
+    
+    toast.showSuccess({
+      message: `已删除 ${selectedOperations.size} 条记录`,
+    });
+    clearSelectedOperations();
+    toggleEditMode();
+  }, [selectedOperations, toast, clearSelectedOperations, toggleEditMode, deleteOperations]);
+
   const updateLoopButton = useCallback((index: number, isActive: boolean) => {
     setLoopButtons(prev => {
       const newButtons = [...prev];
@@ -181,19 +177,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       runOnJS(setInitialTouchIndex)(null);
     });
 
-  const toggleSelect = (id: string) => {
-    setSelectedOperations(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-
   const handleOperation = async (type: 'open' | 'close' | 'check') => {
     if (selectedDevices.size === 0) {
       toast.showError({
@@ -205,7 +188,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     if (type === 'check') {
       setIsLoading(true);
       try {
-        const deviceIds = Array.from(selectedDevices.values()).map(i=>i.device_info.id);
+        const deviceIds = Array.from(selectedDevices.values()).map(device => device.device_info.id);
         const response = await light_central_detect_status({
           devices: deviceIds
         });
@@ -252,7 +235,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         return;
       }
     
-      const deviceIds = Array.from(selectedDevices.values()).map(i=>i.device_info.id);
+      const deviceIds = Array.from(selectedDevices.values()).map(device => device.device_info.id);
       
       if (currentOperation === 'check') {
         const response = await light_central_detect_status({
@@ -278,8 +261,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         });
 
         if (response.code === 200) {
-          console.log(response);
-          
           toast.showSuccess({
             message: currentOperation === 'open' ? '开灯成功' : '关灯成功',
           });
@@ -358,29 +339,75 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     const animatedHeight = useSharedValue(0);
     const animatedOpacity = useSharedValue(0);
     const MAX_HEIGHT = 400;
+    const isMounted = useRef(true);
+    const { isEditMode, selectedOperations, toggleOperationSelect } = useEboxStore();
+    
+    useEffect(() => {
+      return () => {
+        isMounted.current = false;
+      };
+    }, []);
     
     const toggleExpand = useCallback(() => {
+      if (!isMounted.current) return;
+      
       if (!isExpanded) {
-        animatedHeight.value = withTiming(1, { duration: 300 });
-        animatedOpacity.value = withTiming(1, { duration: 300 });
+        animatedHeight.value = withTiming(1, { 
+          duration: 300,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
+        animatedOpacity.value = withTiming(1, { 
+          duration: 300,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
       } else {
-        animatedHeight.value = withTiming(0, { duration: 300 });
-        animatedOpacity.value = withTiming(0, { duration: 300 });
+        animatedHeight.value = withTiming(0, { 
+          duration: 300,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
+        animatedOpacity.value = withTiming(0, { 
+          duration: 300,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
       }
       setIsExpanded((prev) => !prev);
     }, [isExpanded, animatedHeight, animatedOpacity]);
 
-    const animatedStyle = useAnimatedStyle(() => ({
-      height: animatedHeight.value * MAX_HEIGHT,
-      opacity: animatedOpacity.value,
-      overflow: 'hidden',
-    }));
+    const handleItemPress = useCallback(() => {
+      if (isEditMode) {
+        toggleOperationSelect(item.id);
+      } else {
+        toggleExpand();
+      }
+    }, [isEditMode, toggleOperationSelect, item.id, toggleExpand]);
 
-    const moduleStyle = useMemo(() => ({
-      bgColor: MODULE_MAP[item.module as ModuleType]?.bgColor || 'bg-gray-100',
-      color: MODULE_MAP[item.module as ModuleType]?.color || 'text-gray-500',
-      label: MODULE_MAP[item.module as ModuleType]?.label || item.module
-    }), [item.module]);
+    const handleCheckboxPress = useCallback((e: any) => {
+      e.stopPropagation();
+      toggleOperationSelect(item.id);
+    }, [toggleOperationSelect, item.id]);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        height: animatedHeight.value * MAX_HEIGHT,
+        opacity: animatedOpacity.value,
+        overflow: 'hidden',
+      };
+    }, []);
+
+    const moduleStyle = useMemo(() => {
+      const status = Object.values(DEVICE_STATUS).find(
+        status => status.module === item.module
+      );
+      return {
+        bgColor: status?.dotStyle === 'warn' ? 'bg-error-50' :
+                status?.dotStyle === 'open' ? 'bg-warning-50' :
+                status?.dotStyle === 'online' ? 'bg-success-50' : 'bg-gray-100',
+        color: status?.dotStyle === 'warn' ? 'text-error-500' :
+               status?.dotStyle === 'open' ? 'text-warning-500' :
+               status?.dotStyle === 'online' ? 'text-success-500' : 'text-gray-500',
+        label: item.module
+      };
+    }, [item.module]);
 
     const renderLoopButtons = useCallback(() => (
       <View className="flex-row flex-wrap gap-1">
@@ -441,115 +468,136 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     return (
       <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
         <TouchableOpacity 
-          onPress={toggleExpand}
-          className="bg-background-50 p-4 rounded-lg mb-2 shadow-sm"
+          onPress={handleItemPress}
+          className={`bg-background-50 p-4 rounded-xl mb-2 shadow-sm ${isEditMode ? 'opacity-80' : ''}`}
+          style={{
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            marginHorizontal: 2,
+          }}
         >
-          {/* 顶部信息：SN和模块 */}
-          <View className="flex-row justify-between items-center mb-2">
-            <View className="flex-row items-center flex-1">
-              <Text className={`text-base font-bold mr-2 ${item.type === 'warning' ? 'text-red-500' : ''}`}>
-                {item.sn}
-              </Text>
-              <Text className="text-base flex-1" numberOfLines={1}>{item.deviceName}</Text>
-            </View>
-            <View className={`px-2 py-1 rounded ${moduleStyle.bgColor}`}>
-              <Text className={moduleStyle.color}>
-                {moduleStyle.label}
-              </Text>
-            </View>
-          </View>
-
-          {/* 输出控制状态 */}
-          <View className="flex-row items-center mb-2">
-            <Text className="text-sm text-gray-500 mr-2">输出控制:</Text>
-            {renderLoopButtons()}
-          </View>
-
-          {/* 当前动作方式及时间 */}
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row items-center">
+            {isEditMode && (
+              <TouchableOpacity 
+                onPress={handleCheckboxPress}
+                className="mr-3"
+              >
+                <Ionicons 
+                  name={selectedOperations.has(item.id) ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={selectedOperations.has(item.id) ? "#409eff" : "#909399"}
+                />
+              </TouchableOpacity>
+            )}
             <View className="flex-1">
-              <Text className="text-sm text-gray-500">当前动作: {item.data.mode}</Text>
-              <Text className="text-xs text-gray-500">{item.data.optTime}</Text>
+              {/* 顶部信息：SN和模块 */}
+              <View className="flex-row justify-between items-center mb-2">
+                <View className="flex-row items-center flex-1">
+                  <Text className={`text-base font-bold mr-2 ${item.type === 'warning' ? 'text-red-500' : ''}`}>
+                    {item.sn}
+                  </Text>
+                  <Text className="text-base flex-1" numberOfLines={1}>{item.deviceName}</Text>
+                </View>
+                <View className={`px-2 py-1 rounded-full ${moduleStyle.bgColor}`}>
+                  <Text className={moduleStyle.color}>
+                    {moduleStyle.label}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 输出控制状态 */}
+              <View className="flex-row items-center mb-2">
+                <Text className="text-sm text-gray-500 mr-2">输出控制:</Text>
+                {renderLoopButtons()}
+              </View>
+
+              {/* 当前动作方式及时间 */}
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1">
+                  <Text className="text-sm text-gray-500">当前动作: {item.data.mode}</Text>
+                  <Text className="text-xs text-gray-500">{item.data.optTime}</Text>
+                </View>
+                <Ionicons 
+                  name={isExpanded ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#666"
+                />
+              </View>
+
+              {/* 展开的详细信息 */}
+              <Animated.View style={animatedStyle}>
+                <View className="mt-3 pt-3 border-t border-gray-200">
+                  {/* 电压电流信息 */}
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-1 mr-2">
+                      <Text className="text-sm text-gray-500 mb-1">三相电压(V)</Text>
+                      <View className="space-y-1">
+                        {item.data.phase3Voltage.map((voltage, index) => (
+                          <View key={index} className="flex-row items-center">
+                            <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                            <Text className="text-sm">{voltage}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+
+                    <View className="flex-1 mx-2">
+                      <Text className="text-sm text-gray-500 mb-1">三相电流(A)</Text>
+                      <View className="space-y-1">
+                        {item.data.phase3Electric.map((current, index) => (
+                          <View key={index} className="flex-row items-center">
+                            <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                            <Text className="text-sm">{current}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+
+                    <View className="flex-1 ml-2">
+                      <Text className="text-sm text-gray-500 mb-1">用电量(Kwh)</Text>
+                      <Text className="text-sm">{item.data.power}</Text>
+                    </View>
+                  </View>
+
+                  {/* 时间信息 */}
+                  <View className="flex-row justify-between mb-3">
+                    <View className="flex-1 mr-2">
+                      <Text className="text-sm text-gray-500 mb-1">设备时钟</Text>
+                      <Text className="text-sm">{item.data.dateTime}</Text>
+                    </View>
+                    <View className="flex-1 ml-2">
+                      <Text className="text-sm text-gray-500 mb-1">日出日落</Text>
+                      <View className="space-y-1">
+                        <Text className="text-sm">日出: {item.data.powerOff}</Text>
+                        <Text className="text-sm">日落: {item.data.powerOn}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* I/O状态 */}
+                  <View className="mb-3">
+                    <View className="flex-row items-center mb-2">
+                      <Text className="text-sm text-gray-500 w-20">输入开关</Text>
+                      {renderIOButtons()}
+                    </View>
+                  </View>
+
+                  {/* 预案启用情况 */}
+                  <View className="mb-3">
+                    <Text className="text-sm text-gray-500 mb-2">启用预案</Text>
+                    {renderPlanTags()}
+                  </View>
+
+                  {/* 运行描述 */}
+                  <View className="border-t border-gray-200 pt-3">
+                    <Text className={`text-sm ${item.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
+                      {item.content}
+                    </Text>
+                  </View>
+                </View>
+              </Animated.View>
             </View>
-            <Ionicons 
-              name={isExpanded ? "chevron-up" : "chevron-down"} 
-              size={20} 
-              color="#666"
-            />
           </View>
-
-          {/* 展开的详细信息 */}
-          <Animated.View style={animatedStyle}>
-            <View className="mt-3 pt-3 border-t border-gray-200">
-              {/* 电压电流信息 */}
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-1 mr-2">
-                  <Text className="text-sm text-gray-500 mb-1">三相电压(V)</Text>
-                  <View className="space-y-1">
-                    {item.data.phase3Voltage.map((voltage, index) => (
-                      <View key={index} className="flex-row items-center">
-                        <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
-                        <Text className="text-sm">{voltage}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <View className="flex-1 mx-2">
-                  <Text className="text-sm text-gray-500 mb-1">三相电流(A)</Text>
-                  <View className="space-y-1">
-                    {item.data.phase3Electric.map((current, index) => (
-                      <View key={index} className="flex-row items-center">
-                        <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
-                        <Text className="text-sm">{current}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <View className="flex-1 ml-2">
-                  <Text className="text-sm text-gray-500 mb-1">用电量(Kwh)</Text>
-                  <Text className="text-sm">{item.data.power}</Text>
-                </View>
-              </View>
-
-              {/* 时间信息 */}
-              <View className="flex-row justify-between mb-3">
-                <View className="flex-1 mr-2">
-                  <Text className="text-sm text-gray-500 mb-1">设备时钟</Text>
-                  <Text className="text-sm">{item.data.dateTime}</Text>
-                </View>
-                <View className="flex-1 ml-2">
-                  <Text className="text-sm text-gray-500 mb-1">日出日落</Text>
-                  <View className="space-y-1">
-                    <Text className="text-sm">日出: {item.data.powerOff}</Text>
-                    <Text className="text-sm">日落: {item.data.powerOn}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* I/O状态 */}
-              <View className="mb-3">
-                <View className="flex-row items-center mb-2">
-                  <Text className="text-sm text-gray-500 w-20">输入开关</Text>
-                  {renderIOButtons()}
-                </View>
-              </View>
-
-              {/* 预案启用情况 */}
-              <View className="mb-3">
-                <Text className="text-sm text-gray-500 mb-2">启用预案</Text>
-                {renderPlanTags()}
-              </View>
-
-              {/* 运行描述 */}
-              <View className="border-t border-gray-200 pt-3">
-                <Text className={`text-sm ${item.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
-                  {item.content}
-                </Text>
-              </View>
-            </View>
-          </Animated.View>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -584,6 +632,40 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   return (
     <View style={styles.container} className="bg-background-50">
+      {/* 统计信息 */}
+      <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+        <View className="flex-row items-center">
+          <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text>
+          <Text className="text-base text-warning-500 mr-4">警告: {stats.warning}</Text>
+          <Text className="text-base text-success-500">信息: {stats.info}</Text>
+        </View>
+        <View className="flex-row items-center">
+          {isEditMode ? (
+            <>
+              <TouchableOpacity 
+                onPress={handleDeleteSelected}
+                className="bg-error-500 px-3 py-1 rounded-full mr-2"
+              >
+                <Text className="text-white">删除</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={toggleEditMode}
+                className="bg-gray-500 px-3 py-1 rounded-full"
+              >
+                <Text className="text-white">完成</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity 
+              onPress={toggleEditMode}
+              className="bg-primary-500 px-3 py-1 rounded-full"
+            >
+              <Text className="text-white">编辑</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <FlatList
         data={operations}
         renderItem={renderItem}
@@ -598,7 +680,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         windowSize={5}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: 8 }} />
+        )}
       />
+
       <GestureDetector gesture={panGesture}>
         <View style={[styles.operationPanel, { paddingBottom: tabBarHeight + 16 }]} className="bg-background-50 border-t border-outline-200">
           {renderLoopButtons()}

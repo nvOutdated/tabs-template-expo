@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, {
+import {
   Easing,
   useAnimatedStyle,
   useSharedValue,
@@ -178,7 +178,7 @@ export default function LoginIndex() {
           delayLongPress={2000}
           activeOpacity={0.7}
         >
-          <Animated.View 
+          {/* <Animated.View 
             style={[
               styles.logoContainer,
               animatedStyle
@@ -188,7 +188,13 @@ export default function LoginIndex() {
               source={iskabuda?kabuda:sharkHot}
               style={styles.logo}
             />
-          </Animated.View>
+          </Animated.View> */}
+          <View style={styles.logoContainer}>
+           <Image
+              source={iskabuda?kabuda:sharkHot}
+              style={styles.logo}
+            />
+          </View>
         </TouchableOpacity>
         <View style={styles.card}>
           <Text style={styles.title}>Welcome Bro</Text>
