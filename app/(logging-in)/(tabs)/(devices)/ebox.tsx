@@ -1,14 +1,13 @@
-import { get_area_list } from "@/api/area/areaApi";
 import { getEboxListApi } from "@/api/street/configuration";
 import AreaDrawer, { Area, Device } from "@/components/ebox/AreaDrawer";
-import DeviceDrawer, { AreaWithDevices } from "@/components/ebox/DeviceDrawer";
+import DeviceDrawer from "@/components/ebox/DeviceDrawer";
 import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
+import { useAreaStore } from "@/store/areaStore";
 import { DEVICE_STATUS, EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { useWebSocketStore } from "@/store/websocketStore";
-import { listToTree } from "@/utils/treeUtils";
 import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
@@ -21,8 +20,6 @@ export default function EboxScreen() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
-  const [areaList, setAreaList] = useState<Area[]>([]);
-  const [areaWithDevicesList, setAreaWithDevicesList] = useState<AreaWithDevices[]>([]);
   const [userInfo, setUserInfo] = useState<string>("");
   const [isOperationMode, setIsOperationMode] = useState(false);
   const [electricBoxes, setElectricBoxes] = useState<ElectricItem[]>([]);
@@ -34,7 +31,6 @@ export default function EboxScreen() {
   const endReachedRef = useRef(false);
   const {WS_SmartLight_Data} = useWebSocketStore()
   const {
-    initializeEboxTree,
     selectedDevices,
     setSelectedDevices,
     toggleDeviceSelection,
@@ -44,18 +40,7 @@ export default function EboxScreen() {
     addOperation,
   } = useEboxStore();
 
-  const fetchAreaList = async() => {
-    try {
-      const res = await get_area_list()
-      if(res.code === 200){
-        const treeList = listToTree(res.data,'pid','area_id')
-        setAreaList(treeList)
-        setAreaWithDevicesList(treeList)
-      }
-    } catch (error) {
-      console.log('获取区域列表失败:', error);
-    }
-  }
+  const { areaList, areaWithDevicesList } = useAreaStore();
 
   const loadEleBoxList = useCallback(async(page: number, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
@@ -120,8 +105,8 @@ export default function EboxScreen() {
   
   useEffect(()=>{
     if (WS_SmartLight_Data?.did &&
-       WS_SmartLight_Data?.deviceName&&
-       (WS_SmartLight_Data.type==='dataChange'||WS_SmartLight_Data.type==='warning')) {
+       WS_SmartLight_Data?.deviceName){
+       if(WS_SmartLight_Data.type==='dataChange'||WS_SmartLight_Data.type==='warning') {
       console.log("WebSocket数据更新:", WS_SmartLight_Data);
       // 更新设备状态
       updateDeviceStatus(WS_SmartLight_Data.did, WS_SmartLight_Data.data);
@@ -172,14 +157,19 @@ export default function EboxScreen() {
           warn: deviceInfo.warn
         }
       };
-      
       addOperation(newOperation);
-    }
+       }
+        if(WS_SmartLight_Data.type==='online'){
+          updateDeviceStatus(WS_SmartLight_Data.did, WS_SmartLight_Data.data);          
+        }
+        if(WS_SmartLight_Data.type==='offline'){
+          updateDeviceStatus(WS_SmartLight_Data.did, WS_SmartLight_Data.data);          
+        }
+      }
+      
   },[WS_SmartLight_Data, updateDeviceStatus, addOperation])
   // 初始加载
   useEffect(() => {
-    fetchAreaList();
-    initializeEboxTree();
     setCurrentPage(1);
     loadEleBoxList(1, true);
   }, []);

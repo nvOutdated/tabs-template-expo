@@ -125,7 +125,7 @@ export default function LoginIndex() {
         }
         
         setTimeout(() => {
-          router.replace("/(logging-in)/(tabs)/(configuration)/ebox");
+          router.replace("/(logging-in)/(tabs)/(devices)/ebox");
         }, 500);
       } else {
         showError({

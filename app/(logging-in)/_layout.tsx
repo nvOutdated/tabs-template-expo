@@ -1,22 +1,29 @@
 import { useCustomToast } from '@/components/public/UIComponents/ToastComponent';
 import { useAuth } from '@/hooks/useAuth';
+import { useAreaStore } from "@/store/areaStore";
+import { useEboxStore } from "@/store/eboxStore";
+import { useSmartLightStore } from "@/store/smartLightStore";
 import { useWebSocketStore } from '@/store/websocketStore';
 import { getToken } from '@/utils/useStorageState';
 import { Redirect, Stack } from 'expo-router';
 import React, { JSX, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-
 export default function AuthLayout(): JSX.Element {
   const { init, disconnect, isConnected } = useWebSocketStore();
   const { showError } = useCustomToast();
   const { isLoggedIn, isLoading, error } = useAuth();
-
+  const {initializeEboxTree} =useEboxStore()
+  const {initializeSmartLightTree}  = useSmartLightStore()
+  const {fetchAreaList} = useAreaStore()
   useEffect(() => {
     const setupWebSocket = async () => {
       try {
         const token = await getToken();
         if (token && token !== 'tokenKey' && !isConnected) {
           init();
+          initializeEboxTree()
+          initializeSmartLightTree()
+          fetchAreaList()
         }
       } catch (err) {
         console.error('Failed to setup WebSocket:', err);

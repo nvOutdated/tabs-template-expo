@@ -2,10 +2,10 @@ import { AlarmBadge } from '@/components/runlog/AlarmBadge';
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
-
 export default function TabLoggingLayout() {
   const currentTheme = useCurrentTheme();
   const {theme} = useTheme()
@@ -57,13 +57,13 @@ export default function TabLoggingLayout() {
     >
       
        <Tabs.Screen
-        name="(configuration)"
+        name="(devices)"
         options={{
-          title: "config",
+          title: "devices",
           tabBarIcon: ({ color, focused }: any) => (
-            <Ionicons
+            <MaterialIcons
               name={
-                focused ? "settings" : "settings-outline"
+                'devices'
               }
               color={color}
               size={focused ? 25 : 18}
@@ -73,12 +73,12 @@ export default function TabLoggingLayout() {
       />
       
       <Tabs.Screen
-        name="(camera)"
+        name="(plan)"
         options={{
-          title: "camera",
+          title: "plan",
           tabBarIcon: ({ color, focused }: any) => (
             <Ionicons
-              name={focused ? "camera" : "camera"}
+              name={focused ? "document-text" : "document-text-outline"}
               color={color}
               size={isLandscape ? 30 : 20}
             />
