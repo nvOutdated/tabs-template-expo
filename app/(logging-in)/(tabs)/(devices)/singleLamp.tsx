@@ -78,7 +78,7 @@ export default function SingleLampScreen() {
       const res = await lightPole_query_list(params);
       if (res.code === 200) {
         const lampList = res.data || [];
-        console.log(lampList,99999);
+        // console.log(lampList,99999);
         
         setSingleLamps(lampList);
       }

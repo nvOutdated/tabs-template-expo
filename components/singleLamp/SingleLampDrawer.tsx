@@ -208,6 +208,7 @@ export default function SingleLampDrawer({
   }, [areas]);
 
   useEffect(() => {
+    console.log("重新加载树形结构")
     if (visible) {
       opacity.value = withTiming(1, {
         duration: 150,
@@ -219,8 +220,6 @@ export default function SingleLampDrawer({
       });
       // 恢复滚动位置
       if (scrollPositionRef.current > 0) {
-        console.log(scrollPositionRef.current,"滚动距离");
-        
         setTimeout(() => {
           flatListRef.current?.scrollToOffset({
             offset: scrollPositionRef.current,
