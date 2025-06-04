@@ -98,6 +98,10 @@ const DeviceItem = memo(({
     status => status.condition(device.device_info)
   ) || DEVICE_STATUS.OFFLINE;
 
+  const handlePress = useCallback(() => {
+    onSelect(device.id);
+  }, [device.id, onSelect]);
+
   return (
     <View
       style={[
@@ -107,7 +111,8 @@ const DeviceItem = memo(({
     >
       <TouchableOpacity 
         style={styles.checkbox}
-        onPress={() => onSelect(device.id)}
+        onPress={handlePress}
+        activeOpacity={0.7}
       >
         <Ionicons 
           name={isSelected ? "checkbox" : "square-outline"}
@@ -158,48 +163,61 @@ const AreaItem = memo(({
   onToggle: (id: number) => void;
   onSelect: (id: number) => void;
   themeColor: string;
-}) => (
-  <View
-    style={[
-      styles.areaItem,
-      { paddingLeft: 10 + level * 20 },
-    ]}
-  >
-    <TouchableOpacity 
-      style={styles.checkbox}
-      onPress={() => onSelect(area.area_id)}
+}) => {
+  const handleToggle = useCallback((e: any) => {
+    e.stopPropagation();
+    onToggle(area.area_id);
+  }, [area.area_id, onToggle]);
+
+  const handleSelect = useCallback(() => {
+    onSelect(area.area_id);
+  }, [area.area_id, onSelect]);
+
+  return (
+    <View
+      style={[
+        styles.areaItem,
+        { paddingLeft: 10 + level * 20 },
+      ]}
     >
-      <Ionicons 
-        name={
-          isSelected ? "checkbox" :
-          isPartiallySelected ? "square" : "square-outline"
-        }
-        size={20}
-        color={isSelected ? "#409eff" : "#909399"}
-      />
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.areaContent}
-      onPress={() => onToggle(area.area_id)}
-    >
-      <Text
-        style={[
-          styles.areaName,
-          { color: themeColor },
-        ]}
+      <TouchableOpacity 
+        style={styles.checkbox}
+        onPress={handleSelect}
+        activeOpacity={0.7}
       >
-        {area.name}
-      </Text>
-      {hasChildren && (
-        <Ionicons
-          name={isExpanded ? "chevron-up" : "chevron-down"}
+        <Ionicons 
+          name={
+            isSelected ? "checkbox" :
+            isPartiallySelected ? "square" : "square-outline"
+          }
           size={20}
-          color={themeColor}
+          color={isSelected ? "#409eff" : "#909399"}
         />
-      )}
-    </TouchableOpacity>
-  </View>
-));
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.areaContent}
+        onPress={handleToggle}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.areaName,
+            { color: themeColor },
+          ]}
+        >
+          {area.name}
+        </Text>
+        {hasChildren && (
+          <Ionicons
+            name={isExpanded ? "chevron-up" : "chevron-down"}
+            size={20}
+            color={themeColor}
+          />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+});
 
 AreaItem.displayName = 'AreaItem';
 
@@ -275,7 +293,7 @@ export default function DeviceDrawer({
     backgroundColor: `rgba(0, 0, 0, ${opacity.value * 0.5})`,
   }));
 
-  const toggleArea = useCallback((areaId: number)  => {
+  const toggleArea = useCallback((areaId: number) => {
     setExpandedAreas(prev => {
       const newSet = new Set(prev);
       if (newSet.has(areaId)) {
@@ -287,19 +305,62 @@ export default function DeviceDrawer({
     });
   }, []);
 
+  // 获取区域下所有设备ID
+  const getAreaDeviceIds = useCallback((area: AreaWithDevices): number[] => {
+    const deviceIds: number[] = [];
+    
+    // 获取当前区域的设备
+    const currentAreaDevices = allSmartLights.filter(device => device.area_id === area.area_id);
+    deviceIds.push(...currentAreaDevices.map(device => device.id));
+    
+    // 递归获取子区域的设备
+    if (area.children) {
+      area.children.forEach(child => {
+        deviceIds.push(...getAreaDeviceIds(child));
+      });
+    }
+    
+    return deviceIds;
+  }, [allSmartLights]);
+
+  // 处理区域选择
+  const handleAreaSelect = useCallback((areaId: number) => {
+    const area = areas.find(a => a.area_id === areaId);
+    if (!area) return;
+
+    const deviceIds = getAreaDeviceIds(area);
+    const isSelected = deviceIds.every(id => selectedDevices.has(id));
+
+    if (isSelected) {
+      // 如果已全选，则取消选择所有设备
+      deviceIds.forEach(id => {
+        if (selectedDevices.has(id)) {
+          onDeviceSelect(id);
+        }
+      });
+    } else {
+      // 如果未全选，则选择所有未选中的设备
+      deviceIds.forEach(id => {
+        if (!selectedDevices.has(id)) {
+          onDeviceSelect(id);
+        }
+      });
+    }
+  }, [areas, getAreaDeviceIds, selectedDevices, onDeviceSelect]);
+
   const isAreaSelected = useCallback((area: AreaWithDevices) => {
-    const devices = allSmartLights.filter(device => device.area_id === area.area_id);
-    if (devices.length === 0) return false;
-    return devices.every(device => selectedDevices.has(device.id));
-  }, [allSmartLights, selectedDevices]);
+    const deviceIds = getAreaDeviceIds(area);
+    if (deviceIds.length === 0) return false;
+    return deviceIds.every(id => selectedDevices.has(id));
+  }, [getAreaDeviceIds, selectedDevices]);
 
   const isAreaPartiallySelected = useCallback((area: AreaWithDevices) => {
-    const devices = allSmartLights.filter(device => device.area_id === area.area_id);
-    if (devices.length === 0) return false;
-    const hasSelected = devices.some(device => selectedDevices.has(device.id));
-    const allSelected = devices.every(device => selectedDevices.has(device.id));
+    const deviceIds = getAreaDeviceIds(area);
+    if (deviceIds.length === 0) return false;
+    const hasSelected = deviceIds.some(id => selectedDevices.has(id));
+    const allSelected = deviceIds.every(id => selectedDevices.has(id));
     return hasSelected && !allSelected;
-  }, [allSmartLights, selectedDevices]);
+  }, [getAreaDeviceIds, selectedDevices]);
 
   // 将区域和设备数据扁平化为列表项，并添加搜索过滤
   const listData = useMemo(() => {
@@ -361,7 +422,7 @@ export default function DeviceDrawer({
           isPartiallySelected={isAreaPartiallySelected(item.data)}
           hasChildren={item.hasChildren}
           onToggle={toggleArea}
-          onSelect={onAreaSelect}
+          onSelect={handleAreaSelect}
           themeColor={currentTheme.activeTint}
         />
       );
@@ -375,7 +436,7 @@ export default function DeviceDrawer({
         />
       );
     }
-  }, [isAreaSelected, isAreaPartiallySelected, selectedDevices, currentTheme.activeTint, toggleArea, onAreaSelect, onDeviceSelect]);
+  }, [isAreaSelected, isAreaPartiallySelected, selectedDevices, currentTheme.activeTint, toggleArea, handleAreaSelect, onDeviceSelect]);
   
   const keyExtractor = useCallback((item: any) => {
     if (item.type === 'area') {
@@ -389,10 +450,19 @@ export default function DeviceDrawer({
     scrollPositionRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
-  if (!visible) return null;
+  // 添加 getItemLayout 函数
+  const getItemLayout = useCallback((data: any, index: number) => {
+    const item = data[index];
+    const height = item.type === 'area' ? 40 : 36; // 区域项和设备项的高度
+    return {
+      length: height,
+      offset: height * index,
+      index,
+    };
+  }, []);
 
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { display: visible ? 'flex' : 'none' }]}>
       <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
         <TouchableOpacity 
           style={StyleSheet.absoluteFill} 
@@ -449,6 +519,7 @@ export default function DeviceDrawer({
           initialNumToRender={20}
           maxToRenderPerBatch={20}
           windowSize={10}
+          getItemLayout={getItemLayout}
         />
       </Animated.View>
     </View>

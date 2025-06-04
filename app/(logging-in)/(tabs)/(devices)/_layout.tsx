@@ -20,8 +20,8 @@ const { width } = Dimensions.get("window");
 // 定义tab标题和对应的宽度
 const TAB_CONFIG = [
   { name: "index", title: "集中器", width: 70 },
-  { name: "smartLamp", title: "智慧网关", width: 80 },
-  { name: "singleLamp", title: "单灯", width: 90 },
+  { name: "smartLamp", title: "智慧网关", width: 70 },
+  { name: "singleLamp", title: "单灯", width: 70 },
   { name: "camera", title: "摄像头", width: 70 },
 ];
 
@@ -82,6 +82,7 @@ export default function TabConfigurationLayout() {
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
             borderColor: currentTheme.textColor,
+            display:'none'
           },
           tabBarStyle: {
             backgroundColor: "transparent",

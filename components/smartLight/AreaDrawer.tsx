@@ -1,7 +1,7 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { useSmartLightStore } from "@/store/smartLightStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -80,7 +80,7 @@ type AreaDrawerProps = {
 };
 
 // 设备项组件
-const DeviceItem = ({ 
+const DeviceItem = memo(({ 
   device, 
   level, 
   isSelected, 
@@ -97,6 +97,10 @@ const DeviceItem = ({
     status => status.condition(device.device_info)
   ) || DEVICE_STATUS.OFFLINE;
   
+  const handlePress = useCallback(() => {
+    onSelect(device);
+  }, [device, onSelect]);
+
   return (
     <TouchableOpacity
       style={[
@@ -104,7 +108,8 @@ const DeviceItem = ({
         { paddingLeft: 10 + (level + 1) * 20 },
         isSelected && { backgroundColor: "rgba(64,158,255,0.1)" },
       ]}
-      onPress={() => onSelect(device)}
+      onPress={handlePress}
+      activeOpacity={0.7}
     >
       <View style={styles.deviceContent}>
         <Text
@@ -125,10 +130,12 @@ const DeviceItem = ({
       </View>
     </TouchableOpacity>
   );
-};
+});
+
+DeviceItem.displayName = 'DeviceItem';
 
 // 区域项组件
-const AreaItem = ({ 
+const AreaItem = memo(({ 
   area, 
   level, 
   isExpanded, 
@@ -146,42 +153,54 @@ const AreaItem = ({
   onToggle: (id: number) => void;
   onSelect: (area: Area) => void;
   themeColor: string;
-}) => (
-  <TouchableOpacity
-    style={[
-      styles.areaItem,
-      { paddingLeft: 10 + level * 20 },
-      isSelected && { backgroundColor: "rgba(0,0,0,0.05)" },
-    ]}
-    onPress={() => onSelect(area)}
-  >
-    <View style={styles.areaContent}>
-      <Text
-        style={[
-          styles.areaName,
-          { color: themeColor },
-          isSelected && styles.selectedText,
-        ]}
-      >
-        {area.name}
-      </Text>
-      {hasChildren && (
-        <TouchableOpacity 
-          onPress={(e) => {
-            e.stopPropagation();
-            onToggle(area.area_id);
-          }}
+}) => {
+  const handleToggle = useCallback((e: any) => {
+    e.stopPropagation();
+    onToggle(area.area_id);
+  }, [area.area_id, onToggle]);
+
+  const handleSelect = useCallback(() => {
+    onSelect(area);
+  }, [area, onSelect]);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.areaItem,
+        { paddingLeft: 10 + level * 20 },
+        isSelected && { backgroundColor: "rgba(0,0,0,0.05)" },
+      ]}
+      onPress={handleSelect}
+      activeOpacity={0.7}
+    >
+      <View style={styles.areaContent}>
+        <Text
+          style={[
+            styles.areaName,
+            { color: themeColor },
+            isSelected && styles.selectedText,
+          ]}
         >
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={themeColor}
-          />
-        </TouchableOpacity>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+          {area.name}
+        </Text>
+        {hasChildren && (
+          <TouchableOpacity 
+            onPress={handleToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={themeColor}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+AreaItem.displayName = 'AreaItem';
 
 export default function AreaDrawer({
   visible,
@@ -267,6 +286,14 @@ export default function AreaDrawer({
     });
   }, []);
 
+  const handleAreaSelect = useCallback((area: Area) => {
+    onSelectArea(area);
+  }, [onSelectArea]);
+
+  const handleDeviceSelect = useCallback((device: Device) => {
+    onSelectDevice(device);
+  }, [onSelectDevice]);
+
   // 将区域和设备数据扁平化为列表项，并添加搜索过滤
   const listData = useMemo(() => {
     const flattenData = (area: Area, level: number = 0) => {
@@ -326,7 +353,7 @@ export default function AreaDrawer({
           isSelected={selectedArea.area_id === item.data.area_id}
           hasChildren={item.hasChildren}
           onToggle={toggleArea}
-          onSelect={onSelectArea}
+          onSelect={handleAreaSelect}
           themeColor={currentTheme.activeTint}
         />
       );
@@ -336,11 +363,11 @@ export default function AreaDrawer({
           device={item.data}
           level={item.level}
           isSelected={false}
-          onSelect={onSelectDevice}
+          onSelect={handleDeviceSelect}
         />
       );
     }
-  }, [selectedArea, currentTheme.activeTint, toggleArea, onSelectArea, onSelectDevice]);
+  }, [selectedArea, currentTheme.activeTint, toggleArea, handleAreaSelect, handleDeviceSelect]);
 
   const keyExtractor = useCallback((item: any) => {
     if (item.type === 'area') {
@@ -354,10 +381,21 @@ export default function AreaDrawer({
     scrollPositionRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
+  // 添加 getItemLayout 函数
+  const getItemLayout = useCallback((data: any, index: number) => {
+    const item = data[index];
+    const height = item.type === 'area' ? 40 : 36; // 区域项和设备项的高度
+    return {
+      length: height,
+      offset: height * index,
+      index,
+    };
+  }, []);
+
   if (!visible) return null;
 
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { display: visible ? 'flex' : 'none' }]}>
       <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
         <TouchableOpacity 
           style={StyleSheet.absoluteFill} 
@@ -413,6 +451,7 @@ export default function AreaDrawer({
           initialNumToRender={20}
           maxToRenderPerBatch={20}
           windowSize={10}
+          getItemLayout={getItemLayout}
         />
       </Animated.View>
     </View>

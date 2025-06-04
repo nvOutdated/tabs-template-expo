@@ -1,3 +1,4 @@
+// SingleLampDrawer.tsx - 优化后的完整代码
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { useEboxStore } from "@/store/eboxStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,6 +80,14 @@ type SingleLampDrawerProps = {
   areas: Area[];
   selectedDevice: Device | null;
   onSelectDevice: (device: Device) => void;
+};
+
+type ListItem = {
+  type: 'area' | 'device';
+  data: Area | Device;
+  level: number;
+  isExpanded?: boolean;
+  hasChildren?: boolean;
 };
 
 // 设备项组件
@@ -189,51 +198,67 @@ export default function SingleLampDrawer({
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
   const [searchText, setSearchText] = useState("");
   const flatListRef = useRef<FlatList>(null);
-  const scrollPositionRef = useRef(0);
 
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const opacity = useSharedValue(0);
 
-  // 初始化时展开所有区域
+  // 初始化时展开所有区域 - 只在组件挂载时执行一次
   useEffect(() => {
     const expandAllAreas = (areas: Area[]) => {
-      areas.forEach(area => {
-        setExpandedAreas(prev => new Set(prev).add(area.area_id));
-        if (area.children) {
-          expandAllAreas(area.children);
-        }
-      });
+      const allAreaIds = new Set<number>();
+      const traverse = (areas: Area[]) => {
+        areas.forEach(area => {
+          allAreaIds.add(area.area_id);
+          if (area.children) {
+            traverse(area.children);
+          }
+        });
+      };
+      traverse(areas);
+      return allAreaIds;
     };
-    expandAllAreas(areas);
-  }, [areas]);
+    
+    if (areas.length > 0 && expandedAreas.size === 0) {
+      setExpandedAreas(expandAllAreas(areas));
+    }
+  }, [areas]); // 保留 areas 依赖，但添加条件判断避免重复执行
 
   useEffect(() => {
-    console.log("重新加载树形结构")
     if (visible) {
       opacity.value = withTiming(1, {
-        duration: 150,
+        duration: 50,
         easing: Easing.out(Easing.ease),
       });
       translateX.value = withTiming(0, {
-        duration: 250,
+        duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
-      // 恢复滚动位置
-      if (scrollPositionRef.current > 0) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToOffset({
-            offset: scrollPositionRef.current,
-            animated: false,
-          });
-        }, 100);
+      
+      //滚动到选中项（如果存在）
+      if (selectedDevice) {
+        // 使用 requestAnimationFrame 替代 setTimeout
+        requestAnimationFrame(() => {
+          const index = listData.findIndex(
+            (item): item is ListItem & { type: 'device'; data: Device } => 
+              item.type === 'device' && 'id' in item.data && item.data.id === selectedDevice.id
+          );
+          
+          if (index !== -1) {
+            flatListRef.current?.scrollToIndex({
+              index,
+              animated: true,
+              viewPosition: 0.5,
+            });
+          }
+        });
       }
     } else {
       opacity.value = withTiming(0, {
-        duration: 150,
+        duration: 50,
         easing: Easing.in(Easing.ease),
       });
       translateX.value = withTiming(-DRAWER_WIDTH, {
-        duration: 250,
+        duration: 50,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
     }
@@ -262,8 +287,8 @@ export default function SingleLampDrawer({
 
   // 将区域和设备数据扁平化为列表项，并添加搜索过滤
   const listData = useMemo(() => {
-    const flattenData = (area: Area, level: number = 0) => {
-      const items = [];
+    const flattenData = (area: Area, level: number = 0): ListItem[] => {
+      const items: ListItem[] = [];
       const isExpanded = expandedAreas.has(area.area_id);
       const devices = allEboxes.filter(device => device.area_id === area.area_id);
       const hasChildren = (area.children && area.children.length > 0) || devices.length > 0;
@@ -309,7 +334,8 @@ export default function SingleLampDrawer({
     return areas.flatMap(area => flattenData(area));
   }, [areas, expandedAreas, allEboxes, searchText]);
 
-  const renderItem = useCallback(({ item }: { item: any }) => {
+
+  const renderItem = useCallback(({ item, index }: { item: any, index: number }) => {
     if (item.type === 'area') {
       return (
         <AreaItem
@@ -331,7 +357,7 @@ export default function SingleLampDrawer({
         />
       );
     }
-  }, [selectedDevice, currentTheme.activeTint, toggleArea, onSelectDevice]);
+  }, [selectedDevice?.id, currentTheme.activeTint, toggleArea, onSelectDevice]);
 
   const keyExtractor = useCallback((item: any) => {
     if (item.type === 'area') {
@@ -341,14 +367,19 @@ export default function SingleLampDrawer({
     }
   }, []);
 
-  const handleScroll = useCallback((event: any) => {
-    scrollPositionRef.current = event.nativeEvent.contentOffset.y;
+  // Add getItemLayout function
+  const getItemLayout = useCallback((data: any, index: number) => {
+    const itemHeight = 30; // 44px for both area and device items
+    return {
+      length: itemHeight,
+      offset: itemHeight * index,
+      index,
+    };
   }, []);
 
-  if (!visible) return null;
-
+  // 关键改变：使用 display 控制显示而不是条件渲染
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { display: visible ? 'flex' : 'none' }]}>
       <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
@@ -396,14 +427,21 @@ export default function SingleLampDrawer({
           data={listData}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
+          getItemLayout={getItemLayout}
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
           removeClippedSubviews={true}
-          initialNumToRender={20}
-          maxToRenderPerBatch={20}
-          windowSize={10}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          // windowSize={5}
+          // onScrollToIndexFailed={(info) => {
+          //   requestAnimationFrame(() => {
+          //     flatListRef.current?.scrollToOffset({
+          //       offset: info.averageItemLength * info.index,
+          //       animated: true,
+          //     });
+          //   });
+          // }}
         />
       </Animated.View>
     </View>

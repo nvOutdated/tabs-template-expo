@@ -1,4 +1,6 @@
+// singleLamp.tsx - 优化后的完整代码
 import { lightPole_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
+import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
 import DeviceSelector from "@/components/singleLamp/DeviceSelector";
 import LineSelector from "@/components/singleLamp/LineSelector";
 import SingleLampDrawer, { Area, Device } from "@/components/singleLamp/SingleLampDrawer";
@@ -15,16 +17,42 @@ interface Line {
   name: string;
 }
 
+interface Controller {
+  id: number;
+  controllerId: string;
+  controllerType: string;
+  groupIds4Save: number[];
+  groupIds4Detect: number[];
+  lamps: {
+    id: number;
+    lightLoop: string;
+    lightingType: number;
+    cfgId: number;
+    cfgName: string | null;
+    cfgMatched: boolean;
+    phase: string;
+    phaseMatched: boolean;
+  }[];
+  domain: string | null;
+  stateA: string | null;
+  stateB: string | null;
+  powerOnA: boolean | null;
+  powerOnB: boolean | null;
+}
+
 export default function SingleLampScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [drawerInitialized, setDrawerInitialized] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
   const [selectedDevice, setSelectedDevice] = useState<ElectricItem | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [selectedLine, setSelectedLine] = useState<Line | null>(null);
   const [singleLamps, setSingleLamps] = useState<any[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [currentOperation, setCurrentOperation] = useState<'all' | 'controller'>('all');
+  const [controllers, setControllers] = useState<Controller[]>([]);
   const loadingRef = useRef(false);
   const insets = useSafeAreaInsets();
 
@@ -37,7 +65,7 @@ export default function SingleLampScreen() {
       const firstDevice = allEboxes[0];
       setSelectedDevice(firstDevice);
       setSearchText(firstDevice.name);
-      loadLines(firstDevice.device_info.id);
+      loadLines(firstDevice.id);
     }
   }, [allEboxes]);
 
@@ -78,13 +106,20 @@ export default function SingleLampScreen() {
       const res = await lightPole_query_list(params);
       if (res.code === 200) {
         const lampList = res.data || [];
-        // console.log(lampList,99999);
-        
         setSingleLamps(lampList);
+        // 提取所有控制器并展平数组
+        const controllerList = lampList.reduce((acc: Controller[], lamp: any) => {
+          if (lamp.controllers && Array.isArray(lamp.controllers)) {
+            return [...acc, ...lamp.controllers];
+          }
+          return acc;
+        }, []);
+        setControllers(controllerList);
       }
     } catch (error) {
       console.log('加载单灯列表失败:', error);
       setSingleLamps([]);
+      setControllers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -121,7 +156,7 @@ export default function SingleLampScreen() {
       setSelectedDevice(eboxDevice);
       setSearchText(device.name);
       setShowDrawer(false);
-      loadLines(eboxDevice.device_info.id);
+      loadLines(eboxDevice.id);
     }
   }, [loadLines, allEboxes]);
 
@@ -131,6 +166,27 @@ export default function SingleLampScreen() {
       loadSingleLamps(selectedDevice.device_info.id, line.id);
     }
   }, [selectedDevice, loadSingleLamps]);
+
+  // 修改 drawer 打开逻辑
+  const handleOpenDrawer = useCallback(() => {
+    // 使用 requestAnimationFrame 来优化状态更新
+    requestAnimationFrame(() => {
+      setShowDrawer(true);
+      if (!drawerInitialized) {
+        setDrawerInitialized(true);
+      }
+    });
+  }, [drawerInitialized]);
+
+  const handleCloseDrawer = useCallback(() => {
+    requestAnimationFrame(() => {
+      setShowDrawer(false);
+    });
+  }, []);
+
+  const handleOperationChange = useCallback((operation: 'all' | 'controller') => {
+    setCurrentOperation(operation);
+  }, []);
 
   const renderEmptyState = () => {
     if (!selectedDevice) {
@@ -153,32 +209,17 @@ export default function SingleLampScreen() {
       </View>
     );
   };
- /*  const ListFooterComponent = useMemo(
-    () => (
-      <View style={styles.footer}>
-        {loading && singleLamps.length > 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#409eff" />
-            <Text style={styles.loadingText}>加载中...</Text>
-          </View>
-        ) : electricBoxes.length === 0 ? (
-          <Text style={styles.footerText}>暂无数据</Text>
-        ) : !hasMore ? (
-          <Text style={styles.footerText}>没有更多数据了</Text>
-        ) : null}
-      </View>
-    ),
-    [loading, electricBoxes.length, hasMore]
-  ); */
   
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
         <DeviceSelector
           selectedDevice={selectedDevice}
-          onSelectDevice={() => setShowDrawer(true)}
+          onSelectDevice={handleOpenDrawer}
           onSearch={handleSearch}
           onEdit={handleEdit}
+          onOperationChange={handleOperationChange}
+          currentOperation={currentOperation}
         />
 
         {selectedDevice && (
@@ -188,31 +229,32 @@ export default function SingleLampScreen() {
             onSelectLine={handleSelectLine}
           />
         )}
-
-        <SingleLampList
-          singleLamps={singleLamps}
-          loading={loading}
-          hasMore={false}
-          onEndReached={() => {}}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-            />
-          }
-          ListEmptyComponent={renderEmptyState()}
-        //   ListFooterComponent={ListFooterComponent}
-        />
+        {currentOperation === 'all' ? (
+          <SingleLampList
+            singleLamps={singleLamps}
+            loading={loading}
+            hasMore={false}
+            onEndReached={() => {}}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            }
+            ListEmptyComponent={renderEmptyState()}
+          />
+        ) : (
+          <ControllerInfoCard controllers={controllers} />
+        )}
       </View>
      
       <SingleLampDrawer
         visible={showDrawer}
-        onClose={() => setShowDrawer(false)}
+        onClose={handleCloseDrawer}
         areas={areaList}
         selectedDevice={selectedDevice}
         onSelectDevice={handleSelectDevice}
       />
-    
     </GestureHandlerRootView>
   );
 }
@@ -221,5 +263,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  controllerList: {
+    flex: 1,
+    padding: 8,
   },
 });

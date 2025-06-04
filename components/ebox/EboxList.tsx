@@ -2,7 +2,7 @@ import { useGlobalStore } from '@/store/globalStateStore';
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { memo, useCallback, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -55,10 +55,11 @@ type Props = {
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 120; // 压缩后的卡片高度
+const CARD_HEIGHT = 120;
+
+// 将常量移到组件外部，避免每次渲染都创建
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
 
-// 添加状态配置常量
 const DEVICE_STATUS = {
   OFFLINE: {
     condition: (info: ElectricItem['device_info']) => !info.online && !info.open && !info.warn,
@@ -99,13 +100,6 @@ const EboxList = memo(({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const currentServer = useGlobalStore(state => state.currentServer);
 
-  // 使用 useRef 存储不需要触发重渲染的值
-  const modalRef = useRef({
-    setVisible: (visible: boolean) => setModalVisible(visible),
-    setImages: (images: ImageSource[]) => setSelectedImages(images),
-    setIndex: (index: number) => setSelectedIndex(index)
-  });
-
   const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
     setSelectedImages(images);
     setSelectedIndex(index);
@@ -121,9 +115,10 @@ const EboxList = memo(({
     });
   }, []);
 
-  // Memoized ebox item component for better performance
+  // 优化后的 ElectricItem 组件
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
-    const getImages = useCallback(() => {
+    // 优化图片计算
+    const images = useMemo(() => {
       const attachments = item.ebox_attachments || [];
       if (attachments.length === 0) {
         return [centralControllerImage];
@@ -131,13 +126,43 @@ const EboxList = memo(({
       return attachments.map(attachment => ({
         uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
       }));
-    }, [item.ebox_attachments, currentServer]);
+    }, [item.ebox_attachments, currentServer?.ip, currentServer?.filePort]);
 
-    const images = useMemo(() => getImages(), [getImages]);
+    // 优化状态计算
+    const deviceStatus = useMemo(() => {
+      return Object.values(DEVICE_STATUS).find(status => 
+        status.condition(item.device_info)
+      );
+    }, [item.device_info.online, item.device_info.open, item.device_info.warn]);
+
+    // 优化回路状态计算
+    const loopElements = useMemo(() => {
+      return item.device_info.loops.map((loop, index) => (
+        <View key={index} style={styles.loopItem}>
+          <View
+            style={[
+              styles.loopDot,
+              loop ? styles.loopActive : styles.loopInactive,
+            ]}
+          >
+            <Text style={styles.loopNumber}>{index + 1}</Text>
+          </View>
+        </View>
+      ));
+    }, [item.device_info.loops]);
+
     const thumbnailSource = images[0];
 
+    const handleConfigPress = useCallback(() => {
+      getConfigurationDetails(item);
+    }, [item]);
+
+    const handleImagePressLocal = useCallback(() => {
+      handleImagePress(images);
+    }, [images, handleImagePress]);
+
     return (
-      <View >
+      <View>
         <Pressable style={styles.card} className="bg-background-50">
           <View style={styles.containerTitle}>
             <Text
@@ -148,19 +173,21 @@ const EboxList = memo(({
               {item.name}
             </Text>
           </View>
+          
           <View style={styles.pointConfig}>
             <Pressable
               style={styles.configButton}
-              onPress={() => getConfigurationDetails(item)}
+              onPress={handleConfigPress}
             >
               <Ionicons name="settings-outline" size={20} color="#409eff" />
               <Text style={styles.configButtonText}>组态</Text>
             </Pressable>
           </View>
+          
           <View style={styles.imageRowContainer}>
             <Pressable
               style={styles.thumbnailContainer}
-              onPress={() => handleImagePress(images)}
+              onPress={handleImagePressLocal}
             >
               <Image
                 source={thumbnailSource}
@@ -184,34 +211,23 @@ const EboxList = memo(({
               >
                 位置: {item.addr}
               </Text>
+              
               <View style={styles.statusContainer}>
                 <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
-                {Object.values(DEVICE_STATUS).map((status) =>
-                  status.condition(item.device_info) && (
-                    <View key={status.label} className=" flex-row items-center">
-                      <View style={[styles.statusDot, styles[status.dotStyle]]} />
-                      <Text style={[styles.statusText, styles[status.textStyle]]}>
-                        {status.label}
-                      </Text>
-                    </View>
-                  )
+                {deviceStatus && (
+                  <View className="flex-row items-center">
+                    <View style={[styles.statusDot, styles[deviceStatus.dotStyle]]} />
+                    <Text style={[styles.statusText, styles[deviceStatus.textStyle]]}>
+                      {deviceStatus.label}
+                    </Text>
+                  </View>
                 )}
               </View>
+              
               <View style={styles.loopsContainer}>
                 <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
                 <View style={styles.loopsGrid}>
-                  {item.device_info.loops.map((loop, index) => (
-                    <View key={index} style={styles.loopItem}>
-                      <View
-                        style={[
-                          styles.loopDot,
-                          loop ? styles.loopActive : styles.loopInactive,
-                        ]}
-                      >
-                        <Text style={styles.loopNumber}>{index + 1}</Text>
-                      </View>
-                    </View>
-                  ))}
+                  {loopElements}
                 </View>
               </View>
             </View>
@@ -220,10 +236,48 @@ const EboxList = memo(({
       </View>
     );
   }, (prevProps, nextProps) => {
-    return prevProps.item.id === nextProps.item.id &&
-      prevProps.item.device_info.online === nextProps.item.device_info.online &&
-      prevProps.item.device_info.open === nextProps.item.device_info.open &&
-      prevProps.item.device_info.warn === nextProps.item.device_info.warn;
+    // 完善的比较函数
+    const prev = prevProps.item;
+    const next = nextProps.item;
+    
+    // 基本字段比较
+    if (prev.id !== next.id ||
+        prev.name !== next.name ||
+        prev.addr !== next.addr ||
+        prev.device_info.device_code !== next.device_info.device_code ||
+        prev.device_info.online !== next.device_info.online ||
+        prev.device_info.open !== next.device_info.open ||
+        prev.device_info.warn !== next.device_info.warn) {
+      return false;
+    }
+    
+    // 回路状态比较
+    if (prev.device_info.loops.length !== next.device_info.loops.length) {
+      return false;
+    }
+    
+    for (let i = 0; i < prev.device_info.loops.length; i++) {
+      if (prev.device_info.loops[i] !== next.device_info.loops[i]) {
+        return false;
+      }
+    }
+    
+    // 附件比较
+    const prevAttachments = prev.ebox_attachments || [];
+    const nextAttachments = next.ebox_attachments || [];
+    
+    if (prevAttachments.length !== nextAttachments.length) {
+      return false;
+    }
+    
+    for (let i = 0; i < prevAttachments.length; i++) {
+      if (prevAttachments[i].id !== nextAttachments[i].id ||
+          prevAttachments[i].url !== nextAttachments[i].url) {
+        return false;
+      }
+    }
+    
+    return true;
   });
 
   ElectricItem.displayName = "ElectricItem";
@@ -234,7 +288,7 @@ const EboxList = memo(({
   );
 
   const keyExtractor = useCallback(
-    (item: ElectricItem) => item.id.toString(),
+    (item: ElectricItem) => (item.id+item.sn).toString(),
     []
   );
 
@@ -265,11 +319,11 @@ const EboxList = memo(({
     [loading, electricBoxes.length, hasMore]
   );
 
-  const getItemLayout = (data: any, index: number) => ({
+  const getItemLayout = useCallback((data: any, index: number) => ({
     length: CARD_HEIGHT,
     offset: CARD_HEIGHT * index,
     index,
-  });
+  }), []);
 
   return (
     <>
@@ -288,15 +342,16 @@ const EboxList = memo(({
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         getItemLayout={getItemLayout}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        initialNumToRender={10}
-        updateCellsBatchingPeriod={50}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10
-        }}
+        // removeClippedSubviews={true}
+        // 优化的性能配置
+        // initialNumToRender={5}
+        // maxToRenderPerBatch={5}
+        // windowSize={3}
+        // updateCellsBatchingPeriod={100}
+        // maintainVisibleContentPosition={{
+        //   minIndexForVisible: 0,
+        //   autoscrollToTopThreshold: 10
+        // }}
       />
       <EboxImageModal
         visible={modalVisible}
@@ -354,7 +409,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   containerTitle: {
-    // flex: 1,
     width: "100%",
     padding: 0,
     justifyContent: "space-between",
@@ -371,7 +425,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 10,
     top: 5,
-    // marginLeft: 10,
   },
   configButton: {
     flexDirection: "row",
@@ -447,7 +500,6 @@ const styles = StyleSheet.create({
     color: "#F56C6C"
   },
   loopsContainer: {
-    // marginTop: 4,
     width: "80%",
     flexDirection: "row",
   },
@@ -458,7 +510,6 @@ const styles = StyleSheet.create({
   loopsGrid: {
     width: "80%",
     flexDirection: "row",
-    // flexWrap: 'none',
     gap: 1,
   },
   loopItem: {

@@ -288,6 +288,7 @@ export default function EboxScreen() {
         )}
       </View>
 
+      {/* 始终渲染抽屉组件，使用 display 控制显示 */}
       <AreaDrawer
         visible={showDrawer}
         onClose={() => setShowDrawer(false)}
