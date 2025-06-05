@@ -19,7 +19,20 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "image": "latest",
+        "env": {
+          "ENABLE_PROGUARD": "true",
+          "ENABLE_SHRINK_RESOURCES": "true",
+          "ENABLE_R8": "true"
+        }
+      },
+      "ios": {
+        "image": "latest",
+        "env": {
+          "ENABLE_PROGUARD": "true"
+        }
       }
     },
     "production": {

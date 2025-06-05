@@ -49,7 +49,10 @@
             "certificates": ["system", "user"]
           }
         }
-      }
+      },
+      "jsEngine": "hermes",
+      "enableHermes": true,
+      "enableDangerousExperimentalLeanBuilds": true
     },
     "web": {
       "bundler": "metro",
