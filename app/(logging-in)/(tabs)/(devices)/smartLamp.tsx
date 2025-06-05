@@ -6,6 +6,7 @@ import OperationHeader from "@/components/smartLight/OperationHeader";
 import SmartLightList from "@/components/smartLight/SmartLightList";
 import SmartLightOperationList from "@/components/smartLight/SmartOperationList";
 import { useAreaStore } from "@/store/areaStore";
+import { useGlobalStore } from "@/store/globalStateStore";
 import {
   DEVICE_STATUS,
   SmartLightItem,
@@ -14,10 +15,13 @@ import {
 } from "@/store/smartLightStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { getUserInfo } from "@/utils/useStorageState";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-const { width } = Dimensions.get("window");
+const { width } = Dimensions.get('window');
+
+// 将常量移到组件外部
+const centralControllerImage = require("@/assets/images/street/smartLight/smartLamp.png");
 
 export default function SmartLampScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -46,6 +50,7 @@ export default function SmartLampScreen() {
   } = useSmartLightStore();
 
   const { areaList, areaWithDevicesList } = useAreaStore();
+  const currentServer = useGlobalStore(state => state.currentServer);
 
   const loadSmartLightList = useCallback(
     async (page: number, isRefresh: boolean = false) => {
@@ -279,6 +284,32 @@ export default function SmartLampScreen() {
     [allSmartLights, selectedDevices, setSelectedDevices]
   );
 
+  // 计算处理后的智能灯列表
+  const processedSmartLights = useMemo(() => {
+    return smartLights.map(item => {
+      // 计算图片
+      const attachments = item.smart_light_attachments || [];
+      const images = attachments.length === 0 
+        ? [centralControllerImage]
+        : attachments.map(attachment => ({
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
+          }));
+
+      // 计算设备状态
+      const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
+        status.condition(item.device_info)
+      ) || DEVICE_STATUS.OFFLINE; // 提供默认值
+
+      return {
+        ...item,
+        computed: {
+          thumbnailSource: images[0],
+          deviceStatus
+        }
+      };
+    });
+  }, [smartLights, currentServer]);
+
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
@@ -304,7 +335,7 @@ export default function SmartLampScreen() {
           />
         ) : (
           <SmartLightList
-            smartLights={smartLights}
+            smartLights={processedSmartLights}
             userInfo={userInfo}
             loading={loading}
             hasMore={hasMore}

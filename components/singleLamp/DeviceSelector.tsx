@@ -43,7 +43,7 @@ const DeviceSelector = ({
             onPress={() => onOperationChange('controller')}
             className={`px-2 py-2 rounded ${currentOperation === 'controller' ? 'bg-blue-500' : 'bg-gray-200'}`}
           >
-            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-gray-700'}`}>控制器</Text>
+            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-gray-700'}`}>操作</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -1,12 +1,11 @@
-import { useGlobalStore } from '@/store/globalStateStore';
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { memo, useCallback, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -27,6 +26,14 @@ type Attachment = {
   file_type: string;
 };
 
+type DeviceStatus = {
+  condition: (info: any) => boolean;
+  label: string;
+  dotStyle: 'online' | 'offline' | 'open' | 'warn';
+  textStyle: 'onlineText' | 'offlineText' | 'openText' | 'warnText';
+  module: string;
+};
+
 type SmartLightItem = {
   id: number;
   sn: string;
@@ -41,6 +48,10 @@ type SmartLightItem = {
   };
   container_id: number;
   smart_light_attachments?: Attachment[];
+  computed: {
+    thumbnailSource: ImageSource;
+    deviceStatus: DeviceStatus;
+  };
 };
 
 type Props = {
@@ -55,36 +66,8 @@ type Props = {
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 120; // 压缩后的卡片高度
+const CARD_HEIGHT = 120;
 const centralControllerImage = require("@/assets/images/street/smartLight/smartLamp.png");
-
-// 添加状态配置常量
-const DEVICE_STATUS = {
-  OFFLINE: {
-    condition: (info: SmartLightItem['device_info']) => !info.online && !info.open && !info.warn,
-    label: '离线',
-    dotStyle: 'offline',
-    textStyle: 'offlineText'
-  },
-  ONLINE: {
-    condition: (info: SmartLightItem['device_info']) => info.online && !info.open && !info.warn,
-    label: '在线',
-    dotStyle: 'online',
-    textStyle: 'onlineText'
-  },
-  OPEN: {
-    condition: (info: SmartLightItem['device_info']) => info.online && info.open && !info.warn,
-    label: '打开',
-    dotStyle: 'open',
-    textStyle: 'openText'
-  },
-  WARN: {
-    condition: (info: SmartLightItem['device_info']) => info.online && info.warn,
-    label: '报警',
-    dotStyle: 'warn',
-    textStyle: 'warnText'
-  }
-} as const;
 
 const SmartLightList = memo(({
   smartLights,
@@ -97,15 +80,6 @@ const SmartLightList = memo(({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const currentServer = useGlobalStore(state => state.currentServer);
-
-  // 使用 useRef 存储不需要触发重渲染的值
-  const modalRef = useRef({
-    setVisible: (visible: boolean) => setModalVisible(visible),
-    setImages: (images: ImageSource[]) => setSelectedImages(images),
-    setIndex: (index: number) => setSelectedIndex(index)
-  });
-
   const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
     setSelectedImages(images);
     setSelectedIndex(index);
@@ -123,21 +97,32 @@ const SmartLightList = memo(({
 
   // Memoized smart light item component for better performance
   const SmartLightItem = memo(({ item }: { item: SmartLightItem }) => {
-    const getImages = useCallback(() => {
-      const attachments = item.smart_light_attachments || [];
-      if (attachments.length === 0) {
-        return [centralControllerImage];
-      }
-      return attachments.map(attachment => ({
-        uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
-      }));
-    }, [item.smart_light_attachments, currentServer]);
+    const handleConfigPress = useCallback(() => {
+      getConfigurationDetails(item);
+    }, [item]);
 
-    const images = useMemo(() => getImages(), [getImages]);
-    const thumbnailSource = images[0];
+    const handleImagePressLocal = useCallback(() => {
+      handleImagePress([item.computed.thumbnailSource]);
+    }, [item.computed.thumbnailSource, handleImagePress]);
+
+    // 在组件内部计算回路状态
+    const loopElements = useMemo(() => {
+      return item.device_info.loops.map((loop, index) => (
+        <View key={index} style={styles.loopItem}>
+          <View
+            style={[
+              styles.loopDot,
+              loop ? styles.loopActive : styles.loopInactive,
+            ]}
+          >
+            <Text style={styles.loopNumber}>{index + 1}</Text>
+          </View>
+        </View>
+      ));
+    }, [item.device_info.loops]);
 
     return (
-      <View >
+      <View>
         <Pressable style={styles.card} className="bg-background-50">
           <View style={styles.containerTitle}>
             <Text
@@ -151,7 +136,7 @@ const SmartLightList = memo(({
           <View style={styles.pointConfig}>
             <Pressable
               style={styles.configButton}
-              onPress={() => getConfigurationDetails(item)}
+              onPress={handleConfigPress}
             >
               <Ionicons name="settings-outline" size={20} color="#409eff" />
               <Text style={styles.configButtonText}>组态</Text>
@@ -160,10 +145,10 @@ const SmartLightList = memo(({
           <View style={styles.imageRowContainer}>
             <Pressable
               style={styles.thumbnailContainer}
-              onPress={() => handleImagePress(images)}
+              onPress={handleImagePressLocal}
             >
               <Image
-                source={thumbnailSource}
+                source={item.computed.thumbnailSource}
                 style={styles.thumbnail}
                 contentFit="contain"
               />
@@ -186,32 +171,19 @@ const SmartLightList = memo(({
               </Text>
               <View style={styles.statusContainer}>
                 <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
-                {Object.values(DEVICE_STATUS).map((status) =>
-                  status.condition(item.device_info) && (
-                    <View key={status.label} className=" flex-row items-center">
-                      <View style={[styles.statusDot, styles[status.dotStyle]]} />
-                      <Text style={[styles.statusText, styles[status.textStyle]]}>
-                        {status.label}
-                      </Text>
-                    </View>
-                  )
+                {item.computed.deviceStatus && (
+                  <View className="flex-row items-center">
+                    <View style={[styles.statusDot, styles[item.computed.deviceStatus.dotStyle]]} />
+                    <Text style={[styles.statusText, styles[item.computed.deviceStatus.textStyle]]}>
+                      {item.computed.deviceStatus.label}
+                    </Text>
+                  </View>
                 )}
               </View>
               <View style={styles.loopsContainer}>
                 <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
                 <View style={styles.loopsGrid}>
-                  {item.device_info.loops.map((loop, index) => (
-                    <View key={index} style={styles.loopItem}>
-                      <View
-                        style={[
-                          styles.loopDot,
-                          loop ? styles.loopActive : styles.loopInactive,
-                        ]}
-                      >
-                        <Text style={styles.loopNumber}>{index + 1}</Text>
-                      </View>
-                    </View>
-                  ))}
+                  {loopElements}
                 </View>
               </View>
             </View>
@@ -219,11 +191,6 @@ const SmartLightList = memo(({
         </Pressable>
       </View>
     );
-  }, (prevProps, nextProps) => {
-    return prevProps.item.id === nextProps.item.id &&
-      prevProps.item.device_info.online === nextProps.item.device_info.online &&
-      prevProps.item.device_info.open === nextProps.item.device_info.open &&
-      prevProps.item.device_info.warn === nextProps.item.device_info.warn;
   });
 
   SmartLightItem.displayName = "SmartLightItem";
@@ -265,39 +232,56 @@ const SmartLightList = memo(({
     [loading, smartLights.length, hasMore]
   );
 
-  const getItemLayout = (data: any, index: number) => ({
+  const getItemLayout = useCallback((data: any, index: number) => ({
     length: CARD_HEIGHT,
     offset: CARD_HEIGHT * index,
     index,
-  });
+  }), []);
 
   return (
     <>
-      <FlatList
-        data={smartLights}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.container,
-          smartLights.length === 0 && styles.emptyContainer
-        ]}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
-        refreshControl={refreshControl}
-        ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={ListFooterComponent}
-        getItemLayout={getItemLayout}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        initialNumToRender={10}
-        updateCellsBatchingPeriod={50}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10
-        }}
-      />
+      <View style={styles.flashListContainer}>
+        <FlashList
+          data={smartLights}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.container}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControl}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          estimatedItemSize={CARD_HEIGHT}
+          removeClippedSubviews={true}
+        />
+      </View>
+
+     {/*  <View style={[styles.flashListContainer, { display: 'flex' }]}>
+        <FlatList
+          data={smartLights}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.container}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControl}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          getItemLayout={getItemLayout}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={10}
+          updateCellsBatchingPeriod={50}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10
+          }}
+        />
+      </View> */}
+
       <SmartLightImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -319,6 +303,10 @@ SmartLightList.displayName = "SmartLightList";
 export default SmartLightList;
 
 const styles = StyleSheet.create({
+  flashListContainer: {
+    flex: 1,
+    height: '100%',
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

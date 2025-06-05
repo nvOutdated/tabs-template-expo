@@ -8,7 +8,6 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Animated, { FlipInEasyX, FlipOutEasyX } from 'react-native-reanimated';
 
 export type CameraItem = {
   id: number;
@@ -42,8 +41,6 @@ export default function CameraIndexScreen() {
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  const [showSearch, setShowSearch] = useState(true);
-
   const [selectedPlatform, setSelectedPlatform] = useState<MusicPlatform>(platforms[0]);
   const [isPlatformMenuVisible, setIsPlatformMenuVisible] = useState(false);
   const filteredCameras = useMemo(() => {
@@ -73,7 +70,6 @@ export default function CameraIndexScreen() {
         }));
         setCameras(prev => {
           if (isRefresh) return formattedCameras;
-          // 添加数据去重逻辑
           const existingIds = new Set(prev.map(camera => camera.id));
           const uniqueNewCameras = formattedCameras.filter((camera: any) => !existingIds.has(camera.id));
           return [...prev, ...uniqueNewCameras];
@@ -140,32 +136,27 @@ export default function CameraIndexScreen() {
 
   return (
     <View className='flex-1 bg-background-0'>
-      {showSearch && (
-        <Animated.View entering={FlipInEasyX}
-          exiting={FlipOutEasyX}
-          className="absolute   left-0 right-0 h-12 rounded-lg px-4 flex-row items-center bg-background-100"
-          style={[styles.headerContainer]}>
-          <TouchableOpacity
-            className="flex-row items-center w-35 pr-2 border-r border-typography-300"
-            onPress={togglePlatformMenu}
-          >
-            <Text className="text-sm mr-1 text-typography-900">
-              {selectedPlatform.name}
-            </Text>
-            <AntDesign name="down" size={12} className="text-typography-900" />
-          </TouchableOpacity>
+      <View className="h-12 px-4 flex-row items-center bg-background-100 border-b border-typography-300">
+        <TouchableOpacity
+          className="flex-row items-center w-35 pr-2 border-r border-typography-300"
+          onPress={togglePlatformMenu}
+        >
+          <Text className="text-sm mr-1 text-typography-900">
+            {selectedPlatform.name}
+          </Text>
+          <AntDesign name="down" size={12} className="text-typography-900" />
+        </TouchableOpacity>
 
-          <TextInput
-            className="flex-1  ml-2 h-10 text-left  align-middle text-typography-900"
-            style={styles.searchInput}
-            placeholder="搜索..."
-            placeholderTextColor={currentTheme.textColor}
-            value={searchText}
-            onChangeText={handleSearch}
-          />
-        </Animated.View>
+        <TextInput
+          className="flex-1 ml-2 h-10 text-left align-middle text-typography-900"
+          style={styles.searchInput}
+          placeholder="搜索..."
+          placeholderTextColor={currentTheme.textColor}
+          value={searchText}
+          onChangeText={handleSearch}
+        />
+      </View>
 
-      )}
       <Modal
         visible={isPlatformMenuVisible}
         transparent={true}
@@ -220,7 +211,6 @@ export default function CameraIndexScreen() {
       <CameraList
         cameras={filteredCameras}
         onEndReached={onEndReached}
-        setShowSearch={setShowSearch}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -234,12 +224,6 @@ export default function CameraIndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    zIndex: 1,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -265,7 +249,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: 14,
-    lineHeight:2,
+    lineHeight: 2,
   },
 });
 

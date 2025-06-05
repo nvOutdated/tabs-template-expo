@@ -141,7 +141,6 @@ export const useSmartLightStore = create<SmartLightStore>((set, get) => ({
   initializeSmartLightTree: async () => {
     try {
       const res = await get_smart_light_list({ page_size: 1000 });
-      console.log(res);
       if (res.code === 200 && res.data) {
         set({ allSmartLights: res.data });
       }

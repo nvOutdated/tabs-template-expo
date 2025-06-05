@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Dimensions, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,7 +22,6 @@ type Props = {
   cameras: CameraItem[];
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControl['props']>;
-  setShowSearch?: (show: boolean) => void;
 };
 
 interface VideoParams {
@@ -36,13 +36,18 @@ interface VideoParams {
 }
 
 const { width } = Dimensions.get('window');
-const COLUMN_NUM = 2; // 改为2列
+const COLUMN_NUM = 2;
 const CARD_MARGIN = 10;
 const CARD_WIDTH = (width - (COLUMN_NUM + 1) * CARD_MARGIN) / COLUMN_NUM;
-const CARD_HEIGHT = CARD_WIDTH; // 增加卡片高度
+const CARD_HEIGHT = CARD_WIDTH;
 
-export default function CameraList({ cameras, onEndReached, refreshControl, setShowSearch }: Props) {
+const CameraList: React.FC<Props> = ({
+  cameras,
+  onEndReached,
+  refreshControl,
+}) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // Memoized camera item component for better performance
   const CameraItem = memo(({ item, router }: { item: CameraItem; router: any }) => {
@@ -85,7 +90,7 @@ export default function CameraList({ cameras, onEndReached, refreshControl, setS
                       id: item.id.toString(),
                       title: item.name,
                       thumbnail: item.thumbnail,
-                      duration: '00:00', // 默认时长
+                      duration: '00:00',
                       uploadDate: item.create_time,
                       channelId: item.channelId,
                       is_online: item.is_online,
@@ -116,24 +121,9 @@ export default function CameraList({ cameras, onEndReached, refreshControl, setS
 
   CameraItem.displayName = 'CameraItem';
 
-  // Memoized renderItem function
   const renderItem = React.useCallback(({ item }: { item: CameraItem }) => (
     <CameraItem item={item} router={router} />
   ), [router]);
-
-  const [startY, setStartY] = useState<number>(0);
-  const handleScrollBeginDrag = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
-    const { y } = event.nativeEvent.contentOffset;
-    setStartY(y);
-  }, []);
-
-  const handleScrollEndDrag = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
-    const { y } = event.nativeEvent.contentOffset;
-    const direction = y > startY ? '向下' : '向上';
-    if (setShowSearch) {
-      setShowSearch(direction === '向上');
-    }
-  }, [startY, setShowSearch]);
 
   const keyExtractor = useCallback((item: CameraItem) => item.id.toString(), []);
 
@@ -142,24 +132,40 @@ export default function CameraList({ cameras, onEndReached, refreshControl, setS
       <Text style={styles.emptyText}>暂无摄像头数据</Text>
     </View>
   ), []);
+
   return (
-    <FlatList
-      data={cameras}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      numColumns={COLUMN_NUM}
-      contentContainerStyle={styles.container}
-      columnWrapperStyle={styles.columnWrapper}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={0.5}
-      refreshControl={refreshControl}
-      onScrollBeginDrag={handleScrollBeginDrag}
-      onScrollEndDrag={handleScrollEndDrag}
-      ListEmptyComponent={ListEmptyComponent}
-    />
+    <View style={styles.mainContainer}>
+      <FlatList
+        data={cameras}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        numColumns={COLUMN_NUM}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: 50 }
+        ]}
+        columnWrapperStyle={styles.columnWrapper}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
+        refreshControl={refreshControl}
+        ListEmptyComponent={ListEmptyComponent}
+      />
+    </View>
   );
-}
+};
+
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  listContainer: {
+    padding: CARD_MARGIN,
+  },
+  columnWrapper: {
+    justifyContent: 'flex-start',
+    gap: CARD_MARGIN,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -170,17 +176,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  container: {
-    padding: CARD_MARGIN,
-  },
-  columnWrapper: {
-    justifyContent: 'flex-start',
-    gap: CARD_MARGIN,
-  },
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    // backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: CARD_MARGIN,
@@ -209,11 +207,9 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 14,
-    // color: '#666',
   },
   timeText: {
     fontSize: 12,
-    // color: '#999',
   },
   status: {
     fontSize: 14,
@@ -236,9 +232,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -16 }, { translateY: -16 }], // 调整为16以匹配新的大小
-    backgroundColor: 'rgba(0,0,0,0.3)', // 降低背景透明度
-    borderRadius: 16, // 调整为16以匹配新的大小
-    padding: 4, // 增加内边距
+    transform: [{ translateX: -16 }, { translateY: -16 }],
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+    padding: 4,
   },
 });
+
+export default CameraList;

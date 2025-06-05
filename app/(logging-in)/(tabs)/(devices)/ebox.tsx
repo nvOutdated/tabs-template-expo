@@ -7,12 +7,16 @@ import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
 import { useAreaStore } from "@/store/areaStore";
 import { DEVICE_STATUS, EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
+import { useGlobalStore } from "@/store/globalStateStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { getUserInfo } from "@/utils/useStorageState";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 const { width } = Dimensions.get('window');
+
+// 将常量移到组件外部
+const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
 
 export default function EboxScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -41,6 +45,8 @@ export default function EboxScreen() {
   } = useEboxStore();
 
   const { areaList, areaWithDevicesList } = useAreaStore();
+
+  const currentServer = useGlobalStore(state => state.currentServer);
 
   const loadEleBoxList = useCallback(async(page: number, isRefresh: boolean = false) => {
     if (loadingRef.current) return;
@@ -248,6 +254,32 @@ export default function EboxScreen() {
     setSelectedDevices(newSelectedDevices);
   }, [allEboxes, selectedDevices, setSelectedDevices]);
 
+  // 计算处理后的电箱列表
+  const processedElectricBoxes = useMemo(() => {
+    return electricBoxes.map(item => {
+      // 计算图片
+      const attachments = item.ebox_attachments || [];
+      const images = attachments.length === 0 
+        ? [centralControllerImage]
+        : attachments.map(attachment => ({
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
+          }));
+
+      // 计算设备状态
+      const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
+        status.condition(item.device_info)
+      ) || DEVICE_STATUS.OFFLINE; // 提供默认值
+
+      return {
+        ...item,
+        computed: {
+          thumbnailSource: images[0],
+          deviceStatus
+        }
+      };
+    });
+  }, [electricBoxes, currentServer]);
+
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
@@ -273,7 +305,7 @@ export default function EboxScreen() {
           />
         ) : (
           <EboxList
-            electricBoxes={electricBoxes}
+            electricBoxes={processedElectricBoxes}
             userInfo={userInfo}
             loading={loading}
             hasMore={hasMore}

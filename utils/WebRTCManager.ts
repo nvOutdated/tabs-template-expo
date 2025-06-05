@@ -119,8 +119,10 @@ export class WebRTCManager {
       }
 
       const serverBaseUrl = 'http://182.99.177.29:30080';
+      // const serverBaseUrl = 'http://192.1.168.180:30080';
       const requestUrl = `${serverBaseUrl}/index/api/webrtc?app=rtp&stream=${stream}&type=play`;
-
+      console.log(stream,requestUrl,"发送地址");
+      
       const fetchResponse = await fetch(requestUrl, {
         method: 'POST',
         headers: {

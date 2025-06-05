@@ -1,12 +1,11 @@
-import { useGlobalStore } from '@/store/globalStateStore';
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -27,6 +26,19 @@ type Attachment = {
   file_type: string;
 };
 
+type DeviceStatusStyle = {
+  dotStyle: 'online' | 'offline' | 'open' | 'warn';
+  textStyle: 'onlineText' | 'offlineText' | 'openText' | 'warnText';
+};
+
+type DeviceStatus = {
+  condition: (info: any) => boolean;
+  label: string;
+  dotStyle: DeviceStatusStyle['dotStyle'];
+  textStyle: DeviceStatusStyle['textStyle'];
+  module: string;
+};
+
 type ElectricItem = {
   id: number;
   sn: string;
@@ -41,6 +53,10 @@ type ElectricItem = {
   };
   container_id: number;
   ebox_attachments?: Attachment[];
+  computed: {
+    thumbnailSource: ImageSource;
+    deviceStatus: DeviceStatus;
+  };
 };
 
 type Props = {
@@ -57,48 +73,17 @@ const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120;
 
-// 将常量移到组件外部，避免每次渲染都创建
-const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
-
-const DEVICE_STATUS = {
-  OFFLINE: {
-    condition: (info: ElectricItem['device_info']) => !info.online && !info.open && !info.warn,
-    label: '离线',
-    dotStyle: 'offline',
-    textStyle: 'offlineText'
-  },
-  ONLINE: {
-    condition: (info: ElectricItem['device_info']) => info.online && !info.open && !info.warn,
-    label: '在线',
-    dotStyle: 'online',
-    textStyle: 'onlineText'
-  },
-  OPEN: {
-    condition: (info: ElectricItem['device_info']) => info.online && info.open && !info.warn,
-    label: '打开',
-    dotStyle: 'open',
-    textStyle: 'openText'
-  },
-  WARN: {
-    condition: (info: ElectricItem['device_info']) => info.online && info.warn,
-    label: '报警',
-    dotStyle: 'warn',
-    textStyle: 'warnText'
-  }
-} as const;
-
-const EboxList = memo(({
+export default function EboxList({
   electricBoxes,
   onEndReached,
   refreshControl,
   loading,
   hasMore = true,
   userInfo
-}: Props) => {
+}: Props){
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const currentServer = useGlobalStore(state => state.currentServer);
 
   const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
     setSelectedImages(images);
@@ -117,25 +102,15 @@ const EboxList = memo(({
 
   // 优化后的 ElectricItem 组件
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
-    // 优化图片计算
-    const images = useMemo(() => {
-      const attachments = item.ebox_attachments || [];
-      if (attachments.length === 0) {
-        return [centralControllerImage];
-      }
-      return attachments.map(attachment => ({
-        uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
-      }));
-    }, [item.ebox_attachments, currentServer?.ip, currentServer?.filePort]);
+    const handleConfigPress = useCallback(() => {
+      getConfigurationDetails(item);
+    }, [item]);
 
-    // 优化状态计算
-    const deviceStatus = useMemo(() => {
-      return Object.values(DEVICE_STATUS).find(status => 
-        status.condition(item.device_info)
-      );
-    }, [item.device_info.online, item.device_info.open, item.device_info.warn]);
+    const handleImagePressLocal = useCallback(() => {
+      handleImagePress([item.computed.thumbnailSource]);
+    }, [item.computed.thumbnailSource, handleImagePress]);
 
-    // 优化回路状态计算
+    // 在组件内部计算回路状态
     const loopElements = useMemo(() => {
       return item.device_info.loops.map((loop, index) => (
         <View key={index} style={styles.loopItem}>
@@ -150,16 +125,6 @@ const EboxList = memo(({
         </View>
       ));
     }, [item.device_info.loops]);
-
-    const thumbnailSource = images[0];
-
-    const handleConfigPress = useCallback(() => {
-      getConfigurationDetails(item);
-    }, [item]);
-
-    const handleImagePressLocal = useCallback(() => {
-      handleImagePress(images);
-    }, [images, handleImagePress]);
 
     return (
       <View>
@@ -190,7 +155,7 @@ const EboxList = memo(({
               onPress={handleImagePressLocal}
             >
               <Image
-                source={thumbnailSource}
+                source={item.computed.thumbnailSource}
                 style={styles.thumbnail}
                 contentFit="contain"
               />
@@ -214,11 +179,11 @@ const EboxList = memo(({
               
               <View style={styles.statusContainer}>
                 <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
-                {deviceStatus && (
+                {item.computed.deviceStatus && (
                   <View className="flex-row items-center">
-                    <View style={[styles.statusDot, styles[deviceStatus.dotStyle]]} />
-                    <Text style={[styles.statusText, styles[deviceStatus.textStyle]]}>
-                      {deviceStatus.label}
+                    <View style={[styles.statusDot, styles[item.computed.deviceStatus.dotStyle]]} />
+                    <Text style={[styles.statusText, styles[item.computed.deviceStatus.textStyle]]}>
+                      {item.computed.deviceStatus.label}
                     </Text>
                   </View>
                 )}
@@ -235,49 +200,6 @@ const EboxList = memo(({
         </Pressable>
       </View>
     );
-  }, (prevProps, nextProps) => {
-    // 完善的比较函数
-    const prev = prevProps.item;
-    const next = nextProps.item;
-    
-    // 基本字段比较
-    if (prev.id !== next.id ||
-        prev.name !== next.name ||
-        prev.addr !== next.addr ||
-        prev.device_info.device_code !== next.device_info.device_code ||
-        prev.device_info.online !== next.device_info.online ||
-        prev.device_info.open !== next.device_info.open ||
-        prev.device_info.warn !== next.device_info.warn) {
-      return false;
-    }
-    
-    // 回路状态比较
-    if (prev.device_info.loops.length !== next.device_info.loops.length) {
-      return false;
-    }
-    
-    for (let i = 0; i < prev.device_info.loops.length; i++) {
-      if (prev.device_info.loops[i] !== next.device_info.loops[i]) {
-        return false;
-      }
-    }
-    
-    // 附件比较
-    const prevAttachments = prev.ebox_attachments || [];
-    const nextAttachments = next.ebox_attachments || [];
-    
-    if (prevAttachments.length !== nextAttachments.length) {
-      return false;
-    }
-    
-    for (let i = 0; i < prevAttachments.length; i++) {
-      if (prevAttachments[i].id !== nextAttachments[i].id ||
-          prevAttachments[i].url !== nextAttachments[i].url) {
-        return false;
-      }
-    }
-    
-    return true;
   });
 
   ElectricItem.displayName = "ElectricItem";
@@ -288,7 +210,7 @@ const EboxList = memo(({
   );
 
   const keyExtractor = useCallback(
-    (item: ElectricItem) => (item.id+item.sn).toString(),
+    (item: ElectricItem,index:number) => (item.id+index).toString(),
     []
   );
 
@@ -327,32 +249,50 @@ const EboxList = memo(({
 
   return (
     <>
-      <FlatList
-        data={electricBoxes}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.container,
-          electricBoxes.length === 0 && styles.emptyContainer
-        ]}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
-        refreshControl={refreshControl}
-        ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={ListFooterComponent}
-        getItemLayout={getItemLayout}
-        // removeClippedSubviews={true}
-        // 优化的性能配置
-        // initialNumToRender={5}
-        // maxToRenderPerBatch={5}
-        // windowSize={3}
-        // updateCellsBatchingPeriod={100}
-        // maintainVisibleContentPosition={{
-        //   minIndexForVisible: 0,
-        //   autoscrollToTopThreshold: 10
-        // }}
-      />
+      {/* FlashList Implementation */}
+      <View className="flex-1">
+        <FlashList
+          data={electricBoxes}
+          renderItem={renderItem}
+          // keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.container}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControl}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          estimatedItemSize={CARD_HEIGHT}
+          removeClippedSubviews={true}
+        />
+      </View>
+
+      {/* FlatList Implementation */}
+      {/* <View className="flex-1">
+        <FlatList
+          data={electricBoxes}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.container}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControl}
+          ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          getItemLayout={getItemLayout}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={10}
+          updateCellsBatchingPeriod={50}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10
+          }}
+        />
+      </View> */}
+
       <EboxImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -363,17 +303,13 @@ const EboxList = memo(({
       />
     </>
   );
-}, (prevProps, nextProps) => {
-  return prevProps.electricBoxes === nextProps.electricBoxes &&
-    prevProps.loading === nextProps.loading &&
-    prevProps.hasMore === nextProps.hasMore;
-});
-
-EboxList.displayName = "EboxList";
-
-export default EboxList;
+}
 
 const styles = StyleSheet.create({
+  flashListContainer: {
+    flex: 1,
+    height: '100%',
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -499,6 +435,27 @@ const styles = StyleSheet.create({
   warnText: {
     color: "#F56C6C"
   },
+  footer: {
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
   loopsContainer: {
     width: "80%",
     flexDirection: "row",
@@ -538,26 +495,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#666",
     textAlign: "center",
-  },
-  footer: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-  },
-  loadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
   },
 });

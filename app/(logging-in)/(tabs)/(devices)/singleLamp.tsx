@@ -1,5 +1,6 @@
 // singleLamp.tsx - 优化后的完整代码
 import { lightPole_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
+import BatchOperationBar from "@/components/singleLamp/BatchOperationBar";
 import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
 import DeviceSelector from "@/components/singleLamp/DeviceSelector";
 import LineSelector from "@/components/singleLamp/LineSelector";
@@ -7,7 +8,7 @@ import SingleLampDrawer, { Area, Device } from "@/components/singleLamp/SingleLa
 import SingleLampList from "@/components/singleLamp/SingleLampList";
 import { useAreaStore } from "@/store/areaStore";
 import { ElectricItem, useEboxStore } from "@/store/eboxStore";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -55,6 +56,9 @@ export default function SingleLampScreen() {
   const [controllers, setControllers] = useState<Controller[]>([]);
   const loadingRef = useRef(false);
   const insets = useSafeAreaInsets();
+  const [selectedControllers, setSelectedControllers] = useState<{ lampId: number; controllerId: number }[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredSingleLamps, setFilteredSingleLamps] = useState<any[]>([]);
 
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
@@ -68,6 +72,31 @@ export default function SingleLampScreen() {
       loadLines(firstDevice.id);
     }
   }, [allEboxes]);
+
+  // 处理搜索
+  const handleSearch = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (!text.trim()) {
+      setFilteredSingleLamps(singleLamps);
+      return;
+    }
+
+    const filtered = singleLamps.filter(lamp => {
+      return lamp.controllers.some((controller: Controller) => 
+        controller.controllerId.toLowerCase().includes(text.toLowerCase())
+      );
+    });
+    setFilteredSingleLamps(filtered);
+  }, [singleLamps]);
+
+  // 当 singleLamps 更新时，同步更新 filteredSingleLamps
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      handleSearch(searchQuery);
+    } else {
+      setFilteredSingleLamps(singleLamps);
+    }
+  }, [singleLamps, searchQuery, handleSearch]);
 
   const loadLines = useCallback(async (deviceId: number) => {
     try {
@@ -134,15 +163,42 @@ export default function SingleLampScreen() {
     }
   }, [selectedDevice, selectedLine, loadSingleLamps]);
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchText(text);
-    // TODO: Implement search functionality for single lamps
+  const handleSelectAll = useCallback(() => {
+    const allControllers = singleLamps.reduce((acc: { lampId: number; controllerId: number }[], lamp) => {
+      const controllers = lamp.controllers.map((controller: Controller) => ({
+        lampId: lamp.id,
+        controllerId: controller.id
+      }));
+      return [...acc, ...controllers];
+    }, []);
+    setSelectedControllers(allControllers);
+  }, [singleLamps]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedControllers([]);
   }, []);
 
   const handleEdit = useCallback(() => {
-    // TODO: Implement edit functionality
-    console.log('Edit button pressed');
+    // TODO: Implement edit functionality for selected controllers
+    console.log('Selected controllers:', selectedControllers);
+  }, [selectedControllers]);
+
+  const handleSelectionChange = useCallback((selected: { lampId: number; controllerId: number }[]) => {
+    setSelectedControllers(selected);
   }, []);
+
+  // 计算总控制器数量
+  const totalControllerCount = useCallback(() => {
+    return singleLamps.reduce((count, lamp) => {
+      return count + (lamp.controllers?.length || 0);
+    }, 0);
+  }, [singleLamps]);
+
+  // 检查是否全部选中
+  const isAllSelected = useCallback(() => {
+    const total = totalControllerCount();
+    return total > 0 && selectedControllers.length === total;
+  }, [selectedControllers, totalControllerCount]);
 
   const handleSelectArea = useCallback((area: Area) => {
     setSelectedArea(area);
@@ -229,6 +285,7 @@ export default function SingleLampScreen() {
             onSelectLine={handleSelectLine}
           />
         )}
+
         {currentOperation === 'all' ? (
           <SingleLampList
             singleLamps={singleLamps}
@@ -244,7 +301,22 @@ export default function SingleLampScreen() {
             ListEmptyComponent={renderEmptyState()}
           />
         ) : (
-          <ControllerInfoCard controllers={controllers} />
+          <>
+            <BatchOperationBar
+              onSearch={handleSearch}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              onEdit={handleEdit}
+              selectedCount={selectedControllers.length}
+              totalCount={totalControllerCount()}
+              isAllSelected={isAllSelected()}
+            />
+            <ControllerInfoCard 
+              singleLamps={filteredSingleLamps} 
+              onSelectionChange={handleSelectionChange}
+              selectedControllers={selectedControllers}
+            />
+          </>
         )}
       </View>
      

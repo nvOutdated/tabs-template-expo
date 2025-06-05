@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+1.在普通组件中使用tailwindcss类名
+2.动画库使用react-native-reanimated
+
+3.手势库使用react-native-gesture-handler

@@ -21,10 +21,10 @@ export default function ChangeIp() {
     }
 
     return (
-        <ScrollView className="flex-1 bg-white">
+        <ScrollView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
             <StatusBar backgroundColor="transparent"
                 translucent={true} barStyle="dark-content" />
-            <View className="p-4" style={{ paddingTop: insets.top }}>
+            <View className="p-4" >
                 <Text className="text-lg font-bold mb-4">选择服务器地址</Text>
                 {SERVER_ADDRESSES.map((server) => (
                     <TouchableOpacity
