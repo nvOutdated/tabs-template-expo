@@ -72,34 +72,31 @@ const ScannerModal = () => {
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         enableTorch={torch}
         flash={torch ? 'auto' : 'off'}
-      >
-        <View style={[styles.overlay, { paddingTop: insets.top }]}>
-          {/* 移除顶部返回按钮 */}
-          
-          {/* 扫描框和动画角 */}
-          <View style={styles.scanFrameContainer}>
-            <View style={styles.scanFrame}>
-              <Animated.View style={[styles.corner, styles.topLeft, cornerAnimatedStyle]} />
-              <Animated.View style={[styles.corner, styles.topRight, cornerAnimatedStyle]} />
-              <Animated.View style={[styles.corner, styles.bottomLeft, cornerAnimatedStyle]} />
-              <Animated.View style={[styles.corner, styles.bottomRight, cornerAnimatedStyle]} />
-            </View>
-            <Text style={styles.text}>请将二维码对准扫描框</Text>
+      />
+      <View style={[styles.overlay, { paddingTop: insets.top }]}>
+        {/* 扫描框和动画角 */}
+        <View style={styles.scanFrameContainer}>
+          <View style={styles.scanFrame}>
+            <Animated.View style={[styles.corner, styles.topLeft, cornerAnimatedStyle]} />
+            <Animated.View style={[styles.corner, styles.topRight, cornerAnimatedStyle]} />
+            <Animated.View style={[styles.corner, styles.bottomLeft, cornerAnimatedStyle]} />
+            <Animated.View style={[styles.corner, styles.bottomRight, cornerAnimatedStyle]} />
           </View>
-
-          {/* 底部按钮区域 */}
-          <View style={styles.bottomControls}>
-            <Pressable style={styles.controlButton} onPress={() => setTorch(!torch)}>
-              <Ionicons name={torch ? "flash" : "flash-off"} size={48} color="white" />
-              <Text style={styles.buttonText}>{torch ? "关闭闪光灯" : "打开闪光灯"}</Text>
-            </Pressable>
-            <Pressable style={styles.controlButton} onPress={() => router.back()}>
-              <Ionicons name="close" size={48} color="white" />
-              <Text style={styles.buttonText}>关闭</Text>
-            </Pressable>
-          </View>
+          <Text style={styles.text}>请将二维码对准扫描框</Text>
         </View>
-      </CameraView>
+
+        {/* 底部按钮区域 */}
+        <View style={styles.bottomControls}>
+          <Pressable style={styles.controlButton} onPress={() => setTorch(!torch)}>
+            <Ionicons name={torch ? "flash" : "flash-off"} size={48} color="white" />
+            <Text style={styles.buttonText}>{torch ? "关闭闪光灯" : "打开闪光灯"}</Text>
+          </Pressable>
+          <Pressable style={styles.controlButton} onPress={() => router.back()}>
+            <Ionicons name="close" size={48} color="white" />
+            <Text style={styles.buttonText}>关闭</Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 };
@@ -116,7 +113,11 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   overlay: { 
-    flex: 1, 
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
 

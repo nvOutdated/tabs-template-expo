@@ -2,7 +2,6 @@ import { LinearGradient } from "@/components/ui/linear-gradient";
 import Icon from "@expo/vector-icons/FontAwesome";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,7 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import {
   Easing,
@@ -92,24 +91,35 @@ export default function LoginIndex() {
       const formBody = Object.keys(loginForm)
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(loginForm[key as keyof typeof loginForm]))
         .join('&');
+
+      console.log('Login attempt with URL:', `${DEFAULT_BASE_URL}/smart/auth/token`);
+      
       const response = await fetch(`${DEFAULT_BASE_URL}/smart/auth/token`, {
         method: 'POST',
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json"
         },
         body: formBody
       });
-      // const response = await loginApi(loginForm);
+
       const responseText = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response text:', responseText);
+
       let responseData;
       try {
         responseData = JSON.parse(responseText);
       } catch (e) {
-        console.log("响应不是有效的JSON格式");
+        // console.error("Failed to parse response:", e);
+        showError({
+          title: '登录失败',
+          message: '服务器响应格式错误'
+        });
+        return;
       }
       
       if (response.ok) {
-        // console.log("登录成功");
         if (rememberPassword) {
           await saveUserInfo({name: username, password: password});
         } else {
@@ -118,27 +128,34 @@ export default function LoginIndex() {
         
         if (responseData && responseData.access_token) {
           await saveToken(responseData.access_token);
-          console.log(responseData.access_token,"token");
+          console.log("Login successful, token saved");
           
+          setTimeout(() => {
+            router.replace("/(logging-in)/(tabs)/(devices)/ebox");
+          }, 500);
         } else {
-          await saveToken('tokenKey');
+          // console.error("No access token in response:", responseData);
+          showError({
+            title: '登录失败',
+            message: '服务器响应缺少必要信息'
+          });
         }
-        
-        setTimeout(() => {
-          router.replace("/(logging-in)/(tabs)/(devices)/ebox");
-        }, 500);
       } else {
+        const errorMessage = responseData?.error_description || responseData?.error || '用户名或密码错误';
+        // console.error("Login failed:", errorMessage);
         showError({
-          title:'登录失败',
-          message:"密码错误"
-        })
+          title: '登录失败',
+          message: errorMessage
+        });
         setLoginFailed(true);
-        // Alert.alert('登录失败', '用户名或密码错误！');
       }
     } catch (error) {
-      // console.error("登录请求出错:", error);
+      console.error("Login request error:", error);
       setLoginFailed(true);
-      Alert.alert('登录失败', '网络请求错误，请稍后再试！');
+      showError({
+        title: '登录失败',
+        message: `网络请求错误，请检查网络连接或稍后再试${DEFAULT_BASE_URL},${error}`
+      });
     }
   };
 

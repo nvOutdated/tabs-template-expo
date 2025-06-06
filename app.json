@@ -4,7 +4,7 @@
     "slug": "tabs-component-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "assets/images/icon.png",
     "scheme": "tabscomponentapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,17 +12,20 @@
     "ios": {
       "supportsTablet": true,
       "bitcode": false,
+      "bundleIdentifier": "com.xdd11.tabscomponentapp",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "需要获取您的位置信息以显示地图",
         "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图",
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsArbitraryLoadsInWebContent": true,
+          "NSAllowsLocalNetworking": true
         }
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -42,14 +45,7 @@
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResources": true,
       "enableR8": true,
-      "networkSecurityConfig": {
-        "cleartextTrafficPermitted": true,
-        "securityConfig": {
-          "trustAnchors": {
-            "certificates": ["system", "user"]
-          }
-        }
-      },
+      "usesCleartextTraffic": true,
       "jsEngine": "hermes",
       "enableHermes": true,
       "enableDangerousExperimentalLeanBuilds": true
@@ -61,15 +57,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ],
       [
         "expo-camera",
         {

@@ -1,5 +1,6 @@
 // singleLamp.tsx - 优化后的完整代码
 import { lightPole_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
+import BatchControlModal, { BatchControlFormData } from "@/components/singleLamp/BatchControlModal";
 import BatchOperationBar from "@/components/singleLamp/BatchOperationBar";
 import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
 import DeviceSelector from "@/components/singleLamp/DeviceSelector";
@@ -59,6 +60,7 @@ export default function SingleLampScreen() {
   const [selectedControllers, setSelectedControllers] = useState<{ lampId: number; controllerId: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredSingleLamps, setFilteredSingleLamps] = useState<any[]>([]);
+  const [showBatchControlModal, setShowBatchControlModal] = useState(false);
 
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
@@ -179,7 +181,14 @@ export default function SingleLampScreen() {
   }, []);
 
   const handleEdit = useCallback(() => {
-    // TODO: Implement edit functionality for selected controllers
+    if (selectedControllers.length > 0) {
+      setShowBatchControlModal(true);
+    }
+  }, [selectedControllers]);
+
+  const handleBatchControlConfirm = useCallback((formData: BatchControlFormData) => {
+    // TODO: Implement batch control logic
+    console.log('Batch control form data:', formData);
     console.log('Selected controllers:', selectedControllers);
   }, [selectedControllers]);
 
@@ -326,6 +335,12 @@ export default function SingleLampScreen() {
         areas={areaList}
         selectedDevice={selectedDevice}
         onSelectDevice={handleSelectDevice}
+      />
+
+      <BatchControlModal
+        visible={showBatchControlModal}
+        onClose={() => setShowBatchControlModal(false)}
+        onConfirm={handleBatchControlConfirm}
       />
     </GestureHandlerRootView>
   );

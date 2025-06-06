@@ -7,51 +7,44 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug",
-        "image": "latest"
+        "gradleCommand": ":app:assembleDebug"
       },
-      "ios": {
-        "image": "latest"
+      "ios": {},
+      "env": {
+        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp.dev",
+        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp.dev",
+        "EAS_BUILD_PROFILE": "development"
       }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "image": "latest",
-        "env": {
-          "ENABLE_PROGUARD": "true",
-          "ENABLE_SHRINK_RESOURCES": "true",
-          "ENABLE_R8": "true"
-        }
+        "gradleCommand": ":app:assembleRelease"
       },
-      "ios": {
-        "image": "latest",
-        "env": {
-          "ENABLE_PROGUARD": "true"
-        }
+      "ios": {},
+      "env": {
+        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp.preview",
+        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp.preview",
+        "EAS_BUILD_PROFILE": "preview"
       }
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease",
-        "image": "latest",
-        "env": {
-          "ENABLE_PROGUARD": "true",
-          "ENABLE_SHRINK_RESOURCES": "true",
-          "ENABLE_R8": "true"
-        }
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       },
-      "ios": {
-        "image": "latest",
-        "env": {
-          "ENABLE_PROGUARD": "true"
-        }
+      "ios": {},
+      "env": {
+        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp",
+        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp",
+        "EAS_BUILD_PROFILE": "production"
       }
     }
   },

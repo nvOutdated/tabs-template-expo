@@ -13,7 +13,7 @@ export const useGlobalStore = create<GlobalState>((set) => ({
     setCurrentServer: (server) => set({ currentServer: server }),
     initializeServer: async () => {
         const cachedAddress = await getAccessAddress()
-        const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[2]
+        const server = SERVER_ADDRESSES.find(s => s.name === cachedAddress) || SERVER_ADDRESSES[1]
         set({ currentServer: server })
     }
 }))
@@ -35,7 +35,7 @@ export const getCurrentBaseWs = () => {
     const server = getCurrentServer()
     return `ws://${server.ip}:${server.wsPort}`
     // return `http://192.168.1.215:38300`
-} 
+}
 
 export const getCurrentFileUrl = () => {
     const server = getCurrentServer()
