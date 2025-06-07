@@ -48,7 +48,10 @@
       "usesCleartextTraffic": true,
       "jsEngine": "hermes",
       "enableHermes": true,
-      "enableDangerousExperimentalLeanBuilds": true
+      "enableDangerousExperimentalLeanBuilds": true,
+      "networkSecurityConfig": {
+        "cleartextTrafficPermitted": true
+      }
     },
     "web": {
       "bundler": "metro",
