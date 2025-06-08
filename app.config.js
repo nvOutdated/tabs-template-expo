@@ -1,6 +1,7 @@
+// app.config.ts
 module.exports = ({ config }) => {
   const buildProfile = process.env.EAS_BUILD_PROFILE || 'development';
-  
+
   const getImagePath = (type) => {
     const env = buildProfile === 'production' ? 'prod' : 'dev';
     return `assets/images/${env}/${type}.png`;
@@ -19,16 +20,10 @@ module.exports = ({ config }) => {
         foregroundImage: iconPath,
         backgroundColor: "#ffffff"
       },
-      // 移除之前的 networkSecurityConfig 配置
+      usesCleartextTraffic: true, // ✅ 明文请求
       networkSecurityConfig: {
-        cleartextTrafficPermitted: true
-      },
-      usesCleartextTraffic: true,
-      enableProguardInReleaseBuilds: true,
-      enableShrinkResources: true,
-      enableR8: true,
-      jsEngine: "hermes",
-      enableHermes: true
+        cleartextTrafficPermitted: true,
+      }
     },
     ios: {
       ...config.ios,
@@ -38,13 +33,36 @@ module.exports = ({ config }) => {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true,
           NSAllowsArbitraryLoadsInWebContent: true,
-          NSAllowsLocalNetworking: true
+          NSAllowsLocalNetworking: true,
+          NSExceptionDomains: {
+            "*": {
+              NSExceptionAllowsInsecureHTTPLoads: true,
+              NSIncludesSubdomains: true
+            }
+          }
         }
       }
     },
     plugins: [
-      ...config.plugins,
-      // 添加自定义网络安全插件
+      ...(config.plugins || []),
+      
+      // ✅ 插件声明必须在 root 层级
+      [
+        "expo-build-properties",
+        {
+          android: {
+            enableProguardInReleaseBuilds: true,
+            enableShrinkResources: true,
+            enableR8: true,
+            jsEngine: "hermes",
+            usesCleartextTraffic: true,
+            networkSecurityConfig: {
+              cleartextTrafficPermitted: true
+            }
+          }
+        }
+      ],
+
       [
         "expo-splash-screen",
         {

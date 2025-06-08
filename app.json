@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "tabs-component-app",
+    "name": "xddApp",
     "slug": "tabs-component-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -48,10 +48,7 @@
       "usesCleartextTraffic": true,
       "jsEngine": "hermes",
       "enableHermes": true,
-      "enableDangerousExperimentalLeanBuilds": true,
-      "networkSecurityConfig": {
-        "cleartextTrafficPermitted": true
-      }
+      "enableDangerousExperimentalLeanBuilds": true
     },
     "web": {
       "bundler": "metro",
@@ -74,6 +71,14 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],
