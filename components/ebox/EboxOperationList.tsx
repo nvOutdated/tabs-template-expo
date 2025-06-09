@@ -4,8 +4,9 @@ import PasswordModal from '@/components/ui/PasswordModal';
 import { DEVICE_STATUS, useEboxStore } from '@/store/eboxStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -281,7 +282,20 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     }
   };
   
-
+  // 添加全选/取消全选的处理函数
+  const handleSelectAll = useCallback(() => {
+    if (selectedOperations.size === operations.length) {
+      // 如果已经全选，则取消全选
+      clearSelectedOperations();
+    } else {
+      // 否则全选所有操作
+      operations.forEach(operation => {
+        if (!selectedOperations.has(operation.id)) {
+          toggleOperationSelect(operation.id);
+        }
+      });
+    }
+  }, [operations, selectedOperations, clearSelectedOperations, toggleOperationSelect]);
 
   const renderLoopButtons = () => (
     <View style={styles.loopContainer}>
@@ -635,13 +649,21 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       {/* 统计信息 */}
       <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
         <View className="flex-row items-center">
-          <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text>
+        {/*   <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text> */}
           <Text className="text-base text-warning-500 mr-4">警告: {stats.warning}</Text>
           <Text className="text-base text-success-500">信息: {stats.info}</Text>
         </View>
         <View className="flex-row items-center">
           {isEditMode ? (
             <>
+              <TouchableOpacity 
+                onPress={handleSelectAll}
+                className="bg-primary-500 px-3 py-1 rounded-full mr-2"
+              >
+                <Text className="text-white">
+                  {selectedOperations.size === operations.length ? '取消全选' : '全选'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity 
                 onPress={handleDeleteSelected}
                 className="bg-error-500 px-3 py-1 rounded-full mr-2"
@@ -666,20 +688,16 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         </View>
       </View>
 
-      <FlatList
+      <FlashList
         data={operations}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        contentContainerStyle={[
-          styles.list,
-          operations.length === 0 && styles.emptyList
-        ]}
+        contentContainerStyle={operations.length === 0 ? styles.emptyList : styles.list}
         ListEmptyComponent={EmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={5}
+        estimatedItemSize={200}
         ItemSeparatorComponent={() => (
           <View style={{ height: 8 }} />
         )}
@@ -766,7 +784,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   emptyList: {
-    flex: 1,
+    padding: 16,
+    paddingBottom: 32,
   },
   footer: {
     paddingVertical: 16,

@@ -4,22 +4,16 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 
 interface BatchOperationBarProps {
   onSearch: (text: string) => void;
-  onSelectAll: () => void;
-  onDeselectAll: () => void;
   onEdit: () => void;
   selectedCount: number;
   totalCount: number;
-  isAllSelected: boolean;
 }
 
 const BatchOperationBar: React.FC<BatchOperationBarProps> = ({
   onSearch,
-  onSelectAll,
-  onDeselectAll,
   onEdit,
   selectedCount,
   totalCount,
-  isAllSelected,
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -32,14 +26,6 @@ const BatchOperationBar: React.FC<BatchOperationBarProps> = ({
     setSearchText('');
     onSearch('');
   }, [onSearch]);
-
-  const handleSelectAll = useCallback(() => {
-    if (isAllSelected) {
-      onDeselectAll();
-    } else {
-      onSelectAll();
-    }
-  }, [isAllSelected, onSelectAll, onDeselectAll]);
 
   return (
     <View style={styles.container}>
@@ -66,21 +52,13 @@ const BatchOperationBar: React.FC<BatchOperationBarProps> = ({
         
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={[styles.button, isAllSelected && styles.buttonSelected]} 
-            onPress={handleSelectAll}
-          >
-            <Text style={[styles.buttonText, isAllSelected && styles.buttonTextSelected]}>
-              {isAllSelected ? '取消全选' : '全选'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
             style={[styles.button, styles.editButton]} 
             onPress={onEdit}
             disabled={selectedCount === 0}
           >
             <Text style={[styles.buttonText, selectedCount === 0 && styles.buttonTextDisabled]}>
-              编辑 ({selectedCount}/{totalCount})
+              编辑 
+             {/*  ({selectedCount}/{totalCount}) */}
             </Text>
           </TouchableOpacity>
         </View>
@@ -138,20 +116,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 4,
   },
-  buttonSelected: {
-    backgroundColor: '#e6f7ff',
-    borderColor: '#91d5ff',
-    borderWidth: 1,
-  },
   editButton: {
     backgroundColor: '#2196F3',
   },
   buttonText: {
     fontSize: 12,
     color: '#333',
-  },
-  buttonTextSelected: {
-    color: '#1890ff',
   },
   buttonTextDisabled: {
     color: '#999',

@@ -81,6 +81,18 @@ export interface EboxStore {
   initializeEboxTree: () => Promise<void>;
 }
 
+// 添加设备状态比较函数
+const isDeviceStatusChanged = (oldInfo: any, newInfo: any): boolean => {
+  if (!oldInfo || !newInfo) return true;
+  
+  return (
+    oldInfo.online !== newInfo.online ||
+    oldInfo.open !== newInfo.open ||
+    oldInfo.warn !== newInfo.warn ||
+    JSON.stringify(oldInfo.loops) !== JSON.stringify(newInfo.loops)
+  );
+};
+
 export const useEboxStore = create<EboxStore>((set, get) => ({
   allEboxes: [],
   searchText: '',
@@ -122,16 +134,34 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
     }),
   clearSelectedOperations: () => set({ selectedOperations: new Set() }),
   updateDeviceStatus: (deviceId, status) => {
-    set((state) => ({
-      allEboxes: state.allEboxes.map((ebox) =>
-        ebox.id === deviceId ? { ...ebox, status } : ebox
-      ),
-    }));
+    set((state) => {
+      const updatedEboxes = state.allEboxes.map((ebox) => {
+        if (ebox.id === deviceId) {
+          // 检查状态是否真的发生变化
+          if (!isDeviceStatusChanged(ebox.device_info, status)) {
+            return ebox; // 如果没有变化，返回原对象
+          }
+          return { ...ebox, device_info: { ...ebox.device_info, ...status } };
+        }
+        return ebox;
+      });
+
+      // 只有当数组引用发生变化时才更新状态
+      if (JSON.stringify(updatedEboxes) !== JSON.stringify(state.allEboxes)) {
+        return { allEboxes: updatedEboxes };
+      }
+      return state;
+    });
   },
   addOperation: (operation) => {
-    set((state) => ({
-      operations: [operation, ...state.operations],
-    }));
+    set((state) => {
+      const newOperations = [operation, ...state.operations];
+      // 如果超过100条记录，删除最后一条
+      if (newOperations.length > 100) {
+        newOperations.pop();
+      }
+      return { operations: newOperations };
+    });
   },
   deleteOperations: (operationIds) => {
     set((state) => ({

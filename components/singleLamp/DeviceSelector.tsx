@@ -35,7 +35,7 @@ const DeviceSelector = ({
         <View className="flex-row space-x-2">
           <TouchableOpacity
             onPress={() => onOperationChange('all')}
-            className={`px-2 py-2 rounded ${currentOperation === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
+            className={`px-3 py-2 rounded ${currentOperation === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
           >
             <Text className={`text-xs ${currentOperation === 'all' ? 'text-white' : 'text-gray-700'}`}>灯杆</Text>
           </TouchableOpacity>
@@ -43,26 +43,10 @@ const DeviceSelector = ({
             onPress={() => onOperationChange('controller')}
             className={`px-2 py-2 rounded ${currentOperation === 'controller' ? 'bg-blue-500' : 'bg-gray-200'}`}
           >
-            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-gray-700'}`}>操作</Text>
+            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-gray-700'}`}>控制器</Text>
           </TouchableOpacity>
         </View>
       </View>
-      {/* Second Row - Search and Edit */}
-     {/*  <View className="px-3 pb-1 flex-row items-center space-x-2">
-        <TouchableOpacity 
-          onPress={() => onSearch('')}
-          className="flex-1 flex-row items-center bg-gray-100 rounded-lg px-2 py-2"
-        >
-          <Ionicons name="search" size={16} color="#666" />
-          <Text className="ml-2 text-gray-500 text-xs">搜索当前线路下的单灯</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onEdit}
-          className="bg-blue-500 px-4 py-2 rounded"
-        >
-          <Text className="text-white text-xs">编辑</Text>
-        </TouchableOpacity>
-      </View> */}
     </View>
   );
 };

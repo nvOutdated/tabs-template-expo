@@ -1,4 +1,6 @@
 import { ThemeProvider } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
+import MessageGlobalModal from '@/components/ui/MessageGlobalModal';
+import { useMessageModal } from '@/components/ui/useMessageModal';
 import "@/global.css";
 import { useAuthStore } from "@/store/autherStore";
 import { useGlobalStore } from "@/store/globalStateStore";
@@ -6,11 +8,11 @@ import { Stack } from "expo-router";
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
 // Suppress the layout animation warning
 // LogBox.ignoreLogs(['setLayoutAnimationEnabledExperimental']);
 
 export default function RootLayout() {
+  const { visible, modalOptions, hideModal } = useMessageModal();
   useEffect(() => {
     // 初始化全局状态
     useGlobalStore.getState().initializeServer();
@@ -20,6 +22,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+       <MessageGlobalModal
+        visible={visible}
+        {...modalOptions}
+        onClose={hideModal}
+      />
       <SafeAreaProvider>
         <ThemeProvider>
           <Stack

@@ -81,6 +81,18 @@ export interface SmartLightStore {
   initializeSmartLightTree: () => Promise<void>;
 }
 
+// 添加设备状态比较函数
+const isDeviceStatusChanged = (oldInfo: any, newInfo: any): boolean => {
+  if (!oldInfo || !newInfo) return true;
+  
+  return (
+    oldInfo.online !== newInfo.online ||
+    oldInfo.open !== newInfo.open ||
+    oldInfo.warn !== newInfo.warn ||
+    JSON.stringify(oldInfo.loops) !== JSON.stringify(newInfo.loops)
+  );
+};
+
 export const useSmartLightStore = create<SmartLightStore>((set, get) => ({
   allSmartLights: [],
   searchText: '',
@@ -122,16 +134,34 @@ export const useSmartLightStore = create<SmartLightStore>((set, get) => ({
     }),
   clearSelectedOperations: () => set({ selectedOperations: new Set() }),
   updateDeviceStatus: (deviceId, status) => {
-    set((state) => ({
-      allSmartLights: state.allSmartLights.map((light) =>
-        light.id === deviceId ? { ...light, status } : light
-      ),
-    }));
+    set((state) => {
+      const updatedLights = state.allSmartLights.map((light) => {
+        if (light.id === deviceId) {
+          // 检查状态是否真的发生变化
+          if (!isDeviceStatusChanged(light.device_info, status)) {
+            return light; // 如果没有变化，返回原对象
+          }
+          return { ...light, device_info: { ...light.device_info, ...status } };
+        }
+        return light;
+      });
+
+      // 只有当数组引用发生变化时才更新状态
+      if (JSON.stringify(updatedLights) !== JSON.stringify(state.allSmartLights)) {
+        return { allSmartLights: updatedLights };
+      }
+      return state;
+    });
   },
   addOperation: (operation) => {
-    set((state) => ({
-      operations: [operation, ...state.operations],
-    }));
+    set((state) => {
+      const newOperations = [operation, ...state.operations];
+      // 如果超过100条记录，删除最后一条
+      if (newOperations.length > 100) {
+        newOperations.pop();
+      }
+      return { operations: newOperations };
+    });
   },
   deleteOperations: (operationIds) => {
     set((state) => ({

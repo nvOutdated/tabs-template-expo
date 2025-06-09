@@ -165,21 +165,6 @@ export default function SingleLampScreen() {
     }
   }, [selectedDevice, selectedLine, loadSingleLamps]);
 
-  const handleSelectAll = useCallback(() => {
-    const allControllers = singleLamps.reduce((acc: { lampId: number; controllerId: number }[], lamp) => {
-      const controllers = lamp.controllers.map((controller: Controller) => ({
-        lampId: lamp.id,
-        controllerId: controller.id
-      }));
-      return [...acc, ...controllers];
-    }, []);
-    setSelectedControllers(allControllers);
-  }, [singleLamps]);
-
-  const handleDeselectAll = useCallback(() => {
-    setSelectedControllers([]);
-  }, []);
-
   const handleEdit = useCallback(() => {
     if (selectedControllers.length > 0) {
       setShowBatchControlModal(true);
@@ -202,18 +187,6 @@ export default function SingleLampScreen() {
       return count + (lamp.controllers?.length || 0);
     }, 0);
   }, [singleLamps]);
-
-  // 检查是否全部选中
-  const isAllSelected = useCallback(() => {
-    const total = totalControllerCount();
-    return total > 0 && selectedControllers.length === total;
-  }, [selectedControllers, totalControllerCount]);
-
-  const handleSelectArea = useCallback((area: Area) => {
-    setSelectedArea(area);
-    setSearchText("");
-    setShowDrawer(false);
-  }, []);
 
   const handleSelectDevice = useCallback((device: Device) => {
     const eboxDevice = allEboxes.find(ebox => ebox.id === device.id);
@@ -313,12 +286,9 @@ export default function SingleLampScreen() {
           <>
             <BatchOperationBar
               onSearch={handleSearch}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
               onEdit={handleEdit}
               selectedCount={selectedControllers.length}
               totalCount={totalControllerCount()}
-              isAllSelected={isAllSelected()}
             />
             <ControllerInfoCard 
               singleLamps={filteredSingleLamps} 
@@ -341,6 +311,15 @@ export default function SingleLampScreen() {
         visible={showBatchControlModal}
         onClose={() => setShowBatchControlModal(false)}
         onConfirm={handleBatchControlConfirm}
+        eboxId={selectedDevice?.device_info.id}
+        lineId={selectedLine?.id?.toString()}
+        deviceInfo={selectedDevice ? {
+          sn: selectedDevice.name,
+          device_info: {
+            id: selectedDevice.device_info.id
+          }
+        } : undefined}
+        controllerId={selectedControllers[0]?.controllerId?.toString()}
       />
     </GestureHandlerRootView>
   );

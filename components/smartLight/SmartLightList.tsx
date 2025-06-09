@@ -67,8 +67,6 @@ const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120;
-const centralControllerImage = require("@/assets/images/street/smartLight/smartLamp.png");
-
 const SmartLightList = memo(({
   smartLights,
   onEndReached,
@@ -232,12 +230,6 @@ const SmartLightList = memo(({
     [loading, smartLights.length, hasMore]
   );
 
-  const getItemLayout = useCallback((data: any, index: number) => ({
-    length: CARD_HEIGHT,
-    offset: CARD_HEIGHT * index,
-    index,
-  }), []);
-
   return (
     <>
       <View style={styles.flashListContainer}>
@@ -256,32 +248,6 @@ const SmartLightList = memo(({
           removeClippedSubviews={true}
         />
       </View>
-
-     {/*  <View style={[styles.flashListContainer, { display: 'flex' }]}>
-        <FlatList
-          data={smartLights}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.container}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          refreshControl={refreshControl}
-          ListEmptyComponent={ListEmptyComponent}
-          ListFooterComponent={ListFooterComponent}
-          getItemLayout={getItemLayout}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          initialNumToRender={10}
-          updateCellsBatchingPeriod={50}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 0,
-            autoscrollToTopThreshold: 10
-          }}
-        />
-      </View> */}
-
       <SmartLightImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

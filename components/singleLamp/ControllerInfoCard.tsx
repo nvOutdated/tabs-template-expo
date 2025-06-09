@@ -74,11 +74,11 @@ const LampPoleItem = ({
 }: { 
   singleLamp: SingleLamp;
   selectedControllers: { lampId: number; controllerId: number }[];
-  onControllerSelect: (lampId: number, controllerId: number) => void;
+  onControllerSelect: (lampId: number, controllerId: string) => void;
 }) => {
-  const isControllerSelected = (controllerId: number) => {
+  const isControllerSelected = (controllerId: string) => {
     return selectedControllers.some(
-      sc => sc.lampId === singleLamp.id && sc.controllerId === controllerId
+      sc => sc.lampId === singleLamp.id && sc.controllerId === Number(controllerId)
     );
   };
 
@@ -93,18 +93,22 @@ const LampPoleItem = ({
       {singleLamp.controllers.map((controller, index) => (
         <React.Fragment key={controller.id}>
           {index > 0 && <View style={styles.controllerDivider} />}
-          <View style={styles.controllerContent}>
+          <TouchableOpacity 
+            style={[
+              styles.controllerContent,
+              isControllerSelected(controller.controllerId) && styles.selectedController
+            ]}
+            onPress={() => onControllerSelect(singleLamp.id, controller.controllerId)}
+            activeOpacity={0.7}
+          >
             {/* Checkbox */}
-            <TouchableOpacity 
-              style={styles.checkboxContainer}
-              onPress={() => onControllerSelect(singleLamp.id, controller.id)}
-            >
+            <View style={styles.checkboxContainer}>
               <Ionicons 
-                name={isControllerSelected(controller.id) ? "checkbox" : "square-outline"} 
+                name={isControllerSelected(controller.controllerId) ? "checkbox" : "square-outline"} 
                 size={24} 
-                color={isControllerSelected(controller.id) ? "#409eff" : "#909399"}
+                color={isControllerSelected(controller.controllerId) ? "#409eff" : "#909399"}
               />
-            </TouchableOpacity>
+            </View>
             {/* 左侧控制器信息 - 垂直排列 */}
             <View style={styles.controllerInfo}>
               <View style={styles.controllerHeader}>
@@ -150,7 +154,7 @@ const LampPoleItem = ({
                 </View>
               ))}
             </View>
-          </View>
+          </TouchableOpacity>
         </React.Fragment>
       ))}
     </View>
@@ -171,24 +175,18 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
     }
   }, [externalSelectedControllers]);
 
-  const handleControllerSelect = (lampId: number, controllerId: number) => {
-    setInternalSelectedControllers(prev => {
-      const isSelected = prev.some(
-        sc => sc.lampId === lampId && sc.controllerId === controllerId
-      );
-      
-      let newSelection;
-      if (isSelected) {
-        newSelection = prev.filter(
-          sc => !(sc.lampId === lampId && sc.controllerId === controllerId)
-        );
-      } else {
-        newSelection = [...prev, { lampId, controllerId }];
-      }
-      
-      onSelectionChange?.(newSelection);
-      return newSelection;
-    });
+  const handleControllerSelect = (lampId: number, controllerId: string) => {
+    const currentSelection = externalSelectedControllers || internalSelectedControllers;
+    const isSelected = currentSelection.some(
+      sc => sc.lampId === lampId && sc.controllerId === Number(controllerId)
+    );
+
+    const newSelection: { lampId: number; controllerId: number }[] = isSelected 
+      ? [] // 如果已经选中，则取消选中
+      : [{ lampId, controllerId: Number(controllerId) }]; // 如果未选中，则只选中当前控制器
+
+    setInternalSelectedControllers(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const renderItem = ({ item }: { item: SingleLamp }) => (
@@ -199,13 +197,20 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
     />
   );
 
+  const ListFooterComponent = () => (
+    <View className="py-1 items-center">
+      <Text className="text-gray-400 text-sm">暂无更多数据</Text>
+    </View>
+  );
+
   return (
     <FlatList
       data={singleLamps}
       renderItem={renderItem}
       keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={styles.listContainer}
+      contentContainerStyle={[styles.listContainer, { paddingBottom: 50 }]}
       showsVerticalScrollIndicator={false}
+      ListFooterComponent={ListFooterComponent}
     />
   );
 };
@@ -242,6 +247,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 2,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  selectedController: {
+    backgroundColor: '#f0f7ff',
   },
   checkboxContainer: {
     width: 32,

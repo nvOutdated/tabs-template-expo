@@ -46,7 +46,7 @@ export default function TabConfigurationLayout() {
     children: string;
   }) => {
     const tabConfig = TAB_CONFIG.find(tab => tab.title === children);
-    const tabWidth = tabConfig?.width || 70; // 默认宽度
+    const tabWidth = tabConfig?.width || 50; // 默认宽度
 
     return (
       <Text
@@ -82,7 +82,7 @@ export default function TabConfigurationLayout() {
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
             borderColor: currentTheme.textColor,
-            display:'none'
+            display:'flex'
           },
           tabBarStyle: {
             backgroundColor: "transparent",
@@ -106,12 +106,13 @@ export default function TabConfigurationLayout() {
           tabBarGap: GAP_BETWEEN_TABS,
         }}
       >
-        {TAB_CONFIG.map((tab) => (
+        {TAB_CONFIG.map((tab, index) => (
           <Tab.Screen
             key={tab.name}
-            name={tab.name}
+            name={tab.name}               
             options={{
               title: tab.title,
+              lazy: index !== 0, // 第一个tab不懒加载，其他tab懒加载
             }}
             component={
               tab.name === "index"
@@ -131,7 +132,7 @@ export default function TabConfigurationLayout() {
           right: 0,
           top: insets.top - 5,
           width: width * 0.1,
-          height: 36,
+          height: 34,
           justifyContent: "center",
           alignItems: "center",
           backgroundColor: currentTheme.headerBg,

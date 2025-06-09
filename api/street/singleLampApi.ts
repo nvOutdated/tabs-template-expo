@@ -23,3 +23,11 @@ export const lightPole_query_list=(params:lightPoleQueryListByLine)=>{
     })
 }
 
+//singleLamp controller
+export const lightPole_devicectrl_sendSingleControlCmd=(params:any)=>{
+    return request("/smart/light/devicectrl/sendSingleControlCmd",{
+        method:"post",
+        body:params
+    })
+}
+

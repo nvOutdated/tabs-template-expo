@@ -209,11 +209,6 @@ export default function EboxList({
     []
   );
 
-  const keyExtractor = useCallback(
-    (item: ElectricItem,index:number) => (item.id+index).toString(),
-    []
-  );
-
   const ListEmptyComponent = useMemo(
     () => (
       <View style={styles.emptyContainer}>
@@ -241,12 +236,6 @@ export default function EboxList({
     [loading, electricBoxes.length, hasMore]
   );
 
-  const getItemLayout = useCallback((data: any, index: number) => ({
-    length: CARD_HEIGHT,
-    offset: CARD_HEIGHT * index,
-    index,
-  }), []);
-
   return (
     <>
       {/* FlashList Implementation */}
@@ -266,33 +255,6 @@ export default function EboxList({
           removeClippedSubviews={true}
         />
       </View>
-
-      {/* FlatList Implementation */}
-      {/* <View className="flex-1">
-        <FlatList
-          data={electricBoxes}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.container}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          refreshControl={refreshControl}
-          ListEmptyComponent={ListEmptyComponent}
-          ListFooterComponent={ListFooterComponent}
-          getItemLayout={getItemLayout}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          initialNumToRender={10}
-          updateCellsBatchingPeriod={50}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 0,
-            autoscrollToTopThreshold: 10
-          }}
-        />
-      </View> */}
-
       <EboxImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -303,9 +265,7 @@ export default function EboxList({
       />
     </>
   );
-}
-
-const styles = StyleSheet.create({
+}const styles = StyleSheet.create({
   flashListContainer: {
     flex: 1,
     height: '100%',
@@ -497,3 +457,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+

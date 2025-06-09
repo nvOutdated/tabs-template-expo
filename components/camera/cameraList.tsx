@@ -1,6 +1,7 @@
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import React, { memo, useCallback, useMemo } from 'react';
-import { Dimensions, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +49,16 @@ const CameraList: React.FC<Props> = ({
 }) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // 处理数据以确保正确的网格布局顺序
+  const processedData = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < cameras.length; i += COLUMN_NUM) {
+      const row = cameras.slice(i, i + COLUMN_NUM);
+      result.push(...row);
+    }
+    return result;
+  }, [cameras]);
 
   // Memoized camera item component for better performance
   const CameraItem = memo(({ item, router }: { item: CameraItem; router: any }) => {
@@ -135,20 +146,23 @@ const CameraList: React.FC<Props> = ({
 
   return (
     <View style={styles.mainContainer}>
-      <FlatList
-        data={cameras}
+      <FlashList
+        data={processedData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         numColumns={COLUMN_NUM}
-        contentContainerStyle={[
-          styles.listContainer,
-          { paddingBottom: 50 }
-        ]}
-        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={{
+          padding: CARD_MARGIN,
+          paddingBottom: 50
+        }}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         refreshControl={refreshControl}
         ListEmptyComponent={ListEmptyComponent}
+        estimatedItemSize={CARD_HEIGHT + CARD_MARGIN}
+        overrideItemLayout={(layout, item) => {
+          layout.size = CARD_HEIGHT + CARD_MARGIN;
+        }}
       />
     </View>
   );
@@ -182,6 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: CARD_MARGIN,
+    marginHorizontal: CARD_MARGIN / 2,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

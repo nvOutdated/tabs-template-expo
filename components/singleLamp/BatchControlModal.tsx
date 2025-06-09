@@ -1,19 +1,32 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TextInput } from 'react-native-gesture-handler';
+import { smart_personal_matchOptCode } from "@/api/street/configuration";
+import { lightPole_devicectrl_sendSingleControlCmd } from "@/api/street/singleLampApi";
+import { showMessageModal } from "@/components/ui/MessageGlobalModal";
+import PasswordModal from "@/components/ui/PasswordModal";
+import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
+import { useState } from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TextInput } from "react-native-gesture-handler";
 
 interface BatchControlModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (formData: BatchControlFormData) => void;
+  eboxId?: number;
+  lineId?: string;
+  deviceInfo?: {
+    sn: string;
+    device_info: {
+      id: number;
+    };
+  };
+  controllerId?: string;
 }
 
 export interface BatchControlFormData {
-  comm: 'COMM_NORMAL' | 'COMM_GROUP' | 'COMM_BROADCAST';
+  comm: "COMM_NORMAL" | "COMM_GROUP" | "COMM_BROADCAST";
   group: number;
-  method: 'MD_ON' | 'MD_OFF' | 'MD_DIM' | 'MD_DETECT';
+  method: "MD_ON" | "MD_OFF" | "MD_DIM" | "MD_DETECT";
   dimming: string;
   enabledA: boolean;
   enabledB: boolean;
@@ -23,19 +36,88 @@ export default function BatchControlModal({
   visible,
   onClose,
   onConfirm,
+  eboxId,
+  lineId,
+  deviceInfo,
+  controllerId,
 }: BatchControlModalProps) {
   const [formData, setFormData] = useState<BatchControlFormData>({
-    comm: 'COMM_NORMAL',
+    comm: "COMM_NORMAL",
     group: 1,
-    method: 'MD_ON',
-    dimming: '',
+    method: "MD_ON",
+    dimming: "",
     enabledA: true,
     enabledB: false,
   });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfirm = () => {
-    onConfirm(formData);
-    onClose();
+  const handleConfirm = async () => {
+    if (!eboxId || !lineId) {
+      showMessageModal({
+        type: 'error',
+        message: '请选择设备'
+      });
+      return;
+    }
+
+    if (formData.comm === "COMM_NORMAL" && !controllerId) {
+      showMessageModal({
+        type: 'error',
+        message: '单控请选择控制器'
+      });
+      return;
+    }
+
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordConfirm = async (password: string) => {
+    setIsLoading(true);
+    try {
+      // 验证密码
+      const passwordResponse = await smart_personal_matchOptCode({
+        isCreated: true,
+        optCode: password
+      });
+
+      if (passwordResponse.code !== 200) {
+        showMessageModal({
+          type: 'error',
+          message: '密码验证失败'
+        });
+        return;
+      }
+
+      // 发送控制命令
+      const response = await lightPole_devicectrl_sendSingleControlCmd({
+        ...formData,
+        deviceId: deviceInfo?.device_info.id,
+        id: controllerId?.toString(),
+      });
+      
+      if (response.code === 200) {
+        onConfirm(formData);
+        onClose();
+        showMessageModal({
+          type: 'success',
+          message: '设置成功'
+        });
+      } else {
+        showMessageModal({
+          type: 'error',
+          message: response.message || '设置失败'
+        });
+      }
+    } catch (error) {
+      showMessageModal({
+        type: 'error',
+        message: '网络错误，请稍后重试'
+      });
+    } finally {
+      setIsLoading(false);
+      setShowPasswordModal(false);
+    }
   };
 
   return (
@@ -61,8 +143,17 @@ export default function BatchControlModal({
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={formData.comm}
-                  onValueChange={(value) => setFormData({ ...formData, comm: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, comm: value })
+                  }
                   style={styles.picker}
+                  itemStyle={{
+                    height: 40,
+                    lineHeight: 40,
+                    padding: 0,
+                    margin: 0,
+                  }}
+                  mode="dropdown"
                 >
                   <Picker.Item label="单控" value="COMM_NORMAL" />
                   <Picker.Item label="组控" value="COMM_GROUP" />
@@ -77,11 +168,24 @@ export default function BatchControlModal({
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={formData.group}
-                  onValueChange={(value) => setFormData({ ...formData, group: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, group: value })
+                  }
                   style={styles.picker}
+                  itemStyle={{
+                    height: 40,
+                    lineHeight: 40,
+                    padding: 0,
+                    margin: 0,
+                  }}
+                  mode="dropdown"
                 >
                   {Array.from({ length: 16 }, (_, i) => (
-                    <Picker.Item key={i + 1} label={`${i + 1}组`} value={i + 1} />
+                    <Picker.Item
+                      key={i + 1}
+                      label={`${i + 1}组`}
+                      value={i + 1}
+                    />
                   ))}
                 </Picker>
               </View>
@@ -93,8 +197,19 @@ export default function BatchControlModal({
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={formData.method}
-                  onValueChange={(value) => setFormData({ ...formData, method: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, method: value })
+                  }
                   style={styles.picker}
+                  itemStyle={{
+                    height: 30,
+                    lineHeight: 1,
+                    padding: 0,
+                    margin: 0,
+                    includeFontPadding: false,
+                    textAlignVertical:'center'
+                  }}
+                  mode="dropdown"
                 >
                   <Picker.Item label="开灯" value="MD_ON" />
                   <Picker.Item label="关灯" value="MD_OFF" />
@@ -110,7 +225,9 @@ export default function BatchControlModal({
               <TextInput
                 style={styles.input}
                 value={formData.dimming}
-                onChangeText={(value) => setFormData({ ...formData, dimming: value })}
+                onChangeText={(value) =>
+                  setFormData({ ...formData, dimming: value })
+                }
                 keyboardType="numeric"
                 placeholder="请输入调光值"
               />
@@ -121,18 +238,38 @@ export default function BatchControlModal({
               <Text style={styles.label}>A灯B灯选项</Text>
               <View style={styles.checkboxContainer}>
                 <TouchableOpacity
-                  style={[styles.checkbox, formData.enabledA && styles.checkboxSelected]}
-                  onPress={() => setFormData({ ...formData, enabledA: !formData.enabledA })}
+                  style={[
+                    styles.checkbox,
+                    formData.enabledA && styles.checkboxSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData({ ...formData, enabledA: !formData.enabledA })
+                  }
                 >
-                  <Text style={[styles.checkboxText, formData.enabledA && styles.checkboxTextSelected]}>
+                  <Text
+                    style={[
+                      styles.checkboxText,
+                      formData.enabledA && styles.checkboxTextSelected,
+                    ]}
+                  >
                     A灯
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.checkbox, formData.enabledB && styles.checkboxSelected]}
-                  onPress={() => setFormData({ ...formData, enabledB: !formData.enabledB })}
+                  style={[
+                    styles.checkbox,
+                    formData.enabledB && styles.checkboxSelected,
+                  ]}
+                  onPress={() =>
+                    setFormData({ ...formData, enabledB: !formData.enabledB })
+                  }
                 >
-                  <Text style={[styles.checkboxText, formData.enabledB && styles.checkboxTextSelected]}>
+                  <Text
+                    style={[
+                      styles.checkboxText,
+                      formData.enabledB && styles.checkboxTextSelected,
+                    ]}
+                  >
                     B灯
                   </Text>
                 </TouchableOpacity>
@@ -142,15 +279,33 @@ export default function BatchControlModal({
 
           {/* 底部按钮 */}
           <View style={styles.footer}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={onClose}
+            >
               <Text style={styles.buttonText}>取消</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={handleConfirm}>
-              <Text style={[styles.buttonText, styles.confirmButtonText]}>设置</Text>
+            <TouchableOpacity
+              style={[styles.button, styles.confirmButton]}
+              onPress={handleConfirm}
+            >
+              <Text style={[styles.buttonText, styles.confirmButtonText]}>
+                设置
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
+
+      <PasswordModal
+        visible={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+        }}
+        onConfirm={handlePasswordConfirm}
+        loading={isLoading}
+        title="请输入操作密码"
+      />
     </Modal>
   );
 }
@@ -158,28 +313,28 @@ export default function BatchControlModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
+    width: "90%",
+    backgroundColor: "#fff",
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   closeButton: {
     padding: 4,
@@ -192,71 +347,84 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    padding: 0,
+    margin: 0,
+    position: "relative",
+    height: 40,
   },
   picker: {
-    height: 40,
+    height: 50,
+    padding: 0,
+    margin: 0,
+    width: "100%",
+    paddingRight: 35,
+    paddingLeft: 8,
+    textAlignVertical:'bottom'
   },
   input: {
     height: 40,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 4,
     paddingHorizontal: 12,
     fontSize: 14,
   },
   checkboxContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   checkbox: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 4,
   },
   checkboxSelected: {
-    backgroundColor: '#e6f7ff',
-    borderColor: '#91d5ff',
+    backgroundColor: "#e6f7ff",
+    borderColor: "#91d5ff",
   },
   checkboxText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   checkboxTextSelected: {
-    color: '#1890ff',
+    color: "#1890ff",
   },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: "#eee",
   },
   button: {
     flex: 1,
     height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelButton: {
     borderRightWidth: 1,
-    borderRightColor: '#eee',
+    borderRightColor: "#eee",
   },
   confirmButton: {
-    backgroundColor: '#1890ff',
+    backgroundColor: "#1890ff",
   },
   buttonText: {
     fontSize: 16,
-    color: '#333',
+    color: "#666",
   },
   confirmButtonText: {
-    color: '#fff',
+    color: "#fff",
   },
-}); 
+});
