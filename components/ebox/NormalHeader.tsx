@@ -7,12 +7,13 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { Area } from "./AreaDrawer";
+import { Area, Device } from "./AreaDrawer";
 
 type NormalHeaderProps = {
   onSearch: (text: string) => void;
   handleSetShowDrawer: () => void;
   selectedArea: Area;
+  selectedDevice?: Device;
   onToggleOperationMode: () => void;
 };
 
@@ -20,6 +21,7 @@ export default function NormalHeader({
   onSearch,
   handleSetShowDrawer,
   selectedArea,
+  selectedDevice,
   onToggleOperationMode,
 }: NormalHeaderProps) {
   const currentTheme = useCurrentTheme();
@@ -33,7 +35,7 @@ export default function NormalHeader({
       setIsSearchFocused(false);
       searchWidth.value = withSpring(0, {
         damping: 15,
-        stiffness: 100,
+        stiffness: 50,
       });
       searchOpacity.value = withSpring(0);
       // 清除搜索内容
@@ -61,28 +63,33 @@ export default function NormalHeader({
 
   const searchAnimatedStyle = useAnimatedStyle(() => {
     return {
-      width: `${searchWidth.value * 100}%`,
+      width: `${searchWidth.value * 300}%`,
       opacity: searchOpacity.value,
     };
   });
 
+  // 获取显示的名称
+  const displayName = selectedDevice 
+    ? selectedDevice.name
+    : selectedArea.name || '设备列表';
+
   return (
     <View className="h-11 flex-row items-center px-1 bg-secondary-400">
       <TouchableOpacity
-        className="p-1 flex-row items-center min-w-[140px]"
+        className="p-1 flex-row items-center min-w-[280px]"
         onPress={() => handleSetShowDrawer()}
       >
         <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
         <View className="flex-row items-center ml-1 flex-1">
           <Text className="text-tertiary-500 font-medium flex-1" numberOfLines={1}>
-            {selectedArea.name || '选择区域'}
+            {displayName}
           </Text>
         </View>
       </TouchableOpacity>
 
       <View className="flex-1 flex-row items-center justify-end">
         <Animated.View 
-          className="flex-row items-center bg-background-0 rounded-lg px-0.5 h-9 mr-2 border border-outline-300 max-w-[250px]"
+          className="flex-row items-center bg-background-0 rounded-lg px-0.5 h-9 mr-2 border border-outline-300 max-w-[350px]"
           style={searchAnimatedStyle}
         >
           <TextInput

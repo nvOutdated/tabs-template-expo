@@ -1,7 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StatusBar, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 import { RTCView } from 'react-native-webrtc';
 
 import { WebRTCManager, WebRTCStream } from '@/utils/WebRTCManager';
@@ -18,11 +24,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
   const [stream, setStream] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const controlsTimer = useRef<NodeJS.Timeout | null>(null);
   const webRTCManager = useRef<WebRTCManager | null>(null);
   
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const loadingScale = useSharedValue(1);
+  const fullscreenScale = useSharedValue(isFullscreen ? 1 : 0.95);
+  const controlsOpacity = useSharedValue(0);
+  
+  // 判断是否为横屏模式
+  const isLandscape = windowWidth > windowHeight;
 
   const loadingAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -30,20 +42,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
     ]
   }));
 
-  const fullscreenAnimatedStyle = useAnimatedStyle(() => {
+  const videoAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { scale: withSpring(isFullscreen ? 1 : 1, { damping: 15 }) },
+        { scale: withSpring(fullscreenScale.value, { 
+          damping: 20, 
+          stiffness: 300,
+          mass: 0.8
+        }) }
       ],
-      ...(isFullscreen ? {
-        width: '100%',
-        height: '100%',
-      } : {})
+      opacity: withTiming(isTransitioning ? 0.9 : 1, {
+        duration: 200,
+        easing: Easing.out(Easing.quad)
+      })
     };
   });
 
+  const controlsAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(controlsOpacity.value, {
+      duration: 300,
+      easing: Easing.inOut(Easing.quad)
+    })
+  }));
+
   const getVideoSize = () => {
-    if (isFullscreen) {
+    if (isFullscreen || isLandscape) {
       return {
         width: windowWidth,
         height: windowHeight
@@ -56,14 +79,67 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
     }
   };
 
-  useEffect(() => {
-    if (isFullscreen) {
-      StatusBar.setHidden(true);
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-    } else {
-      StatusBar.setHidden(false);
-      ScreenOrientation.unlockAsync();
+  // 平滑的全屏切换处理
+  const handleFullscreenToggle = useCallback(async () => {
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    
+    try {
+      // 开始切换动画
+      fullscreenScale.value = withSpring(0.95, { 
+        damping: 20, 
+        stiffness: 300 
+      });
+      
+      // 延迟执行状态切换
+      setTimeout(() => {
+        if (onFullscreenChange) {
+          onFullscreenChange(!isFullscreen);
+        }
+        
+        // 完成切换动画
+        setTimeout(() => {
+          fullscreenScale.value = withSpring(1, { 
+            damping: 20, 
+            stiffness: 300,
+            mass: 0.8
+          });
+          setIsTransitioning(false);
+        }, 100);
+      }, 150);
+      
+    } catch (error) {
+      console.error('Fullscreen toggle error:', error);
+      setIsTransitioning(false);
     }
+  }, [isFullscreen, onFullscreenChange, isTransitioning, fullscreenScale]);
+
+  useEffect(() => {
+    // 同步全屏状态的动画
+    fullscreenScale.value = withSpring(1, { 
+      damping: 20, 
+      stiffness: 300,
+      mass: 0.8
+    });
+  }, [isFullscreen, fullscreenScale]);
+
+  useEffect(() => {
+    const handleOrientationChange = async () => {
+      try {
+        if (isFullscreen) {
+          StatusBar.setHidden(true);
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        } else {
+          StatusBar.setHidden(false);
+          await ScreenOrientation.unlockAsync();
+        }
+      } catch (error) {
+        console.error('Orientation change error:', error);
+      }
+    };
+
+    handleOrientationChange();
   }, [isFullscreen]);
 
   useEffect(() => {
@@ -91,19 +167,40 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
     };
   }, [channelId]);
 
-  const showControlsTemporarily = () => {
+  const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
+    controlsOpacity.value = withTiming(1, { duration: 200 });
+    
     if (controlsTimer.current) {
       clearTimeout(controlsTimer.current);
     }
+    
     controlsTimer.current = setTimeout(() => {
-      setShowControls(false);
+      controlsOpacity.value = withTiming(0, { duration: 200 });
+      setTimeout(() => setShowControls(false), 200);
     }, 3000) as unknown as NodeJS.Timeout;
-  };
+  }, [controlsOpacity]);
+
+  const hideControls = useCallback(() => {
+    controlsOpacity.value = withTiming(0, { duration: 200 });
+    setTimeout(() => setShowControls(false), 200);
+  }, [controlsOpacity]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (controlsTimer.current) {
+        clearTimeout(controlsTimer.current);
+      }
+    };
+  }, []);
 
   return (
     <TouchableOpacity
-      style={[styles.container, isFullscreen && styles.fullscreenContainer]}
+      style={[
+        styles.container, 
+        (isFullscreen || isLandscape) && styles.fullscreenContainer
+      ]}
       activeOpacity={1}
       onPress={showControlsTemporarily}
     >
@@ -114,29 +211,29 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
       )}
 
       {stream ? (
-        <>
-          <Animated.View style={[styles.videoWrapper, fullscreenAnimatedStyle]}>
-            <RTCView
-              streamURL={stream.toURL()}
-              style={{
-                width: getVideoSize().width,
-                height: getVideoSize().height,
-                alignSelf: 'center',
-                transform: isFullscreen ? [{ rotate: '90deg' }] : [],
-                transformOrigin: 'center',
-              }}
-              objectFit="contain"
-              zOrder={1}
-              mirror={false}
-            />
-          </Animated.View>
-        </>
+        <Animated.View style={[
+          styles.videoWrapper, 
+          (isFullscreen || isLandscape) && styles.fullscreenVideoWrapper,
+          videoAnimatedStyle
+        ]}>
+          <RTCView
+            streamURL={stream.toURL()}
+            style={{
+              width: getVideoSize().width,
+              height: getVideoSize().height,
+              alignSelf: 'center',
+            }}
+            objectFit="cover"
+            zOrder={1}
+            mirror={false}
+          />
+        </Animated.View>
       ) : (
         <View style={styles.placeholder} />
       )}
 
       {showControls && (
-        <View style={styles.controls}>
+        <Animated.View style={[styles.controls, controlsAnimatedStyle]}>
           <TouchableOpacity
             onPress={() => {
               if (isPlaying) {
@@ -144,6 +241,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
               } else {
                 webRTCManager.current?.startStream();
               }
+              showControlsTemporarily();
             }}
             style={styles.controlButton}
           >
@@ -153,28 +251,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channelId, isFullscreen = fal
               color="#fff"
             />
           </TouchableOpacity>
+          
           <TouchableOpacity
-            onPress={() => {
-              if (onFullscreenChange) {
-                onFullscreenChange(!isFullscreen);
-              }
-              setShowControls(true);
-              if (controlsTimer.current) {
-                clearTimeout(controlsTimer.current);
-              }
-              controlsTimer.current = setTimeout(() => {
-                setShowControls(false);
-              }, 3000)as unknown as NodeJS.Timeout;;
-            }}
+            onPress={handleFullscreenToggle}
             style={[styles.controlButton, { marginLeft: 20 }]}
+            disabled={isTransitioning}
           >
             <MaterialIcons
               name={isFullscreen ? 'fullscreen-exit' : 'fullscreen'}
               size={32}
-              color="#fff"
+              color={isTransitioning ? '#999' : '#fff'}
             />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       )}
     </TouchableOpacity>
   );
@@ -209,12 +298,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  video: {
-    width: '100%',
-    height: '100%',
-    alignSelf: 'center',
-  },
-  fullscreenVideo: {
+  fullscreenVideoWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
   },
@@ -245,10 +334,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   debugInfo: {
     position: 'absolute',

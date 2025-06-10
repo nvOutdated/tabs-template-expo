@@ -102,9 +102,10 @@ const DeviceItem = ({
       style={[
         styles.deviceItem,
         { paddingLeft: 10 + (level + 1) * 20 },
-        isSelected && { backgroundColor: "rgba(64,158,255,0.1)" },
+        isSelected && styles.selectedItem,
       ]}
       onPress={() => onSelect(device)}
+      activeOpacity={0.7}
     >
       <View style={styles.deviceContent}>
         <Text
@@ -146,42 +147,45 @@ const AreaItem = ({
   onToggle: (id: number) => void;
   onSelect: (area: Area) => void;
   themeColor: string;
-}) => (
-  <TouchableOpacity
-    style={[
-      styles.areaItem,
-      { paddingLeft: 10 + level * 20 },
-      isSelected && { backgroundColor: "rgba(0,0,0,0.05)" },
-    ]}
-    onPress={() => onSelect(area)}
-  >
-    <View style={styles.areaContent}>
-      <Text
-        style={[
-          styles.areaName,
-          { color: themeColor },
-          isSelected && styles.selectedText,
-        ]}
-      >
-        {area.name}
-      </Text>
-      {hasChildren && (
-        <TouchableOpacity 
-          onPress={(e) => {
-            e.stopPropagation();
-            onToggle(area.area_id);
-          }}
+}) => {
+  console.log('AreaItem render:', { area, isSelected }); // 添加调试日志
+  return (
+    <TouchableOpacity
+      style={[
+        styles.areaItem,
+        { paddingLeft: 10 + level * 20 },
+        isSelected && styles.selectedAreaItem,
+      ]}
+      onPress={() => onSelect(area)}
+    >
+      <View style={styles.areaContent}>
+        <Text
+          style={[
+            styles.areaName,
+            { color: themeColor },
+            isSelected && styles.selectedText,
+          ]}
         >
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={themeColor}
-          />
-        </TouchableOpacity>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+          {area.name}
+        </Text>
+        {hasChildren && (
+          <TouchableOpacity 
+            onPress={(e) => {
+              e.stopPropagation();
+              onToggle(area.area_id);
+            }}
+          >
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={themeColor}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function AreaDrawer({
   visible,
@@ -196,6 +200,7 @@ export default function AreaDrawer({
   const { allEboxes } = useEboxStore();
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
   const [searchText, setSearchText] = useState('');
+  const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const scrollPositionRef = useRef(0);
   
@@ -267,6 +272,18 @@ export default function AreaDrawer({
     });
   }, []);
 
+  const handleAreaSelect = useCallback((area: Area) => {
+    // 选中区域时，清除设备选中状态
+    setSelectedDeviceId(null);
+    onSelectArea(area);
+  }, [onSelectArea]);
+
+  const handleDeviceSelect = useCallback((device: Device) => {
+    // 选中设备时，清除区域选中状态
+    setSelectedDeviceId(device.id);
+    onSelectDevice(device);
+  }, [onSelectDevice]);
+
   // 将区域和设备数据扁平化为列表项，并添加搜索过滤
   const listData = useMemo(() => {
     const flattenData = (area: Area, level: number = 0) => {
@@ -318,29 +335,31 @@ export default function AreaDrawer({
 
   const renderItem = useCallback(({ item }: { item: any }) => {
     if (item.type === 'area') {
+      const isSelected = selectedArea && selectedArea.area_id === item.data.area_id;
       return (
         <AreaItem
           area={item.data}
           level={item.level}
           isExpanded={item.isExpanded}
-          isSelected={selectedArea.area_id === item.data.area_id}
+          isSelected={isSelected}
           hasChildren={item.hasChildren}
           onToggle={toggleArea}
-          onSelect={onSelectArea}
+          onSelect={handleAreaSelect}
           themeColor={currentTheme.activeTint}
         />
       );
     } else {
+      const isDeviceSelected = selectedDeviceId === item.data.id;
       return (
         <DeviceItem
           device={item.data}
           level={item.level}
-          isSelected={false}
-          onSelect={onSelectDevice}
+          isSelected={isDeviceSelected}
+          onSelect={handleDeviceSelect}
         />
       );
     }
-  }, [selectedArea, currentTheme.activeTint, toggleArea, onSelectArea, onSelectDevice]);
+  }, [selectedArea, selectedDeviceId, currentTheme.activeTint, toggleArea, handleAreaSelect, handleDeviceSelect]);
 
   const keyExtractor = useCallback((item: any) => {
     if (item.type === 'area') {
@@ -554,5 +573,12 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontWeight: "600",
+  },
+  selectedItem: {
+    backgroundColor: "rgba(64,158,255,0.1)",
+  },
+  selectedAreaItem: {
+    backgroundColor: "rgba(64,158,255,0.1)",
+    borderRadius: 4,
   },
 });

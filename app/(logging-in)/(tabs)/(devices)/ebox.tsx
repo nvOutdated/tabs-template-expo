@@ -42,7 +42,12 @@ export default function EboxScreen() {
   const [loading, setLoading] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
-  const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
+  const [selectedArea, setSelectedArea] = useState<Area>({
+    area_id: 0,
+    name: '',
+    children: []
+  });
+  const [selectedDevice, setSelectedDevice] = useState<Device | undefined>();
   const [isOperationMode, setIsOperationMode] = useState(false);
   const [electricBoxes, setElectricBoxes] = useState<ExtendedElectricItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -109,7 +114,12 @@ export default function EboxScreen() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     // 重置所有相关状态
-    setSelectedArea({} as Area);
+    setSelectedArea({
+      area_id: 0,
+      name: '',
+      children: []
+    });
+    setSelectedDevice(undefined); // 清除设备选中状态
     setSearchText("");
     setCurrentPage(1);
     setHasMore(true);
@@ -235,6 +245,7 @@ export default function EboxScreen() {
   const handleSelectArea = useCallback((area: Area) => {
     setSelectedArea(area);
     setSearchText("");
+    setSelectedDevice(undefined); // 清除设备选中状态
     setShowDrawer(false);
   }, []);
 
@@ -242,6 +253,7 @@ export default function EboxScreen() {
     // 根据设备信息重新查询
     setSearchText(device.name);
     setSelectedArea({} as Area);
+    setSelectedDevice(device);
     setShowDrawer(false);
   }, []);
 
@@ -256,6 +268,7 @@ export default function EboxScreen() {
   const handleToggleOperationMode = useCallback(() => {
     setIsOperationMode(prev => !prev);
     setSelectedDevices(new Map());
+    setSelectedDevice(undefined); // 清除设备选中状态
   }, [setSelectedDevices]);
 
   const handleOperationSelect = useCallback((operation: any) => {
@@ -371,6 +384,7 @@ export default function EboxScreen() {
             onSearch={handleSearch}
             handleSetShowDrawer={handleSetShowDrawer}
             selectedArea={selectedArea}
+            selectedDevice={selectedDevice}
             onToggleOperationMode={handleToggleOperationMode}
           />
         )}

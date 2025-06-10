@@ -103,28 +103,28 @@ const DeviceItem = memo(({
   }, [device.id, onSelect]);
 
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.deviceItem,
         { paddingLeft: 10 + (level + 1) * 20 },
+        isSelected && styles.selectedItem,
       ]}
+      onPress={handlePress}
+      activeOpacity={0.7}
     >
-      <TouchableOpacity 
-        style={styles.checkbox}
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
+      <View style={styles.checkbox}>
         <Ionicons 
           name={isSelected ? "checkbox" : "square-outline"}
           size={20}
           color={isSelected ? "#409eff" : "#909399"}
         />
-      </TouchableOpacity>
+      </View>
       <View style={styles.deviceContent}>
         <Text
           style={[
             styles.deviceName,
             { color: "#666666" },
+            isSelected && { color: "#409eff" },
           ]}
         >
           {device.name} ({device.sn})
@@ -136,7 +136,7 @@ const DeviceItem = memo(({
           </Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 });
 
@@ -196,7 +196,7 @@ const AreaItem = memo(({
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.areaContent}
-        onPress={handleToggle}
+        onPress={handleSelect}
         activeOpacity={0.7}
       >
         <Text
@@ -208,11 +208,17 @@ const AreaItem = memo(({
           {area.name}
         </Text>
         {hasChildren && (
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={themeColor}
-          />
+          <TouchableOpacity
+            onPress={handleToggle}
+            activeOpacity={0.7}
+            style={styles.expandButton}
+          >
+            <Ionicons
+              name={isExpanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={themeColor}
+            />
+          </TouchableOpacity>
         )}
       </TouchableOpacity>
     </View>
@@ -305,7 +311,21 @@ export default function DeviceDrawer({
     });
   }, []);
 
-  // 获取区域下所有设备ID
+  // 递归查找指定区域ID的区域对象（在任何层级）
+  const findAreaById = useCallback((areaId: number, areasToSearch: AreaWithDevices[] = areas): AreaWithDevices | null => {
+    for (const area of areasToSearch) {
+      if (area.area_id === areaId) {
+        return area;
+      }
+      if (area.children) {
+        const found = findAreaById(areaId, area.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, [areas]);
+
+  // 获取区域下所有设备ID（包括子区域的设备）
   const getAreaDeviceIds = useCallback((area: AreaWithDevices): number[] => {
     const deviceIds: number[] = [];
     
@@ -325,10 +345,19 @@ export default function DeviceDrawer({
 
   // 处理区域选择
   const handleAreaSelect = useCallback((areaId: number) => {
-    const area = areas.find(a => a.area_id === areaId);
-    if (!area) return;
+    // 使用递归查找函数查找区域
+    const area = findAreaById(areaId);
+    if (!area) {
+      return;
+    }
 
     const deviceIds = getAreaDeviceIds(area);
+    
+    if (deviceIds.length === 0) {
+      return;
+    }
+
+    // 检查当前区域是否已全部选中
     const isSelected = deviceIds.every(id => selectedDevices.has(id));
 
     if (isSelected) {
@@ -346,7 +375,7 @@ export default function DeviceDrawer({
         }
       });
     }
-  }, [areas, getAreaDeviceIds, selectedDevices, onDeviceSelect]);
+  }, [findAreaById, getAreaDeviceIds, selectedDevices, onDeviceSelect]);
 
   const isAreaSelected = useCallback((area: AreaWithDevices) => {
     const deviceIds = getAreaDeviceIds(area);
@@ -652,5 +681,15 @@ const styles = StyleSheet.create({
   },
   warnText: {
     color: "#F56C6C",
+  },
+  selectedItem: {
+    backgroundColor: "rgba(64,158,255,0.1)",
+  },
+  selectedAreaItem: {
+    backgroundColor: "rgba(64,158,255,0.1)",
+    borderRadius: 4,
+  },
+  expandButton: {
+    padding: 4,
   },
 }); 

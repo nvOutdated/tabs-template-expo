@@ -7,12 +7,13 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { Area } from "./AreaDrawer";
+import { Area, Device } from "./AreaDrawer";
 
 type NormalHeaderProps = {
   onSearch: (text: string) => void;
   handleSetShowDrawer: () => void;
   selectedArea: Area;
+  selectedDevice?:Device
   onToggleOperationMode: () => void;
 };
 
@@ -21,6 +22,7 @@ export default function NormalHeader({
   handleSetShowDrawer,
   selectedArea,
   onToggleOperationMode,
+  selectedDevice
 }: NormalHeaderProps) {
   const currentTheme = useCurrentTheme();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -65,7 +67,10 @@ export default function NormalHeader({
       opacity: searchOpacity.value,
     };
   });
-
+  // 获取显示的名称
+  const displayName = selectedDevice 
+    ? selectedDevice.name
+    : selectedArea.name || '设备列表';
   return (
     <View className="h-11 flex-row items-center px-1 bg-secondary-400">
       <TouchableOpacity
@@ -75,7 +80,7 @@ export default function NormalHeader({
         <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
         <View className="flex-row items-center ml-1 flex-1">
           <Text className="text-tertiary-500 font-medium flex-1" numberOfLines={1}>
-            {selectedArea.name || '选择区域'}
+            {displayName}
           </Text>
         </View>
       </TouchableOpacity>

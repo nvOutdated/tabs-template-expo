@@ -60,6 +60,7 @@ export default function SmartLampScreen() {
   const loadingRef = useRef(false);
   const endReachedRef = useRef(false);
   const { WS_SmartLight_Data } = useWebSocketStore();
+  const [selectedDevice, setSelectedDevice] = useState<Device | undefined>();
   const {
     selectedDevices,
     setSelectedDevices,
@@ -125,6 +126,7 @@ export default function SmartLampScreen() {
     setSearchText("");
     setCurrentPage(1);
     setHasMore(true);
+    setSelectedDevice(undefined); // 清除设备选中状态
     endReachedRef.current = false;
     loadSmartLightList(1, true);
   }, []);
@@ -252,6 +254,7 @@ export default function SmartLampScreen() {
   const handleSelectArea = useCallback((area: Area) => {
     setSelectedArea(area);
     setSearchText("");
+    setSelectedDevice(undefined); // 清除设备选中状态
     setShowDrawer(false);
   }, []);
 
@@ -259,6 +262,7 @@ export default function SmartLampScreen() {
     // 根据设备信息重新查询
     setSearchText(device.name);
     setSelectedArea({} as Area);
+    setSelectedDevice(device);
     setShowDrawer(false);
   }, []);
 
@@ -273,6 +277,7 @@ export default function SmartLampScreen() {
   const handleToggleOperationMode = useCallback(() => {
     setIsOperationMode((prev) => !prev);
     setSelectedDevices(new Map());
+    setSelectedDevice(undefined); // 清除设备选中状态
   }, [setSelectedDevices]);
 
   const handleOperationSelect = useCallback((operation: any) => {
@@ -399,6 +404,7 @@ export default function SmartLampScreen() {
             handleSetShowDrawer={handleSetShowDrawer}
             selectedArea={selectedArea}
             onToggleOperationMode={handleToggleOperationMode}
+            selectedDevice={selectedDevice}
           />
         )}
 

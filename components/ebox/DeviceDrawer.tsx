@@ -107,6 +107,7 @@ const DeviceItem = memo(({
       style={[
         styles.deviceItem,
         { paddingLeft: 10 + (level + 1) * 20 },
+        isSelected && styles.selectedItem,
       ]}
       onPress={handlePress}
       activeOpacity={0.7}
@@ -123,6 +124,7 @@ const DeviceItem = memo(({
           style={[
             styles.deviceName,
             { color: "#666666" },
+            isSelected && { color: "#409eff" },
           ]}
         >
           {device.name} ({device.sn})
@@ -309,7 +311,21 @@ export default function DeviceDrawer({
     });
   }, []);
 
-  // 获取区域下所有设备ID
+  // 递归查找指定区域ID的区域对象（在任何层级）
+  const findAreaById = useCallback((areaId: number, areasToSearch: AreaWithDevices[] = areas): AreaWithDevices | null => {
+    for (const area of areasToSearch) {
+      if (area.area_id === areaId) {
+        return area;
+      }
+      if (area.children) {
+        const found = findAreaById(areaId, area.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, [areas]);
+
+  // 获取区域下所有设备ID（包括子区域的设备）
   const getAreaDeviceIds = useCallback((area: AreaWithDevices): number[] => {
     const deviceIds: number[] = [];
     
@@ -329,10 +345,21 @@ export default function DeviceDrawer({
 
   // 处理区域选择
   const handleAreaSelect = useCallback((areaId: number) => {
-    const area = areas.find(a => a.area_id === areaId);
-    if (!area) return;
+    // 使用递归查找函数查找区域
+    const area = findAreaById(areaId);
+    if (!area) {
+      // console.warn(`Area with id ${areaId} not found`);
+      return;
+    }
 
     const deviceIds = getAreaDeviceIds(area);
+    
+    if (deviceIds.length === 0) {
+      // console.warn(`No devices found for area ${areaId}`);
+      return;
+    }
+
+    // 检查当前区域是否已全部选中
     const isSelected = deviceIds.every(id => selectedDevices.has(id));
 
     if (isSelected) {
@@ -350,7 +377,7 @@ export default function DeviceDrawer({
         }
       });
     }
-  }, [areas, getAreaDeviceIds, selectedDevices, onDeviceSelect]);
+  }, [findAreaById, getAreaDeviceIds, selectedDevices, onDeviceSelect]);
 
   const isAreaSelected = useCallback((area: AreaWithDevices) => {
     const deviceIds = getAreaDeviceIds(area);
@@ -661,4 +688,7 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
-}); 
+  selectedItem: {
+    backgroundColor: "rgba(64,158,255,0.1)",
+  },
+});

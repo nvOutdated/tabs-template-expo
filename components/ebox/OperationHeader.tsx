@@ -23,7 +23,7 @@ export default function OperationHeader({
       >
         <Ionicons name="menu" size={24} color={currentTheme.activeTint} />
         <Text className="text-tertiary-500 ml-1 align-middle font-medium">
-          选择设备
+          设备列表
         </Text>
       </TouchableOpacity>
 
