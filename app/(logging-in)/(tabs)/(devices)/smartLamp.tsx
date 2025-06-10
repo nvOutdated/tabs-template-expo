@@ -23,6 +23,27 @@ const { width } = Dimensions.get('window');
 // 将常量移到组件外部
 const centralControllerImage = require("@/assets/images/street/smartLight/smartLamp.png");
 
+// 添加附件类型定义
+type Attachment = {
+  id: number;
+  url: string;
+  name: string;
+  file_type: string;
+};
+
+// 扩展 SmartLightItem 类型以包含 computed 属性
+type ExtendedSmartLightItem = SmartLightItem & {
+  lamp_attachments?: Attachment[];
+  computed: {
+    thumbnailSource: any;
+    deviceStatus: any;
+    attachments: {
+      uri: string;
+      id: number;
+    }[];
+  };
+};
+
 export default function SmartLampScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,7 +52,7 @@ export default function SmartLampScreen() {
   const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
   const [userInfo, setUserInfo] = useState<string>("");
   const [isOperationMode, setIsOperationMode] = useState(false);
-  const [smartLights, setSmartLights] = useState<SmartLightItem[]>([]);
+  const [smartLights, setSmartLights] = useState<ExtendedSmartLightItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(20);
@@ -291,27 +312,73 @@ export default function SmartLampScreen() {
     [allSmartLights, selectedDevices, setSelectedDevices]
   );
 
+  const handleUpdateSmartLight = useCallback((updatedSmartLight: any) => {
+    setSmartLights(prevLights => {
+      return prevLights.map(light => {
+        if (light.id === updatedSmartLight.id) {
+          // 更新图片数据
+          const attachments = updatedSmartLight.lamp_attachments || [];
+          const thumbnailSource = attachments.length > 0 
+            ? {
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+                id: attachments[0].id
+              }
+            : centralControllerImage;
+
+          // 计算设备状态
+          const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
+            status.condition(updatedSmartLight.device_info)
+          ) || DEVICE_STATUS.OFFLINE;
+          
+          return {
+            ...light,
+            ...updatedSmartLight,
+            computed: {
+              ...light.computed,
+              thumbnailSource,
+              deviceStatus,
+              attachments: attachments.map((attachment: Attachment) => ({
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+                id: attachment.id
+              }))
+            }
+          };
+        }
+        return light;
+      });
+    });
+
+    // 触发刷新
+    setRefreshing(true);
+    loadSmartLightList(1, true);
+  }, [currentServer, loadSmartLightList]);
+
   // 计算处理后的智能灯列表
   const processedSmartLights = useMemo(() => {
     return smartLights.map(item => {
       // 计算图片
-      const attachments = item.smart_light_attachments || [];
-      const images = attachments.length === 0 
-        ? [centralControllerImage]
-        : attachments.map(attachment => ({
-            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
-          }));
+      const attachments = item.lamp_attachments || [];
+      const thumbnailSource = attachments.length > 0 
+        ? {
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+            id: attachments[0].id
+          }
+        : centralControllerImage;
 
       // 计算设备状态
       const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
         status.condition(item.device_info)
-      ) || DEVICE_STATUS.OFFLINE; // 提供默认值
+      ) || DEVICE_STATUS.OFFLINE;
 
       return {
         ...item,
         computed: {
-          thumbnailSource: images[0],
-          deviceStatus
+          thumbnailSource,
+          deviceStatus,
+          attachments: attachments.map(attachment => ({
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+            id: attachment.id
+          }))
         }
       };
     });
@@ -343,10 +410,11 @@ export default function SmartLampScreen() {
         ) : (
           <SmartLightList
             smartLights={processedSmartLights}
-            userInfo={userInfo}
+            
             loading={loading}
             hasMore={hasMore}
             onEndReached={onEndReached}
+            onUpdateEbox={handleUpdateSmartLight}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }

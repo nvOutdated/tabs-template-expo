@@ -45,7 +45,8 @@ export const getElectricCfg = (params:getElectricCfgParams)=>{
 //     })
 // };
 interface lightEboxQuerygetType{
-   id:number
+   id?:number,
+   sn?:string,
 }
 //指定配电箱信息查询
 export const  light_ebox_query_get=(params:lightEboxQuerygetType)=> {

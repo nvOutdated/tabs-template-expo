@@ -1,5 +1,5 @@
 // singleLamp.tsx - 优化后的完整代码
-import { lightPole_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
+import { lightPole_query_list, ordinaryLamp_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
 import BatchControlModal, { BatchControlFormData } from "@/components/singleLamp/BatchControlModal";
 import BatchOperationBar from "@/components/singleLamp/BatchOperationBar";
 import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
@@ -9,6 +9,7 @@ import SingleLampDrawer, { Area, Device } from "@/components/singleLamp/SingleLa
 import SingleLampList from "@/components/singleLamp/SingleLampList";
 import { useAreaStore } from "@/store/areaStore";
 import { ElectricItem, useEboxStore } from "@/store/eboxStore";
+import { useGlobalStore } from '@/store/globalStateStore';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -17,6 +18,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface Line {
   id: number;
   name: string;
+}
+
+interface Attachment {
+  id: number;
+  url: string;
+  name: string;
+  file_type: string;
 }
 
 interface Controller {
@@ -42,6 +50,26 @@ interface Controller {
   powerOnB: boolean | null;
 }
 
+interface OrdinaryLamp {
+  id: number;
+  lamp_attachments?: Attachment[];
+}
+
+interface SingleLamp {
+  id: number;
+  poleName: string;
+  poleCode: string;
+  poleType: string;
+  installTime: string | null;
+  lng: number;
+  lat: number;
+  addr: string | null;
+  direction: number;
+  controllers: Controller[];
+  lamp_attachments?: Attachment[];
+  container_id: string;
+}
+
 export default function SingleLampScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,7 +79,7 @@ export default function SingleLampScreen() {
   const [selectedDevice, setSelectedDevice] = useState<ElectricItem | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [selectedLine, setSelectedLine] = useState<Line | null>(null);
-  const [singleLamps, setSingleLamps] = useState<any[]>([]);
+  const [singleLamps, setSingleLamps] = useState<SingleLamp[]>([]);
   const [searchText, setSearchText] = useState("");
   const [currentOperation, setCurrentOperation] = useState<'all' | 'controller'>('all');
   const [controllers, setControllers] = useState<Controller[]>([]);
@@ -59,8 +87,10 @@ export default function SingleLampScreen() {
   const insets = useSafeAreaInsets();
   const [selectedControllers, setSelectedControllers] = useState<{ lampId: number; controllerId: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredSingleLamps, setFilteredSingleLamps] = useState<any[]>([]);
+  const [filteredSingleLamps, setFilteredSingleLamps] = useState<SingleLamp[]>([]);
   const [showBatchControlModal, setShowBatchControlModal] = useState(false);
+  const currentServer = useGlobalStore(state => state.currentServer);
+  const singleLampOffline = require('@/assets/images/street/singleLamp/singleLampOfflin.png');
 
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
@@ -134,12 +164,32 @@ export default function SingleLampScreen() {
         deviceId,
         lineId,
       };
+      // 获取普通灯列表（包含图片信息）
+      const res1 = await ordinaryLamp_query_list({line_id:lineId});
+      const ordinaryLamps = res1?.data || [];
+      
+      // 获取单灯列表
       const res = await lightPole_query_list(params);
       if (res.code === 200) {
         const lampList = res.data || [];
-        setSingleLamps(lampList);
+        
+        // 合并图片信息
+        const mergedLampList = lampList.map((lamp: SingleLamp) => {
+          // 查找对应的普通灯数据
+          const matchingOrdinaryLamp = ordinaryLamps.find((ordinary: OrdinaryLamp) => ordinary.id === lamp.id);
+          if (matchingOrdinaryLamp) {
+            return {
+              ...lamp,
+              container_id:matchingOrdinaryLamp.container_id,
+              lamp_attachments: matchingOrdinaryLamp.lamp_attachments || []
+            };
+          }
+          return lamp;
+        });
+        
+        setSingleLamps(mergedLampList);
         // 提取所有控制器并展平数组
-        const controllerList = lampList.reduce((acc: Controller[], lamp: any) => {
+        const controllerList = mergedLampList.reduce((acc: Controller[], lamp: SingleLamp) => {
           if (lamp.controllers && Array.isArray(lamp.controllers)) {
             return [...acc, ...lamp.controllers];
           }
@@ -226,6 +276,42 @@ export default function SingleLampScreen() {
     setCurrentOperation(operation);
   }, []);
 
+  const handleUpdateSingleLamp = useCallback((updatedSingleLamp: SingleLamp) => {
+    setSingleLamps(prevLamps => {
+      return prevLamps.map(lamp => {
+        if (lamp.id === updatedSingleLamp.id) {
+          // 更新图片数据
+          const attachments = updatedSingleLamp.lamp_attachments || [];
+          const thumbnailSource = attachments.length > 0 
+            ? {
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+                id: attachments[0].id
+              }
+            : singleLampOffline;
+
+          return {
+            ...lamp,
+            ...updatedSingleLamp,
+            computed: {
+              thumbnailSource,
+              attachments: attachments.map(attachment => ({
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+                id: attachment.id
+              }))
+            }
+          };
+        }
+        return lamp;
+      });
+    });
+
+    // 触发刷新
+    setRefreshing(true);
+    if (selectedDevice && selectedLine) {
+      loadSingleLamps(selectedDevice.device_info.id, selectedLine.id);
+    }
+  }, [selectedDevice, selectedLine, loadSingleLamps, currentServer]);
+
   const renderEmptyState = () => {
     if (!selectedDevice) {
       return (
@@ -281,6 +367,7 @@ export default function SingleLampScreen() {
               />
             }
             ListEmptyComponent={renderEmptyState()}
+            onUpdateSuccess={handleUpdateSingleLamp}
           />
         ) : (
           <>

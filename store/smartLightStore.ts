@@ -51,7 +51,7 @@ export type SmartLightItem = {
     id: number;
   };
   container_id: number;
-  smart_light_attachments?: {
+  lamp_attachments?: {
     id: number;
     name: string;
     url: string;

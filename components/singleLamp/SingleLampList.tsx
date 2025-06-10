@@ -1,8 +1,17 @@
+import { useGlobalStore } from '@/store/globalStateStore';
 import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ImageUploadPreviewModal from '../public/ImageUploadPreviewModal';
 const singleLampOffline = require('../../assets/images/street/singleLamp/singleLampOfflin.png');
+
+interface Attachment {
+  id: number;
+  url: string;
+  name: string;
+  file_type: string;
+}
+
 interface Lamp {
   id: number;
   lightLoop: string;
@@ -39,7 +48,15 @@ interface SingleLamp {
   addr: string | null;
   direction: number;
   controllers: Controller[];
-  imageUrl?: string;
+  lamp_attachments?: Attachment[];
+  container_id: string;
+  computed?: {
+    thumbnailSource: any;
+    attachments: {
+      uri: string;
+      id: number;
+    }[];
+  };
 }
 
 interface SingleLampListProps {
@@ -49,6 +66,7 @@ interface SingleLampListProps {
   onEndReached: () => void;
   refreshControl?: React.ReactElement<any>;
   ListEmptyComponent?: React.ReactElement;
+  onUpdateSuccess?: (updatedData: any) => void;
 }
 
 const getPoleType = (type: string) => {
@@ -85,37 +103,58 @@ const SingleLampList = ({
   onEndReached,
   refreshControl,
   ListEmptyComponent,
+  onUpdateSuccess,
 }: SingleLampListProps) => {
   const [expanded, setExpanded] = useState<{ [id: number]: boolean }>({});
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImages, setPreviewImages] = useState<any[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewLampId, setPreviewLampId] = useState<number | undefined>(undefined);
+  const currentServer = useGlobalStore(state => state.currentServer);
 
   const handleToggle = useCallback((id: number) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
   const handleImagePress = useCallback((item: SingleLamp) => {
-    const lampImage = item.imageUrl ? { uri: item.imageUrl } : singleLampOffline;
-    setPreviewImages([lampImage]);
+    const attachments = item.lamp_attachments || [];
+    const images = attachments.length > 0 
+      ? attachments.map(attachment => ({
+          uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+          id: attachment.id
+        }))
+      : [singleLampOffline];
+    setPreviewImages(images);
     setPreviewIndex(0);
     setPreviewLampId(item.id);
     setPreviewVisible(true);
-  }, []);
+  }, [currentServer]);
 
   const handleUploadSuccess = useCallback((newUri: string) => {
     setPreviewVisible(false);
   }, []);
+
+  const handleImageUpdate = useCallback((updatedLamp: SingleLamp) => {
+    if (onUpdateSuccess) {
+      onUpdateSuccess(updatedLamp);
+    }
+  }, [onUpdateSuccess]);
   
   const renderItem = useCallback(({ item }: { item: SingleLamp }) => {
     const isExpanded = !!expanded[item.id];
-    const lampImage = item.imageUrl ? { uri: item.imageUrl } : singleLampOffline;
+    const attachments = item.lamp_attachments || [];
+    const lampImage = attachments.length > 0 
+      ? { 
+          uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+          id: attachments[0].id
+        }
+      : singleLampOffline;
+
     return (
       <View style={styles.card}>
         <View style={styles.row}>
           <TouchableOpacity onPress={() => handleImagePress(item)}>
-            <Image source={lampImage} style={styles.image}  contentFit="contain" />
+            <Image source={lampImage} style={styles.image} contentFit="contain" />
           </TouchableOpacity>
           <View style={styles.info}>
             <Text style={styles.title}>{item.poleName}</Text>
@@ -155,7 +194,7 @@ const SingleLampList = ({
         )}
       </View>
     );
-  }, [expanded, handleToggle, handleImagePress]);
+  }, [expanded, handleToggle, handleImagePress, currentServer]);
   
   const ListFooterComponent = useMemo(() => {
     return (
@@ -186,6 +225,7 @@ const SingleLampList = ({
         containerId={previewLampId ? String(previewLampId) : undefined}
         userInfo={undefined}
         onUploadSuccess={handleUploadSuccess}
+        onUpdateSuccess={handleImageUpdate}
       />
     </>
   );

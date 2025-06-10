@@ -12,7 +12,7 @@ import {
   Text,
   View
 } from "react-native";
-import EboxImageModal from "./EboxImageModal";
+import ImageModal from "../public/ImageModal";
 
 type ImageSource = {
   uri?: string;
@@ -56,6 +56,10 @@ type ElectricItem = {
   computed: {
     thumbnailSource: ImageSource;
     deviceStatus: DeviceStatus;
+    attachments: {
+      uri: string;
+      id: number;
+    }[];
   };
 };
 
@@ -65,7 +69,7 @@ type Props = {
   refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
   hasMore?: boolean;
-  userInfo: string;
+  onUpdateEbox?: (updatedEbox: any) => void;
 };
 
 const { width } = Dimensions.get("window");
@@ -79,15 +83,15 @@ export default function EboxList({
   refreshControl,
   loading,
   hasMore = true,
-  userInfo
+  onUpdateEbox
 }: Props){
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedEbox, setSelectedEbox] = useState<ElectricItem | null>(null);
 
-  const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
+  const handleImagePress = useCallback((images: ImageSource[], ebox: ElectricItem) => {
     setSelectedImages(images);
-    setSelectedIndex(index);
+    setSelectedEbox(ebox);
     setModalVisible(true);
   }, []);
 
@@ -100,6 +104,12 @@ export default function EboxList({
     });
   }, []);
 
+  const handleImageUpdate = useCallback((updatedEbox: any) => {
+    if (onUpdateEbox) {
+      onUpdateEbox(updatedEbox);
+    }
+  }, [onUpdateEbox]);
+
   // 优化后的 ElectricItem 组件
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
     const handleConfigPress = useCallback(() => {
@@ -107,12 +117,14 @@ export default function EboxList({
     }, [item]);
 
     const handleImagePressLocal = useCallback(() => {
-      handleImagePress([item.computed.thumbnailSource]);
-    }, [item.computed.thumbnailSource, handleImagePress]);
+      // 传递所有附件图片，如果没有则传递空数组
+      const images = item.computed.attachments || [];
+      handleImagePress(images, item);
+    }, [item.computed.attachments, handleImagePress]);
 
     // 在组件内部计算回路状态
     const loopElements = useMemo(() => {
-      return item.device_info.loops.map((loop, index) => (
+      return item.device_info.loops.map((loop: boolean, index: number) => (
         <View key={index} style={styles.loopItem}>
           <View
             style={[
@@ -255,13 +267,14 @@ export default function EboxList({
           removeClippedSubviews={true}
         />
       </View>
-      <EboxImageModal
+      <ImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         images={selectedImages}
-        initialIndex={selectedIndex}
-        containerId={electricBoxes[selectedIndex]?.container_id.toString()}
-        userInfo={userInfo}
+        containerId={selectedEbox?.container_id.toString()}
+        itemId={selectedEbox?.id || 0}
+        type="ebox"
+        onUpdateSuccess={handleImageUpdate}
       />
     </>
   );

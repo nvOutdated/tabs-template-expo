@@ -15,13 +15,22 @@ export const query_eleBox_line =(params:queryEleBoxLine)=>{
     })
 }
 
-//search singleLamp by line 
+//search singleLamp by line (controller)
 export const lightPole_query_list=(params:lightPoleQueryListByLine)=>{
     return request("/smart/light/lightPole/query/list",{
         method:"post",
         body:params
     })
 }
+
+//  singleLamp for common
+export const ordinaryLamp_query_list=(params:any)=>{
+    return request("/smart/light/lamp/query/list",{
+        method:"post",
+        body:params
+    })
+}
+
 
 //singleLamp controller
 export const lightPole_devicectrl_sendSingleControlCmd=(params:any)=>{

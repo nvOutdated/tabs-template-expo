@@ -9,7 +9,6 @@ import { useAreaStore } from "@/store/areaStore";
 import { DEVICE_STATUS, EboxOperation, ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { useGlobalStore } from "@/store/globalStateStore";
 import { useWebSocketStore } from "@/store/websocketStore";
-import { getUserInfo } from "@/utils/useStorageState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -18,15 +17,34 @@ const { width } = Dimensions.get('window');
 // 将常量移到组件外部
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
 
+// 添加附件类型定义
+type Attachment = {
+  id: number;
+  url: string;
+  name: string;
+  file_type: string;
+};
+
+// 扩展 ElectricItem 类型以包含 computed 属性
+type ExtendedElectricItem = ElectricItem & {
+  computed: {
+    thumbnailSource: any;
+    deviceStatus: any;
+    attachments: {
+      uri: string;
+      id: number;
+    }[];
+  };
+};
+
 export default function EboxScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area>({} as Area);
-  const [userInfo, setUserInfo] = useState<string>("");
   const [isOperationMode, setIsOperationMode] = useState(false);
-  const [electricBoxes, setElectricBoxes] = useState<ElectricItem[]>([]);
+  const [electricBoxes, setElectricBoxes] = useState<ExtendedElectricItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(20);
@@ -99,16 +117,6 @@ export default function EboxScreen() {
     loadEleBoxList(1, true);
   }, []);
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      const info = await getUserInfo();
-      if (info) {
-        setUserInfo(info.name || "未登录用户");
-      }
-    };
-    fetchUserInfo();
-  }, []);
-  
   useEffect(()=>{
     if (WS_SmartLight_Data?.did &&
        WS_SmartLight_Data?.deviceName){
@@ -282,26 +290,72 @@ export default function EboxScreen() {
     return electricBoxes.map(item => {
       // 计算图片
       const attachments = item.ebox_attachments || [];
-      const images = attachments.length === 0 
-        ? [centralControllerImage]
-        : attachments.map(attachment => ({
-            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : ''
-          }));
+      const thumbnailSource = attachments.length > 0 
+        ? {
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+            id: attachments[0].id
+          }
+        : centralControllerImage;
 
       // 计算设备状态
       const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
         status.condition(item.device_info)
-      ) || DEVICE_STATUS.OFFLINE; // 提供默认值
+      ) || DEVICE_STATUS.OFFLINE;
 
       return {
         ...item,
         computed: {
-          thumbnailSource: images[0],
-          deviceStatus
+          thumbnailSource,
+          deviceStatus,
+          attachments: attachments.map(attachment => ({
+            uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+            id: attachment.id
+          }))
         }
       };
     });
   }, [electricBoxes, currentServer]);
+
+  const handleUpdateEbox = useCallback((updatedEbox: any) => {
+    setElectricBoxes(prevBoxes => {
+      return prevBoxes.map(box => {
+        if (box.id === updatedEbox.id) {
+          // 更新图片数据
+          const attachments = updatedEbox.ebox_attachments || [];
+          const thumbnailSource = attachments.length > 0 
+            ? {
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+                id: attachments[0].id
+              }
+            : centralControllerImage;
+
+          // 计算设备状态
+          const deviceStatus = Object.values(DEVICE_STATUS).find(status => 
+            status.condition(updatedEbox.device_info)
+          ) || DEVICE_STATUS.OFFLINE;
+          
+          return {
+            ...box,
+            ...updatedEbox,
+            computed: {
+              ...box.computed,
+              thumbnailSource,
+              deviceStatus,
+              attachments: attachments.map((attachment: Attachment) => ({
+                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+                id: attachment.id
+              }))
+            }
+          };
+        }
+        return box;
+      });
+    });
+
+    // 触发刷新
+    setRefreshing(true);
+    loadEleBoxList(1, true);
+  }, [currentServer, loadEleBoxList]);
 
   return (
     <GestureHandlerRootView className="flex-1">
@@ -329,10 +383,10 @@ export default function EboxScreen() {
         ) : (
           <EboxList
             electricBoxes={processedElectricBoxes}
-            userInfo={userInfo}
             loading={loading}
             hasMore={hasMore}
             onEndReached={onEndReached}
+            onUpdateEbox={handleUpdateEbox}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

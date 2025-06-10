@@ -12,7 +12,7 @@ import {
   Text,
   View
 } from "react-native";
-import SmartLightImageModal from "./SmartLightImageModal";
+import ImageModal from "../public/ImageModal";
 
 type ImageSource = {
   uri?: string;
@@ -51,38 +51,50 @@ type SmartLightItem = {
   computed: {
     thumbnailSource: ImageSource;
     deviceStatus: DeviceStatus;
+    attachments: {
+      uri: string;
+      id: number;
+    }[];
   };
 };
 
-type Props = {
+type SmartLightListProps = {
   smartLights: SmartLightItem[];
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControl["props"]>;
   loading: boolean;
   hasMore?: boolean;
-  userInfo: string;
+  onUpdateEbox?: (updatedSmartLight: any) => void;
 };
 
 const { width } = Dimensions.get("window");
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 const CARD_HEIGHT = 120;
+
 const SmartLightList = memo(({
   smartLights,
   onEndReached,
   refreshControl,
   loading,
   hasMore = true,
-  userInfo
-}: Props) => {
+  onUpdateEbox
+}: SmartLightListProps) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const handleImagePress = useCallback((images: ImageSource[], index: number = 0) => {
+  const [selectedSmartLight, setSelectedSmartLight] = useState<SmartLightItem | null>(null);
+
+  const handleImagePress = useCallback((images: ImageSource[], smartLight: SmartLightItem) => {
     setSelectedImages(images);
-    setSelectedIndex(index);
+    setSelectedSmartLight(smartLight);
     setModalVisible(true);
   }, []);
+
+  const handleImageUpdate = useCallback((updatedSmartLight: any) => {
+    if (onUpdateEbox) {
+      onUpdateEbox(updatedSmartLight);
+    }
+  }, [onUpdateEbox]);
 
   const getConfigurationDetails = useCallback((item: SmartLightItem) => {
     router.push({
@@ -98,11 +110,12 @@ const SmartLightList = memo(({
     const handleConfigPress = useCallback(() => {
       getConfigurationDetails(item);
     }, [item]);
-
+   
     const handleImagePressLocal = useCallback(() => {
-      handleImagePress([item.computed.thumbnailSource]);
-    }, [item.computed.thumbnailSource, handleImagePress]);
-
+      const images = item.computed.attachments || [];
+      handleImagePress(images, item);
+    }, [item, handleImagePress]);
+    
     // 在组件内部计算回路状态
     const loopElements = useMemo(() => {
       return item.device_info.loops.map((loop, index) => (
@@ -248,13 +261,14 @@ const SmartLightList = memo(({
           removeClippedSubviews={true}
         />
       </View>
-      <SmartLightImageModal
+      <ImageModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         images={selectedImages}
-        initialIndex={selectedIndex}
-        containerId={smartLights[selectedIndex]?.container_id.toString()}
-        userInfo={userInfo}
+        containerId={selectedSmartLight?.container_id.toString()}
+        itemId={selectedSmartLight?.id || 0}
+        type="smartLight"
+        onUpdateSuccess={handleImageUpdate}
       />
     </>
   );

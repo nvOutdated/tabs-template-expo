@@ -29,3 +29,10 @@ export const gis_lightContainer_list=(query:gisLightContainerListType)=>{
         body:query
     })
 }
+//light remove image
+export const light_container_attach_remove=(query:any)=>{
+    return request('/smart/light/container/attach/remove',{
+        method:"post",
+        body:query
+    })
+}
