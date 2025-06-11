@@ -2,10 +2,10 @@ import { smart_personal_matchOptCode } from "@/api/street/configuration";
 import { lightPole_devicectrl_sendSingleControlCmd } from "@/api/street/singleLampApi";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
 import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { TextInput } from "react-native-gesture-handler";
 
 interface BatchControlModalProps {
   visible: boolean;
@@ -238,21 +238,22 @@ export default function BatchControlModal({
             {/* 调光值输入 */}
             <View style={styles.formItem}>
               <Text style={styles.label}>调光值 (0-20)</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.dimming}
-                onChangeText={(value) => {
-                  // 只允许输入数字
-                  const numericValue = value.replace(/[^0-9]/g, '');
-                  // 限制范围在0-20之间
-                  const validValue = numericValue === '' ? '' : 
-                    Math.min(Math.max(parseInt(numericValue) || 0, 0), 20).toString();
-                  setFormData({ ...formData, dimming: validValue });
-                }}
-                keyboardType="numeric"
-                placeholder="请输入调光值(0-20)"
-                maxLength={2}
-              />
+              <View style={styles.sliderContainer}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={20}
+                  step={1}
+                  value={parseInt(formData.dimming)}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, dimming: value.toString() });
+                  }}
+                  minimumTrackTintColor="#1890ff"
+                  maximumTrackTintColor="#ddd"
+                  thumbTintColor="#1890ff"
+                />
+                <Text style={styles.sliderValue}>{formData.dimming}</Text>
+              </View>
             </View>
 
             {/* A灯B灯选项 */}
@@ -448,5 +449,21 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: "#fff",
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  slider: {
+    flex: 1,
+    height: 40,
+  },
+  sliderValue: {
+    width: 30,
+    textAlign: 'right',
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
   },
 });
