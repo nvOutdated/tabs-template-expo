@@ -148,7 +148,7 @@ const AreaItem = ({
   onSelect: (area: Area) => void;
   themeColor: string;
 }) => {
-  console.log('AreaItem render:', { area, isSelected }); // 添加调试日志
+  // console.log('AreaItem render:', { area, isSelected }); // 添加调试日志
   return (
     <TouchableOpacity
       style={[

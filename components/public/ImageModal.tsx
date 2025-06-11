@@ -1,4 +1,5 @@
 import { light_ebox_query_get } from "@/api/street/configuration";
+import { ordinaryLamp_query_get } from "@/api/street/singleLampApi";
 import { get_smart_light_list } from "@/api/street/smartLightApi";
 import { light_container_attach_remove } from "@/api/street/streetCommon";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
@@ -10,23 +11,23 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    Extrapolation,
-    interpolate,
-    useSharedValue,
+  Extrapolation,
+  interpolate,
+  useSharedValue,
 } from "react-native-reanimated";
 import Carousel, {
-    ICarouselInstance,
-    Pagination,
+  ICarouselInstance,
+  Pagination,
 } from "react-native-reanimated-carousel";
 
 const { width, height } = Dimensions.get("window");
@@ -109,6 +110,9 @@ export default function ImageModal({
           // TODO: 添加智能灯查询接口
           break;
         case 'singleLamp':
+          response = await ordinaryLamp_query_get({id})
+          console.log(response,"单灯查询接口");
+          
           // TODO: 添加单灯查询接口
           break;
         default:
@@ -161,7 +165,6 @@ export default function ImageModal({
 
     try {
       setIsUploading(true);
-      console.log("图片开始上传", new Date().getSeconds());
       const formData = new FormData();
       formData.append("files", {
         uri,
@@ -180,12 +183,12 @@ export default function ImageModal({
         },
         body: formData,
       });
-      console.log("图片上传成功", new Date().getSeconds());
       if (!response.ok) {
         throw new Error(`上传失败: ${response.status} - ${await response.text()}`);
       }
 
       // 上传成功后获取最新数据
+
       if (itemId) {
         const updatedItem = await fetchUpdatedItem(itemId);
         if (onUpdateSuccess && updatedItem) {

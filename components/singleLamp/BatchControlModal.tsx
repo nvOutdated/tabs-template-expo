@@ -1,7 +1,6 @@
 import { smart_personal_matchOptCode } from "@/api/street/configuration";
 import { lightPole_devicectrl_sendSingleControlCmd } from "@/api/street/singleLampApi";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
-import PasswordModal from "@/components/ui/PasswordModal";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
@@ -45,7 +44,7 @@ export default function BatchControlModal({
     comm: "COMM_NORMAL",
     group: 1,
     method: "MD_ON",
-    dimming: "",
+    dimming: '20',
     enabledA: true,
     enabledB: false,
   });
@@ -68,7 +67,26 @@ export default function BatchControlModal({
       });
       return;
     }
-
+    /* 绕过密码验证 */
+    const response = await lightPole_devicectrl_sendSingleControlCmd({
+      ...formData,
+      deviceId: deviceInfo?.device_info.id,
+      id: controllerId?.toString(),
+    });
+    
+    if (response.code === 200) {
+      onConfirm(formData);
+      showMessageModal({
+        type: 'success',
+        message: '设置成功'
+      });
+    } else {
+      showMessageModal({
+        type: 'error',
+        message: response.message || '设置失败'
+      });
+    }
+    /* 11 */
     setShowPasswordModal(true);
   };
 
@@ -88,7 +106,6 @@ export default function BatchControlModal({
         });
         return;
       }
-
       // 发送控制命令
       const response = await lightPole_devicectrl_sendSingleControlCmd({
         ...formData,
@@ -98,7 +115,6 @@ export default function BatchControlModal({
       
       if (response.code === 200) {
         onConfirm(formData);
-        onClose();
         showMessageModal({
           type: 'success',
           message: '设置成功'
@@ -221,15 +237,21 @@ export default function BatchControlModal({
 
             {/* 调光值输入 */}
             <View style={styles.formItem}>
-              <Text style={styles.label}>调光值</Text>
+              <Text style={styles.label}>调光值 (0-20)</Text>
               <TextInput
                 style={styles.input}
                 value={formData.dimming}
-                onChangeText={(value) =>
-                  setFormData({ ...formData, dimming: value })
-                }
+                onChangeText={(value) => {
+                  // 只允许输入数字
+                  const numericValue = value.replace(/[^0-9]/g, '');
+                  // 限制范围在0-20之间
+                  const validValue = numericValue === '' ? '' : 
+                    Math.min(Math.max(parseInt(numericValue) || 0, 0), 20).toString();
+                  setFormData({ ...formData, dimming: validValue });
+                }}
                 keyboardType="numeric"
-                placeholder="请输入调光值"
+                placeholder="请输入调光值(0-20)"
+                maxLength={2}
               />
             </View>
 
@@ -297,7 +319,7 @@ export default function BatchControlModal({
         </View>
       </View>
 
-      <PasswordModal
+     {/*  <PasswordModal
         visible={showPasswordModal}
         onClose={() => {
           setShowPasswordModal(false);
@@ -305,7 +327,7 @@ export default function BatchControlModal({
         onConfirm={handlePasswordConfirm}
         loading={isLoading}
         title="请输入操作密码"
-      />
+      /> */}
     </Modal>
   );
 }

@@ -1,20 +1,20 @@
 // singleLamp.tsx - 优化后的完整代码
 import { lightPole_query_list, ordinaryLamp_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
 import BatchControlModal, { BatchControlFormData } from "@/components/singleLamp/BatchControlModal";
-import BatchOperationBar from "@/components/singleLamp/BatchOperationBar";
 import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
 import DeviceSelector from "@/components/singleLamp/DeviceSelector";
 import LineSelector from "@/components/singleLamp/LineSelector";
+import MessagePanel from "@/components/singleLamp/MessagePanel";
 import SingleLampDrawer, { Area, Device } from "@/components/singleLamp/SingleLampDrawer";
 import SingleLampList from "@/components/singleLamp/SingleLampList";
 import { useAreaStore } from "@/store/areaStore";
 import { ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { useGlobalStore } from '@/store/globalStateStore';
+import { useWebSocketStore } from "@/store/websocketStore";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 interface Line {
   id: number;
   name: string;
@@ -91,10 +91,11 @@ export default function SingleLampScreen() {
   const [showBatchControlModal, setShowBatchControlModal] = useState(false);
   const currentServer = useGlobalStore(state => state.currentServer);
   const singleLampOffline = require('@/assets/images/street/singleLamp/singleLampOfflin.png');
-
+  const [messages, setMessages] = useState<{ id: string; content: string; timestamp: number }[]>([]);
+  
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
-
+  const {WS_SingleControlResp_Data} = useWebSocketStore()
   // 初始化时选择第一个可用的集中器
   useEffect(() => {
     if (allEboxes.length > 0 && !selectedDevice) {
@@ -104,6 +105,108 @@ export default function SingleLampScreen() {
       loadLines(firstDevice.id);
     }
   }, [allEboxes]);
+  useEffect(() => {
+    if (WS_SingleControlResp_Data) {
+      const { data, deviceName } = WS_SingleControlResp_Data;
+      if (data) {
+        // 处理消息面板数据
+        let stateAMessage = '';
+        let stateBMessage = '';
+        
+        // 处理A灯状态
+        switch (data.stateA) {
+          case 'SINGLE_STATE_ERR':
+            stateAMessage = '故障';
+            break;
+          case 'SINGLE_STATE_ON':
+            stateAMessage = '开启';
+            break;
+          case 'SINGLE_STATE_OFF':
+            stateAMessage = '关闭';
+            break;
+          case 'SINGLE_STATE_WAIT':
+            stateAMessage = '检测中';
+            break;
+        }
+
+        // 处理B灯状态
+        switch (data.stateB) {
+          case 'SINGLE_STATE_ERR':
+            stateBMessage = '故障';
+            break;
+          case 'SINGLE_STATE_ON':
+            stateBMessage = '开启';
+            break;
+          case 'SINGLE_STATE_OFF':
+            stateBMessage = '关闭';
+            break;
+          case 'SINGLE_STATE_WAIT':
+            stateBMessage = '检测中';
+            break;
+        }
+
+        // 构建消息内容
+        const messageContent = `${data.id} A灯状态：${stateAMessage},B灯状态：${stateBMessage},调光值：${data.dimming}`;
+        
+        // 添加新消息到列表
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [newMessage, ...prev]);
+
+        // // 更新控制器状态
+        // setSingleLamps(prevLamps => {
+        //   return prevLamps.map(lamp => {
+        //     const updatedControllers = lamp.controllers.map(controller => {
+        //       if (controller.controllerId === data.id) {
+        //         return {
+        //           ...controller,
+        //           stateA: data.stateA,
+        //           stateB: data.stateB,
+        //           powerOnA: data.stateA === 'SINGLE_STATE_ON',
+        //           powerOnB: data.stateB === 'SINGLE_STATE_ON'
+        //         };
+        //       }
+        //       return controller;
+        //     });
+
+        //     return {
+        //       ...lamp,
+        //       controllers: updatedControllers
+        //     };
+        //   });
+        // });
+
+        // // 更新 filteredSingleLamps（如果当前在控制器视图）
+        // if (currentOperation === 'controller') {
+        //   setFilteredSingleLamps(prevLamps => {
+        //     return prevLamps.map(lamp => {
+        //       const updatedControllers = lamp.controllers.map(controller => {
+        //         if (controller.controllerId === data.id) {
+        //           return {
+        //             ...controller,
+        //             stateA: data.stateA,
+        //             stateB: data.stateB,
+        //             powerOnA: data.stateA === 'SINGLE_STATE_ON',
+        //             powerOnB: data.stateB === 'SINGLE_STATE_ON'
+        //           };
+        //         }
+        //         return controller;
+        //       });
+
+        //       return {
+        //         ...lamp,
+        //         controllers: updatedControllers
+        //       };
+        //     });
+        //   });
+        // }
+      }
+    }
+  }, [WS_SingleControlResp_Data, currentOperation]);
+
 
   // 处理搜索
   const handleSearch = useCallback((text: string) => {
@@ -312,6 +415,12 @@ export default function SingleLampScreen() {
     }
   }, [selectedDevice, selectedLine, loadSingleLamps, currentServer]);
 
+  const handleClearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+
+
   const renderEmptyState = () => {
     if (!selectedDevice) {
       return (
@@ -351,6 +460,11 @@ export default function SingleLampScreen() {
             lines={lines}
             selectedLine={selectedLine}
             onSelectLine={handleSelectLine}
+            onSearch={handleSearch}
+            onEdit={handleEdit}
+            selectedCount={selectedControllers.length}
+            totalCount={totalControllerCount()}
+            currentOperation={currentOperation}
           />
         )}
 
@@ -370,19 +484,17 @@ export default function SingleLampScreen() {
             onUpdateSuccess={handleUpdateSingleLamp}
           />
         ) : (
-          <>
-            <BatchOperationBar
-              onSearch={handleSearch}
-              onEdit={handleEdit}
-              selectedCount={selectedControllers.length}
-              totalCount={totalControllerCount()}
-            />
+          <View style={{ flex: 1 }}>
             <ControllerInfoCard 
               singleLamps={filteredSingleLamps} 
               onSelectionChange={handleSelectionChange}
               selectedControllers={selectedControllers}
             />
-          </>
+            <MessagePanel
+              messages={messages}
+              onClearMessages={handleClearMessages}
+            />
+          </View>
         )}
       </View>
      

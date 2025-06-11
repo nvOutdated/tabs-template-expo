@@ -2,9 +2,8 @@ import { useGlobalStore } from '@/store/globalStateStore';
 import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ImageUploadPreviewModal from '../public/ImageUploadPreviewModal';
+import ImageModal from '../public/ImageModal';
 const singleLampOffline = require('../../assets/images/street/singleLamp/singleLampOfflin.png');
-
 interface Attachment {
   id: number;
   url: string;
@@ -98,8 +97,6 @@ const getLightingType = (type: number) => ({
 
 const SingleLampList = ({
   singleLamps,
-  loading,
-  hasMore,
   onEndReached,
   refreshControl,
   ListEmptyComponent,
@@ -108,8 +105,9 @@ const SingleLampList = ({
   const [expanded, setExpanded] = useState<{ [id: number]: boolean }>({});
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImages, setPreviewImages] = useState<any[]>([]);
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [previewLampId, setPreviewLampId] = useState<number | undefined>(undefined);
+  // const [previewIndex, setPreviewIndex] = useState(0);
+  const [itemId,setItemId] = useState<number>();
+  const [previewLampId, setPreviewLampId] = useState<string | undefined>(undefined);
   const currentServer = useGlobalStore(state => state.currentServer);
 
   const handleToggle = useCallback((id: number) => {
@@ -123,16 +121,12 @@ const SingleLampList = ({
           uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
           id: attachment.id
         }))
-      : [singleLampOffline];
+      : [];
     setPreviewImages(images);
-    setPreviewIndex(0);
-    setPreviewLampId(item.id);
+    setItemId(item.id);
+    setPreviewLampId(item.container_id);
     setPreviewVisible(true);
   }, [currentServer]);
-
-  const handleUploadSuccess = useCallback((newUri: string) => {
-    setPreviewVisible(false);
-  }, []);
 
   const handleImageUpdate = useCallback((updatedLamp: SingleLamp) => {
     if (onUpdateSuccess) {
@@ -216,15 +210,13 @@ const SingleLampList = ({
         contentContainerStyle={singleLamps.length === 0 ? { flex: 1 } : { paddingBottom: 40 }}
         ListFooterComponent={ListFooterComponent}
       />
-      <ImageUploadPreviewModal
+      <ImageModal
         visible={previewVisible}
         onClose={() => setPreviewVisible(false)}
         images={previewImages}
-        initialIndex={previewIndex}
-        uploadType="singleLight"
         containerId={previewLampId ? String(previewLampId) : undefined}
-        userInfo={undefined}
-        onUploadSuccess={handleUploadSuccess}
+        itemId={itemId?itemId:0}
+        type="singleLamp"
         onUpdateSuccess={handleImageUpdate}
       />
     </>

@@ -36,6 +36,25 @@ interface WebSocketState {
     };
     [key: string]: any;
   } | null;
+
+  WS_SingleControlResp_Data: {
+    data?: {
+      comm?: "COMM_NORMAL" | "COMM_GROUP" | "COMM_BROADCAST";
+      dimming?: number;
+      enabledA?: boolean;
+      enabledB?: boolean;
+      group?: number;
+      id?: string;
+      method?: "MD_ON" | "MD_OFF" | "MD_DIM" | "MD_DETECT";
+      stateA?: "SINGLE_STATE_OFF" | "SINGLE_STATE_ON" | "SINGLE_STATE_WAIT"| 'SINGLE_STATE_ERR';
+      stateB?: "SINGLE_STATE_OFF" | "SINGLE_STATE_ON" | "SINGLE_STATE_WAIT"| 'SINGLE_STATE_ERR';
+    };
+    description?: string | null;
+    deviceName?: string;
+    did?: number;
+    productID?: string;
+    sn?: string;
+  } | null;
   init: () => void;
   disconnect: () => void;
   sendMessage: (message: string) => void;
@@ -44,12 +63,14 @@ interface WebSocketState {
 // 比较两个对象是否相同（忽略 dateTime, dateTimeMillis 和 reportTime）
 const isDataEqual = (oldData: any, newData: any): boolean => {
   if (!oldData || !newData) return false;
-  
+
   // 比较基本属性
-  if (oldData.type !== newData.type ||
-      oldData.did !== newData.did ||
-      oldData.sn !== newData.sn ||
-      oldData.deviceName !== newData.deviceName) {
+  if (
+    oldData.type !== newData.type ||
+    oldData.did !== newData.did ||
+    oldData.sn !== newData.sn ||
+    oldData.deviceName !== newData.deviceName
+  ) {
     return false;
   }
 
@@ -58,32 +79,38 @@ const isDataEqual = (oldData: any, newData: any): boolean => {
   const newDataObj = newData.data || {};
 
   // 比较数组类型的属性
-  if (!arraysEqual(oldDataObj.phase3Voltage, newDataObj.phase3Voltage) ||
-      !arraysEqual(oldDataObj.phase3Electric, newDataObj.phase3Electric) ||
-      !arraysEqual(oldDataObj.loops, newDataObj.loops) ||
-      !arraysEqual(oldDataObj.ios, newDataObj.ios)) {
+  if (
+    !arraysEqual(oldDataObj.phase3Voltage, newDataObj.phase3Voltage) ||
+    !arraysEqual(oldDataObj.phase3Electric, newDataObj.phase3Electric) ||
+    !arraysEqual(oldDataObj.loops, newDataObj.loops) ||
+    !arraysEqual(oldDataObj.ios, newDataObj.ios)
+  ) {
     return false;
   }
 
   // 比较布尔值类型的属性
-  if (oldDataObj.enabledWeekly !== newDataObj.enabledWeekly ||
-      oldDataObj.enabledAlways !== newDataObj.enabledAlways ||
-      oldDataObj.enabledLocation !== newDataObj.enabledLocation ||
-      oldDataObj.enabledMultiple !== newDataObj.enabledMultiple ||
-      oldDataObj.enabledLight !== newDataObj.enabledLight ||
-      oldDataObj.enabledWater !== newDataObj.enabledWater ||
-      oldDataObj.enabledOneByOne !== newDataObj.enabledOneByOne ||
-      oldDataObj.warn !== newDataObj.warn) {
+  if (
+    oldDataObj.enabledWeekly !== newDataObj.enabledWeekly ||
+    oldDataObj.enabledAlways !== newDataObj.enabledAlways ||
+    oldDataObj.enabledLocation !== newDataObj.enabledLocation ||
+    oldDataObj.enabledMultiple !== newDataObj.enabledMultiple ||
+    oldDataObj.enabledLight !== newDataObj.enabledLight ||
+    oldDataObj.enabledWater !== newDataObj.enabledWater ||
+    oldDataObj.enabledOneByOne !== newDataObj.enabledOneByOne ||
+    oldDataObj.warn !== newDataObj.warn
+  ) {
     return false;
   }
 
   // 比较字符串类型的属性（忽略 reportTime）
-  if (oldDataObj.powerOff !== newDataObj.powerOff ||
-      oldDataObj.powerOn !== newDataObj.powerOn ||
-      oldDataObj.mode !== newDataObj.mode ||
-      oldDataObj.optTime !== newDataObj.optTime ||
-      oldDataObj.eventType !== newDataObj.eventType ||
-      oldDataObj.description !== newDataObj.description) {
+  if (
+    oldDataObj.powerOff !== newDataObj.powerOff ||
+    oldDataObj.powerOn !== newDataObj.powerOn ||
+    oldDataObj.mode !== newDataObj.mode ||
+    oldDataObj.optTime !== newDataObj.optTime ||
+    oldDataObj.eventType !== newDataObj.eventType ||
+    oldDataObj.description !== newDataObj.description
+  ) {
     return false;
   }
 
@@ -106,12 +133,12 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
   isConnected: false,
   error: null,
   WS_SmartLight_Data: null,
-  
+  WS_SingleControlResp_Data: null,
   // 初始化WebSocket连接
   init: () => {
     // 先重置之前的连接
     websocketManager.reset();
-    
+
     // 添加状态变化处理器
     websocketManager.addStatusHandler((isConnected) => {
       set({ isConnected });
@@ -120,26 +147,39 @@ export const useWebSocketStore = create<WebSocketState>((set) => ({
     // 添加消息处理器
     websocketManager.addMessageHandler((message: WebSocketMessage) => {
       // console.log(message,"消息推送");
-      
+
       switch (message.service_name) {
         case "smart-light":
-          if(message.message_type==='device'){
-            // console.log(message.device_content,"消息推送");
-            if(message.device_content){
+          if (message.message_type === "device") {
+            if (message.device_content) {
               // 获取当前状态
               const currentState = useWebSocketStore.getState();
               const currentData = currentState.WS_SmartLight_Data;
-              
-              // 只有当数据真正发生变化时才更新状态
-              if (!isDataEqual(currentData, message.device_content)) {
-                console.log("值发生变化");
-                
-                set({ WS_SmartLight_Data: message.device_content });
+              console.log(message.device_content, "消息推送");
+              switch (message.device_content.type) {
+                case "singleControlResp":
+                  set({ WS_SingleControlResp_Data: message.device_content });
+                  break;
+                case "dataChange":
+                  set({ WS_SmartLight_Data: message.device_content });
+                  break;
+                case "warning":
+                  set({ WS_SmartLight_Data: message.device_content });
+                  break;
+                default:
+                  break;
               }
-            }
-            
-            // console.log(message);
+              // if (message.device_content.type === "singleControlResp") {
+              //   set({ WS_SingleControlResp_Data: message.device_content });
+              // }
 
+              // // 只有当数据真正发生变化时才更新状态
+              // if (!isDataEqual(currentData, message.device_content)) {
+              //   console.log("值发生变化");
+              //   set({ WS_SmartLight_Data: message.device_content });
+              // }
+            }
+            // console.log(message);
           }
           break;
         default:

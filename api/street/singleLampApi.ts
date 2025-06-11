@@ -31,6 +31,12 @@ export const ordinaryLamp_query_list=(params:any)=>{
     })
 }
 
+export const ordinaryLamp_query_get=(params:{id:number})=>{
+    return request("/smart/light/lamp/query/get",{
+        method:"post",
+        body:params
+    })
+}
 
 //singleLamp controller
 export const lightPole_devicectrl_sendSingleControlCmd=(params:any)=>{

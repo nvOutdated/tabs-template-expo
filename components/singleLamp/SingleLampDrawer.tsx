@@ -433,15 +433,7 @@ export default function SingleLampDrawer({
           removeClippedSubviews={true}
           initialNumToRender={10}
           maxToRenderPerBatch={10}
-          // windowSize={5}
-          // onScrollToIndexFailed={(info) => {
-          //   requestAnimationFrame(() => {
-          //     flatListRef.current?.scrollToOffset({
-          //       offset: info.averageItemLength * info.index,
-          //       animated: true,
-          //     });
-          //   });
-          // }}
+          windowSize={5}
         />
       </Animated.View>
     </View>

@@ -112,7 +112,12 @@ const LampPoleItem = ({
             {/* 左侧控制器信息 - 垂直排列 */}
             <View style={styles.controllerInfo}>
               <View style={styles.controllerHeader}>
-                <Text style={styles.controllerId}>ID: {controller.controllerId}</Text>
+               {controller.domain?
+               (<Text style={styles.domainControlId}>ID: {controller.controllerId}</Text>):
+               <Text style={styles.controllerId}>ID: {controller.controllerId}</Text>
+              }
+                
+               
               </View>
               <View style={styles.controllerDetails}>
                 <Text style={styles.detailText}>
@@ -208,7 +213,7 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
       data={singleLamps}
       renderItem={renderItem}
       keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={[styles.listContainer, { paddingBottom: 50 }]}
+      contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
       showsVerticalScrollIndicator={false}
       ListFooterComponent={ListFooterComponent}
     />
@@ -272,6 +277,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 13,
     color: '#333',
+  },
+  domainControlId:{
+    color:"#67C23A"
   },
   controllerDetails: {
     marginTop: 2,
