@@ -43,10 +43,16 @@ const getControllerType = (type: string) => ({
   SINGLE_HEAD_CAT1: 'Cat1单头'
 }[type] || type);
 
+const getPowerStateWithColor = (ctrl: Controller, loop: string) => {
+  const state = loop === 'A' ? ctrl.powerOnA : ctrl.powerOnB;
+  return {
+    text: state ? '开' : '关',
+    color: state ? '#67C23A' : '#000000'
+  };
+};
+
 const getPowerState = (ctrl: Controller, loop: string) => {
-  if (loop === 'A') return ctrl.powerOnA ? '开' : '关';
-  if (loop === 'B') return ctrl.powerOnB ? '开' : '关';
-  return '未知';
+  return getPowerStateWithColor(ctrl, loop).text;
 };
 
 const getLightingType = (type: number) => ({
@@ -60,7 +66,15 @@ const getPoleType = (type: string) => ({
   '4': '庭院灯',
   '5': '其他'
 }[type] || '未知');
-
+const getStateMessage = (state?: string) => {
+  const stateMap: Record<string, { text: string; color: string }> = {
+    'SINGLE_STATE_ERR': { text: '故障', color: '#ff0000' },  // Red for error
+    'SINGLE_STATE_ON': { text: '开启', color: '#67C23A' },   // Yellow for on
+    'SINGLE_STATE_OFF': { text: '关闭', color: '#000000' },  // Black for off
+    'SINGLE_STATE_WAIT': { text: '检测中', color: '#0000ff' } // Blue for waiting
+  };
+  return state ? stateMap[state] || { text: '', color: '#000000' } : { text: '', color: '#000000' };
+};
 interface ControllerInfoCardProps {
   singleLamps: SingleLamp[];
   onSelectionChange?: (selectedControllers: { lampId: number; controllerId: number }[]) => void;
@@ -124,22 +138,23 @@ const LampPoleItem = ({
                   <Text style={styles.detailLabel}>类型：</Text>
                   {getControllerType(controller.controllerType)}
                 </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>组：</Text>
+               
+                {(
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>A灯状态:</Text>
+                    <Text style={{ color: getStateMessage(controller.stateA||'').color }}>{getStateMessage(controller.stateA||'').text}</Text>
+                  </Text>
+                )}
+                {(
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>B灯状态:</Text>
+                    <Text style={{ color: getStateMessage(controller.stateB||'').color }}>{getStateMessage(controller.stateB||'').text}</Text>
+                  </Text>
+                )}
+                 <Text style={styles.detailText}>
+                  <Text style={styles.detailLabel}>所属组：</Text>
                   {controller.groupIds4Save.join(',')}
                 </Text>
-                {controller.stateA && (
-                  <Text style={styles.detailText}>
-                    <Text style={styles.detailLabel}>状态A：</Text>
-                    {controller.stateA}
-                  </Text>
-                )}
-                {controller.stateB && (
-                  <Text style={styles.detailText}>
-                    <Text style={styles.detailLabel}>状态B：</Text>
-                    {controller.stateB}
-                  </Text>
-                )}
               </View>
             </View>
             {/* 右侧灯头信息 */}
@@ -152,10 +167,12 @@ const LampPoleItem = ({
               </View>
               {controller.lamps.map(lamp => (
                 <View key={lamp.id} style={styles.lampRow}>
-                  <Text style={styles.lampCol}>{lamp.lightLoop}</Text>
-                  <Text style={styles.lampCol}>{getPowerState(controller, lamp.lightLoop)}</Text>
-                  <Text style={styles.lampCol}>{getLightingType(lamp.lightingType)}</Text>
-                  <Text style={styles.lampCol}>{lamp.phase}</Text>
+                  <Text style={styles.lampColValue}>{lamp.lightLoop}</Text>
+                  <Text style={{ ...styles.lampColValue, color: getPowerStateWithColor(controller, lamp.lightLoop).color }}>
+                    {getPowerState(controller, lamp.lightLoop)}
+                  </Text>
+                  <Text style={styles.lampColValue}>{getLightingType(lamp.lightingType)}</Text>
+                  <Text style={styles.lampColValue}>{lamp.phase}</Text>
                 </View>
               ))}
             </View>
@@ -169,10 +186,10 @@ const LampPoleItem = ({
 const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({ 
   singleLamps,
   onSelectionChange,
-  selectedControllers: externalSelectedControllers 
+  selectedControllers: externalSelectedControllers,
 }) => {
   const [internalSelectedControllers, setInternalSelectedControllers] = useState<{ lampId: number; controllerId: number }[]>([]);
-
+  
   // 同步外部选中状态
   useEffect(() => {
     if (externalSelectedControllers) {
@@ -228,7 +245,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 8,
+    padding: 4,
     elevation: 2,
   },
   lampPoleHeader: {
@@ -301,28 +318,33 @@ const styles = StyleSheet.create({
   lampHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
-    backgroundColor: '#f5f7fa',
-    paddingVertical: 4,
-    paddingHorizontal: 2,
-    borderRadius: 4,
+    marginBottom: 2,
   },
   lampRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    paddingHorizontal: 2,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#e0e0e0',
+    paddingVertical: 4,
   },
   lampCol: {
+    width: '25%',
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    flexShrink: 0,
+    flexGrow: 0,
+    paddingVertical: 4,
+  },
+  lampColValue: {
     width: '25%',
     textAlign: 'center',
     fontSize: 12,
     color: '#333',
     flexShrink: 0,
     flexGrow: 0,
+    paddingVertical: 4,
   },
 });
 
-export default ControllerInfoCard; 
+export default ControllerInfoCard;

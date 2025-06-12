@@ -79,3 +79,43 @@ export const  smart_personal_matchOptCode=(params:smartPersonalMatchOptCode)=> {
         body:params
     })
 }
+
+// 集中器参数检测
+export const detect_dev_param = (params: { deviceId: number }) => {
+  return request("/smart/light/singlectrl/sendDetectParamsCmd", {
+    method: "post",
+    body: params
+  });
+};
+
+// 集中器复位
+export const singleLamp_reset = (params: { deviceId: number }) => {
+  return request("/smart/light/singlectrl/sendSetupReset", {
+    method: "post",
+    body: params
+  });
+};
+
+// 集中器手/自动切换
+export const changeSwitchAuto = (params: { deviceId: number }) => {
+  return request("/smart/light/devicectrl/sendSetupSwitchAutoCmd", {
+    method: "post",
+    body: params
+  });
+};
+
+// 集中器系统时钟检测
+export const detect_lamp_time = (params: { deviceId: number }) => {
+  return request("/smart/light/singlectrl/sendSingleDetectDatetimeCmd", {
+    method: "post",
+    body: params
+  });
+};
+
+// 集中器校时
+export const deviceCtrl_sendTimingCmd = (params: { deviceIds: number[] }) => {
+  return request("/smart/light/devicectrl/sendTimingCmd", {
+    method: "post",
+    body: params
+  });
+};

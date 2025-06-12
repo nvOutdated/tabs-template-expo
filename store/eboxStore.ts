@@ -136,7 +136,7 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
   updateDeviceStatus: (deviceId, status) => {
     set((state) => {
       const updatedEboxes = state.allEboxes.map((ebox) => {
-        if (ebox.id === deviceId) {
+        if (ebox.device_info.id === deviceId) {
           // 检查状态是否真的发生变化
           if (!isDeviceStatusChanged(ebox.device_info, status)) {
             return ebox; // 如果没有变化，返回原对象

@@ -92,10 +92,22 @@ export default function SingleLampScreen() {
   const currentServer = useGlobalStore(state => state.currentServer);
   const singleLampOffline = require('@/assets/images/street/singleLamp/singleLampOfflin.png');
   const [messages, setMessages] = useState<{ id: string; content: string; timestamp: number }[]>([]);
-  
+  const getStateMessage = (state?: string): string => {
+    const stateMap: Record<string, string> = {
+      'SINGLE_STATE_ERR': '故障',
+      'SINGLE_STATE_ON': '开启',
+      'SINGLE_STATE_OFF': '关闭',
+      'SINGLE_STATE_WAIT': '检测中'
+    };
+    return state ? stateMap[state] || '' : '';
+  };
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
-  const {WS_SingleControlResp_Data} = useWebSocketStore()
+  const {WS_SingleControlResp_Data,
+    WS_CentralParamsResp_Data,
+    WS_SingleDatetimeResp_Data,
+    WS_SwitchAutoResp_Data,
+    WS_DetectDatetimeParamsResp_Data} = useWebSocketStore()
   // 初始化时选择第一个可用的集中器
   useEffect(() => {
     if (allEboxes.length > 0 && !selectedDevice) {
@@ -105,49 +117,74 @@ export default function SingleLampScreen() {
       loadLines(firstDevice.id);
     }
   }, [allEboxes]);
+  useEffect(()=>{
+     if(WS_CentralParamsResp_Data&&currentOperation === 'controller'){
+        const {data,deviceName,sn} = WS_CentralParamsResp_Data;
+        if(data&&deviceName&&sn){
+          const messageContent = ` ${deviceName}(${sn})  循环次数：${data.lamp_circle_no},接收超时：${data.lamp_timeout},重试次数：${data.lamp_retry},手自动状态：${data.auto}`;
+          const newMessage = {
+            id: Date.now().toString(),
+            content: messageContent,
+            timestamp: Date.now()
+          };
+          setMessages(prev => [newMessage, ...prev]);
+        }
+     }
+  },[WS_CentralParamsResp_Data])
+  useEffect(()=>{
+    if(WS_SingleDatetimeResp_Data&&currentOperation === 'controller'){
+      const {data,deviceName,sn} = WS_SingleDatetimeResp_Data;
+      if(data&&deviceName&&sn){
+        const messageContent = ` ${deviceName}(${sn})  设备时钟：${data.dateTime}`;
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [newMessage, ...prev]);
+      }
+    }
+  },[WS_SingleDatetimeResp_Data]) 
+  useEffect(()=>{
+    if(WS_SwitchAutoResp_Data&&currentOperation === 'controller'){
+      const {data,deviceName,sn} = WS_SwitchAutoResp_Data;
+      if(data&&deviceName&&sn){
+        const messageContent = ` ${deviceName}(${sn})  手自动状态：${data.auto}`;
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [newMessage, ...prev]);
+      }
+    }
+  },[WS_SwitchAutoResp_Data]) 
+  useEffect(()=>{
+    if(WS_DetectDatetimeParamsResp_Data&&currentOperation === 'controller'){
+      const {data,deviceName,sn} = WS_DetectDatetimeParamsResp_Data;
+      if(data&&deviceName&&sn){
+        const messageContent = ` ${deviceName}(${sn})  设备时钟：${data.dateTime}`;
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [newMessage, ...prev]);
+      }
+    }
+  },[WS_DetectDatetimeParamsResp_Data])  
   useEffect(() => {
-    if (WS_SingleControlResp_Data) {
+    if (WS_SingleControlResp_Data&&currentOperation === 'controller') {
       const { data, deviceName } = WS_SingleControlResp_Data;
       if (data) {
         // 处理消息面板数据
         let stateAMessage = '';
         let stateBMessage = '';
-        
-        // 处理A灯状态
-        switch (data.stateA) {
-          case 'SINGLE_STATE_ERR':
-            stateAMessage = '故障';
-            break;
-          case 'SINGLE_STATE_ON':
-            stateAMessage = '开启';
-            break;
-          case 'SINGLE_STATE_OFF':
-            stateAMessage = '关闭';
-            break;
-          case 'SINGLE_STATE_WAIT':
-            stateAMessage = '检测中';
-            break;
-        }
-
-        // 处理B灯状态
-        switch (data.stateB) {
-          case 'SINGLE_STATE_ERR':
-            stateBMessage = '故障';
-            break;
-          case 'SINGLE_STATE_ON':
-            stateBMessage = '开启';
-            break;
-          case 'SINGLE_STATE_OFF':
-            stateBMessage = '关闭';
-            break;
-          case 'SINGLE_STATE_WAIT':
-            stateBMessage = '检测中';
-            break;
-        }
-
+        // 使用映射函数处理状态
+        stateAMessage = getStateMessage(data.stateA);
+        stateBMessage = getStateMessage(data.stateB);
         // 构建消息内容
         const messageContent = `${data.id} A灯状态：${stateAMessage},B灯状态：${stateBMessage},调光值：${data.dimming}`;
-        
         // 添加新消息到列表
         const newMessage = {
           id: Date.now().toString(),
@@ -156,56 +193,58 @@ export default function SingleLampScreen() {
         };
         setMessages(prev => [newMessage, ...prev]);
 
-        // // 更新控制器状态
-        // setSingleLamps(prevLamps => {
-        //   return prevLamps.map(lamp => {
-        //     const updatedControllers = lamp.controllers.map(controller => {
-        //       if (controller.controllerId === data.id) {
-        //         return {
-        //           ...controller,
-        //           stateA: data.stateA,
-        //           stateB: data.stateB,
-        //           powerOnA: data.stateA === 'SINGLE_STATE_ON',
-        //           powerOnB: data.stateB === 'SINGLE_STATE_ON'
-        //         };
-        //       }
-        //       return controller;
-        //     });
+        // 更新控制器状态
+        setSingleLamps(prevLamps => {
+          return prevLamps.map(lamp => {
+            const updatedControllers = lamp.controllers.map(controller => {
+              if (controller.controllerId === data.id) {
+                return {
+                  ...controller,
+                  stateA: data.stateA,
+                  stateB: data.stateB,
+                  powerOnA: data.enabledA,
+                  powerOnB: data.enabledB,
+                } as Controller;
+              }
+              return controller;
+            });
 
-        //     return {
-        //       ...lamp,
-        //       controllers: updatedControllers
-        //     };
-        //   });
-        // });
+            return {
+              ...lamp,
+              controllers: updatedControllers
+            };
+          });
+        });
 
         // // 更新 filteredSingleLamps（如果当前在控制器视图）
-        // if (currentOperation === 'controller') {
-        //   setFilteredSingleLamps(prevLamps => {
-        //     return prevLamps.map(lamp => {
-        //       const updatedControllers = lamp.controllers.map(controller => {
-        //         if (controller.controllerId === data.id) {
-        //           return {
-        //             ...controller,
-        //             stateA: data.stateA,
-        //             stateB: data.stateB,
-        //             powerOnA: data.stateA === 'SINGLE_STATE_ON',
-        //             powerOnB: data.stateB === 'SINGLE_STATE_ON'
-        //           };
-        //         }
-        //         return controller;
-        //       });
+        if (currentOperation === 'controller') {
+          setFilteredSingleLamps(prevLamps => {
+            return prevLamps.map(lamp => {
+              const updatedControllers = lamp.controllers.map(controller => {
+                if (controller.controllerId === data.id) {
+                  return {
+                    ...controller,
+                    stateA: data.stateA,
+                    stateB: data.stateB,
+                    powerOnA:data.enabledA,
+                    powerOnB:data.enabledB
+                  } as Controller;
+                }
+                return controller;
+              });
 
-        //       return {
-        //         ...lamp,
-        //         controllers: updatedControllers
-        //       };
-        //     });
-        //   });
-        // }
+              return {
+                ...lamp,
+                controllers: updatedControllers
+              };
+            });
+          });
+        }
       }
     }
   }, [WS_SingleControlResp_Data, currentOperation]);
+
+
 
 
   // 处理搜索
@@ -319,10 +358,9 @@ export default function SingleLampScreen() {
   }, [selectedDevice, selectedLine, loadSingleLamps]);
 
   const handleEdit = useCallback(() => {
-    // if (selectedControllers.length > 0) {
-    //   setShowBatchControlModal(true);
-    // }
-    setShowBatchControlModal(true);
+    if (selectedControllers.length > 0) {
+      setShowBatchControlModal(true);
+    }
   }, [selectedControllers]);
 
   const handleBatchControlConfirm = useCallback((formData: BatchControlFormData) => {

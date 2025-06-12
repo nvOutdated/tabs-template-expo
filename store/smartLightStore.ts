@@ -136,7 +136,7 @@ export const useSmartLightStore = create<SmartLightStore>((set, get) => ({
   updateDeviceStatus: (deviceId, status) => {
     set((state) => {
       const updatedLights = state.allSmartLights.map((light) => {
-        if (light.id === deviceId) {
+        if (light.device_info.id === deviceId) {
           // 检查状态是否真的发生变化
           if (!isDeviceStatusChanged(light.device_info, status)) {
             return light; // 如果没有变化，返回原对象

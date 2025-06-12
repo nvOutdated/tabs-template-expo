@@ -65,7 +65,31 @@ const createMessageHandlers = (set: any): MessageHandler[] => [
     handle: (message: WebSocketMessage) => {
       set({ WS_SmartLight_Data: message.device_content });
     }
-  }
+  },
+  {
+    type: MessageType.CENTRAL_PARAMS_RESP,
+    handle: (message: WebSocketMessage) => {
+      set({ WS_CentralParamsResp_Data: message.device_content });
+    }
+  },
+  {
+    type: MessageType.SINGLE_DATETIME_RESP,
+    handle: (message: WebSocketMessage) => {
+      set({ WS_SingleDatetimeResp_Data: message.device_content });
+    }
+  },
+  {
+    type: MessageType.SWITCH_AUTO_RESP,
+    handle: (message: WebSocketMessage) => {
+      set({ WS_SwitchAutoResp_Data: message.device_content });
+    }
+  },
+  {
+    type: MessageType.DETECT_DATETIME_PARAMS_RESP,
+    handle: (message: WebSocketMessage) => {
+      set({ WS_DetectDatetimeParamsResp_Data: message.device_content });
+    }
+  },
 ];
 
 // 处理消息队列的函数
@@ -76,7 +100,6 @@ const processMessageQueue = async (handlers: MessageHandler[]) => {
     while (messageQueue.messages.length > 0) {
       const message = messageQueue.messages.shift();
       const deviceContent = message?.device_content;
-      
       if (message?.service_name === "smart-light" && 
           message?.message_type === "device" && 
           deviceContent && 
@@ -109,7 +132,10 @@ export const useWebSocketStore = create<WebSocketState>((set) => {
     error: null,
     WS_SmartLight_Data: null,
     WS_SingleControlResp_Data: null,
-
+    WS_CentralParamsResp_Data: null,
+    WS_SingleDatetimeResp_Data: null,
+    WS_SwitchAutoResp_Data: null,
+    WS_DetectDatetimeParamsResp_Data: null,
     init: () => {
       websocketManager.reset();
 

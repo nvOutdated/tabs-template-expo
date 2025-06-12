@@ -6,7 +6,11 @@ export enum MessageType {
   DATA_CHANGE = "dataChange",
   WARNING = "warning",
   ONLINE = "online",
-  OFFLINE = "offline"
+  OFFLINE = "offline",
+  CENTRAL_PARAMS_RESP='centralParamsResp',
+  SINGLE_DATETIME_RESP='singleDatetimeResp',
+  SWITCH_AUTO_RESP='switchAutoResp',
+  DETECT_DATETIME_PARAMS_RESP='detectDatetimeParamsResp',
 }
 
 // 消息处理器接口
@@ -27,12 +31,16 @@ export interface WebSocketState {
   error: Error | null;
   WS_SmartLight_Data: SmartLightData | null;
   WS_SingleControlResp_Data: SingleControlRespData | null;
+  WS_CentralParamsResp_Data: CentralParamsRespData | null;
+  WS_SingleDatetimeResp_Data: SingleDatetimeRespData | null;
+  WS_SwitchAutoResp_Data: SwitchAutoRespData | null;
+  WS_DetectDatetimeParamsResp_Data: DetectDatetimeParamsRespData | null;
   init: () => void;
   disconnect: () => void;
   sendMessage: (message: string) => void;
 }
 
-// 智能灯数据接口
+// 集中器数据接口
 export interface SmartLightData {
   type?: string;
   did?: number;
@@ -85,3 +93,65 @@ export interface SingleControlRespData {
   productID?: string;
   sn?: string;
 } 
+
+//检测集中器参数
+export interface CentralParamsRespData{
+  data?:{
+    auto?:boolean,
+    lamp_timeout?:number,
+    lamp_retry?:number,
+    lamp_circle_no?:number,
+  },
+  description?:string,
+  deviceName?:string,
+  did?:number,
+  type?:string,
+  productID?:string,
+  sn?:string
+}
+
+//集中器时间
+export interface SingleDatetimeRespData{
+  data?:{
+    dateTime?:string, 
+  },
+  description?:string,
+  deviceName?:string,
+  did?:number,
+  type?:string,
+  productID?:string,
+  sn?:string
+}
+
+//手自动切换
+export interface SwitchAutoRespData{
+  data?:{
+    auto?:boolean,
+  },
+  description?:string,
+  deviceName?:string,
+  did?:number,
+  type?:string,
+  productID?:string,
+  sn?:string
+}
+
+//校时
+export interface DetectDatetimeParamsRespData{
+  data?:{
+    dateTime?:string,
+    enabledAlways?:boolean,
+    enabledWeekly?:boolean,
+    enabledLocation?:boolean,
+    enabledMultiple?:boolean,
+    enabledOneByOne?:boolean,
+  },
+  description?:string,
+  deviceName?:string,
+  did?:number,
+  type?:string,
+  productID?:string,
+  sn?:string
+}
+
+

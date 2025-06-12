@@ -15,6 +15,7 @@ import {
 } from "@/store/smartLightStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { getUserInfo } from "@/utils/useStorageState";
+import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -74,6 +75,8 @@ export default function SmartLampScreen() {
   const { areaList, areaWithDevicesList } = useAreaStore();
   const currentServer = useGlobalStore(state => state.currentServer);
 
+  const isScreenFocused = useRef(true);
+
   const loadSmartLightList = useCallback(
     async (page: number, isRefresh: boolean = false) => {
       if (loadingRef.current) return;
@@ -131,6 +134,25 @@ export default function SmartLampScreen() {
     loadSmartLightList(1, true);
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      // 页面获得焦点
+      isScreenFocused.current = true;
+      console.log("智能灯页面获得焦点");
+
+      // 返回清理函数，在页面失去焦点时执行
+      return () => {
+        isScreenFocused.current = false;
+        console.log("智能灯页面失去焦点");
+        // 清理状态
+        setRefreshing(false);
+        setLoading(false);
+        setShowDrawer(false);
+        setShowDeviceDrawer(false);
+      };
+    }, [])
+  )
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       const info = await getUserInfo();
@@ -142,28 +164,54 @@ export default function SmartLampScreen() {
   }, []);
 
   useEffect(() => {
-    if (WS_SmartLight_Data?.did && WS_SmartLight_Data?.deviceName) {
+    if (WS_SmartLight_Data?.did && WS_SmartLight_Data?.deviceName&&isScreenFocused.current) {
+       const findSmartLightItems = allSmartLights.find(i=>i.device_info.id===WS_SmartLight_Data.did)
       if (WS_SmartLight_Data.type === "dataChange" || WS_SmartLight_Data.type === "warning") {
         // 检查数据是否真的发生变化
-        const currentDevice = allSmartLights.find(device => device.id === WS_SmartLight_Data.did);
+        const currentDevice = allSmartLights.find(device => device.device_info.id === WS_SmartLight_Data.did);
         if (currentDevice) {
           const deviceInfo = {
             online: WS_SmartLight_Data.data?.online ?? true,
             open: WS_SmartLight_Data.data?.open ?? false,
             warn: WS_SmartLight_Data.data?.warn ?? false,
+            loops:
+              WS_SmartLight_Data.data?.loops || currentDevice.device_info.loops,
           };
-
           // 只有当状态真正发生变化时才更新设备状态
           if (
             currentDevice.device_info.online !== deviceInfo.online ||
             currentDevice.device_info.open !== deviceInfo.open ||
-            currentDevice.device_info.warn !== deviceInfo.warn
+            currentDevice.device_info.warn !== deviceInfo.warn||
+            JSON.stringify(currentDevice.device_info.loops) !==
+              JSON.stringify(deviceInfo.loops)  
           ) {
             // 更新设备状态
             updateDeviceStatus(WS_SmartLight_Data.did, deviceInfo);
           }
-          
-          // 根据状态确定模块
+          if(findSmartLightItems){
+            // 只有当状态真正发生变化时才更新设备状态
+            if (
+                findSmartLightItems.device_info.online !== deviceInfo.online ||
+              findSmartLightItems.device_info.open !== deviceInfo.open ||
+              findSmartLightItems.device_info.warn !== deviceInfo.warn||
+              JSON.stringify(findSmartLightItems.device_info.loops) !==
+              JSON.stringify(deviceInfo.loops)
+            ) {
+              // 更新设备状态
+              setSmartLights((pre)=>{
+                const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
+                if(index!==-1){
+                  pre[index].device_info = {
+                    ...pre[index].device_info,
+                    ...deviceInfo
+                  }
+                }
+                return [...pre]
+              })
+            }
+          }
+          if(isOperationMode){
+             // 根据状态确定模块
           const deviceStatus = Object.values(DEVICE_STATUS).find(
             status => status.condition(deviceInfo)
           ) || DEVICE_STATUS.ONLINE;
@@ -204,6 +252,7 @@ export default function SmartLampScreen() {
             }
           };
           addOperation(newOperation);
+          }
         }
       }
       if (WS_SmartLight_Data.type === 'online') {
@@ -211,7 +260,19 @@ export default function SmartLampScreen() {
           online: true,
           open: false,
           warn: false,
+          loops: Array(8).fill(false),
         };
+        setSmartLights((pre)=>{
+          const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
+          if(index!==-1){
+            pre[index].device_info = {
+              ...pre[index].device_info,
+              ...deviceInfo
+            }
+          }
+          return [...pre]
+        })
+        updateDeviceStatus(WS_SmartLight_Data.did, deviceInfo);
         updateDeviceStatus(WS_SmartLight_Data.did, deviceInfo);
       }
       if (WS_SmartLight_Data.type === 'offline') {
@@ -219,7 +280,18 @@ export default function SmartLampScreen() {
           online: false,
           open: false,
           warn: false,
+            loops: Array(8).fill(false),
         };
+        setSmartLights((pre)=>{
+          const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
+          if(index!==-1){
+            pre[index].device_info = {
+              ...pre[index].device_info,
+              ...deviceInfo
+            }
+          }
+          return [...pre]
+        })
         updateDeviceStatus(WS_SmartLight_Data.did, deviceInfo);
       }
     }
