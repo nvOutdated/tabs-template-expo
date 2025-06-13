@@ -12,10 +12,13 @@
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^10.0.0",
+    "@expo/html-elements": "^0.4.2",
     "@expo/vector-icons": "^14.1.0",
+    "@gluestack-ui/actionsheet": "^0.2.53",
     "@gluestack-ui/icon": "^0.1.27",
     "@gluestack-ui/nativewind-utils": "^1.0.26",
     "@gluestack-ui/overlay": "^0.1.22",
+    "@gluestack-ui/select": "^0.1.31",
     "@gluestack-ui/toast": "^1.0.9",
     "@gorhom/bottom-sheet": "^5.1.6",
     "@legendapp/motion": "^2.4.0",
@@ -29,6 +32,7 @@
     "@react-navigation/native": "^7.1.6",
     "@shopify/flash-list": "1.7.6",
     "@types/lodash": "^4.17.16",
+    "add": "^2.0.6",
     "babel-plugin-module-resolver": "^5.0.2",
     "expo": "~53.0.7",
     "expo-blur": "~14.1.4",
@@ -60,6 +64,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
     "react-native-css-interop": "^0.1.22",
+    "react-native-element-dropdown": "^2.12.4",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gifted-charts": "^1.4.61",
     "react-native-pager-view": "6.7.1",
@@ -72,6 +77,7 @@
     "react-native-webrtc": "^124.0.5",
     "react-native-webview": "13.13.5",
     "tailwindcss": "^3.4.17",
+    "yarn": "^1.22.22",
     "zustand": "^5.0.4"
   },
   "devDependencies": {
@@ -81,6 +87,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "jscodeshift": "^0.15.2",
+    "size-limit": "^11.2.0",
     "typescript": "~5.8.3"
   },
   "private": true

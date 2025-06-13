@@ -2,6 +2,7 @@ import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProv
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { router } from "expo-router";
+import { useMemo } from "react";
 import {
   Dimensions,
   StatusBar,
@@ -25,47 +26,47 @@ const TAB_CONFIG = [
   { name: "camera", title: "摄像头", width: 70 },
 ];
 
-// 计算总宽度和间距
-const TOTAL_TABS = TAB_CONFIG.length;
-const TOTAL_CONTENT_WIDTH = TAB_CONFIG.reduce((sum, tab) => sum + tab.width, 0);
-const AVAILABLE_WIDTH = width * 0.9; // 90% of screen width
-const TOTAL_GAP = AVAILABLE_WIDTH - TOTAL_CONTENT_WIDTH;
-const GAP_BETWEEN_TABS = TOTAL_GAP / (TOTAL_TABS - 1);
-
 export default function TabConfigurationLayout() {
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
-
-  const renderLabel = ({
-    focused,
-    color,
-    children,
-  }: {
-    focused: boolean;
-    color: string;
-    children: string;
-  }) => {
-    const tabConfig = TAB_CONFIG.find(tab => tab.title === children);
-    const tabWidth = tabConfig?.width || 50; // 默认宽度
-
-    return (
-      <Text
-        style={{
-          color,
-          fontSize: focused ? 16 : 14,
-          fontWeight: focused ? "700" : "400",
-          textTransform: "none",
-          lineHeight: 40,
-          height: 40,
-          textAlignVertical: "center",
-          textAlign: "center",
-          width: tabWidth,
-        }}
-      >
-        {children}
-      </Text>
+  const { AVAILABLE_WIDTH, GAP_BETWEEN_TABS } = useMemo(() => {
+    const TOTAL_TABS = TAB_CONFIG.length;
+    const TOTAL_CONTENT_WIDTH = TAB_CONFIG.reduce(
+      (sum, tab) => sum + tab.width,
+      0
     );
-  };
+    const AVAILABLE_WIDTH = width * 0.8;
+    const TOTAL_GAP = AVAILABLE_WIDTH - TOTAL_CONTENT_WIDTH;
+    const GAP_BETWEEN_TABS = TOTAL_GAP / (TOTAL_TABS - 1);
+    return { AVAILABLE_WIDTH, GAP_BETWEEN_TABS };
+  }, [width]);
+  
+  const renderLabel = useMemo(() => {
+    const LabelComponent = ({ focused, color, children }: { focused: boolean; color: string; children: string }) => {
+      const tabConfig = TAB_CONFIG.find(tab => tab.title === children);
+      const tabWidth = tabConfig?.width || 50;
+  
+      return (
+        <Text
+          style={{
+            color,
+            fontSize: focused ? 16 : 14,
+            fontWeight: focused ? "700" : "400",
+            textTransform: "none",
+            lineHeight: 40,
+            height: 40,
+            textAlignVertical: "center",
+            textAlign: "center",
+            width: tabWidth,
+          }}
+        >
+          {children}
+        </Text>
+      );
+    };
+    LabelComponent.displayName = "LabelComponent";
+    return LabelComponent;
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: currentTheme.headerBg }}>
@@ -81,8 +82,9 @@ export default function TabConfigurationLayout() {
           tabBarActiveTintColor: currentTheme.activeTint,
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
-            borderColor: currentTheme.textColor,
-            display:'flex'
+            backgroundColor: currentTheme.activeTint,
+            height: 2,
+            width: 70,
           },
           tabBarStyle: {
             backgroundColor: "transparent",
@@ -104,12 +106,16 @@ export default function TabConfigurationLayout() {
           },
           tabBarLabel: renderLabel,
           tabBarGap: GAP_BETWEEN_TABS,
+          lazy: true,
+          lazyPlaceholder: () => (
+            <View style={{ flex: 1, backgroundColor: currentTheme.headerBg }} />
+          ),
         }}
       >
         {TAB_CONFIG.map((tab, index) => (
           <Tab.Screen
             key={tab.name}
-            name={tab.name}               
+            name={tab.name}
             options={{
               title: tab.title,
               lazy: index !== 0, // 第一个tab不懒加载，其他tab懒加载
@@ -129,7 +135,7 @@ export default function TabConfigurationLayout() {
       <View
         style={{
           position: "absolute",
-          right: 0,
+          right: 10,
           top: insets.top - 5,
           width: width * 0.1,
           height: 34,

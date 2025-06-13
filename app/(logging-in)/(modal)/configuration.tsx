@@ -141,7 +141,6 @@ export default function ConfigurationPage() {
     fetchConfig();
   }, [params.item]);
   useEffect(()=>{
-    
      const item = JSON.parse(params.item as string);
      console.log(item.device_info.id,WS_SmartLight_Data?.did);
      if(item.device_info.id===WS_SmartLight_Data?.did){

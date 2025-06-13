@@ -1,155 +1,74 @@
+import { get_version_list } from '@/api/street/streetCommon';
+import EboxForm from '@/components/addDevice/EboxForm';
+import SingleLampForm from '@/components/addDevice/SingleLampForm';
+import SmartLampForm from '@/components/addDevice/SmartLampForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
-import { useScannerStore } from '@/store/scannerStore';
 import { Ionicons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Dimensions, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const Tab = createMaterialTopTabNavigator();
 
-// 电箱表单组件
-function EboxForm() {
-  const { scanResult, setScanResult } = useScannerStore();
-  useEffect(() => {
-    if(scanResult){
-      console.log('scanResult', scanResult);
-    }
-    // return () => {
-    //   setScanResult('');
-    // };
-  }, [scanResult]);
-  return (
-    <ScrollView className="flex-1 px-4 py-2 bg-background-50">
-      <View className="mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base text-tertiary-900 w-20">设备名称</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
-            placeholder="请输入设备名称"
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
-      <View className="mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base text-tertiary-900 w-20">设备编号</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
-            placeholder="请输入设备编号"
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
-      <View className="mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base text-tertiary-900 w-20">安装位置</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
-            placeholder="请输入安装位置"
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
-      <View className="mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base text-tertiary-900 w-20">所属区域</Text>
-          <Pressable className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 flex-row items-center justify-between">
-            <Text className="text-base text-tertiary-400">请选择所属区域</Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </Pressable>
-        </View>
-      </View>
-      <View className="mb-3">
-        <View className="flex-row items-center mb-1">
-          <Text className="text-base text-tertiary-900 w-20">扫码结果</Text>
-          {
-           ( scanResult&&scanResult.length>0)?
-           <Text className="text-base text-tertiary-400">{scanResult}</Text>:
-           <Text className="text-base text-tertiary-400">暂无扫码结果</Text>
-          }
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
+// 自定义Tab组件
+const CustomTab = ({ focused, color, children }: { focused: boolean; color: string; children: string }) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: focused ? color + '10' : 'transparent',
+      transform: [{ scale: withSpring(focused ? 1.02 : 1) }],
+    };
+  });
 
-// 智能灯表单组件
-function SmartLampForm() {
   return (
-    <ScrollView className="flex-1 p-4 bg-background-50">
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
-          <Text className="text-base text-tertiary-900 w-20">灯杆编号</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
-            placeholder="请输入灯杆编号"
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
-          <Text className="text-base text-tertiary-900 w-20">灯杆类型</Text>
-          <Pressable className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 flex-row items-center justify-between">
-            <Text className="text-base text-tertiary-400">请选择灯杆类型</Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </Pressable>
-        </View>
-      </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
-          <Text className="text-base text-tertiary-900 w-20">安装位置</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 text-base text-tertiary-900"
-            placeholder="请输入安装位置"
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
-      <View className="mb-6">
-        <View className="flex-row items-center mb-2">
-          <Text className="text-base text-tertiary-900 w-20">所属区域</Text>
-          <Pressable className="flex-1 h-11 bg-white border border-tertiary-200 rounded-lg px-3 flex-row items-center justify-between">
-            <Text className="text-base text-tertiary-400">请选择所属区域</Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </Pressable>
-        </View>
-      </View>
-    </ScrollView>
+    <Animated.View style={[{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }, animatedStyle]}>
+      <Text
+        style={{
+          color,
+          fontSize: 15,
+          fontWeight: focused ? '600' : '500',
+          textAlign: 'center',
+        }}
+      >
+        {children}
+      </Text>
+    </Animated.View>
   );
-}
+};
 
 export default function AddDeviceModal() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
   const { showWarning } = useCustomToast();
-  const handleScanPress = () => {
-    // router.push('/(logging-in)/(modal)/scan');
-    router.push('/(logging-in)/(modal)/scannerModal');
-  };
-  const handleScanResult = (result: { data: string; type: string }) => {
-    console.log('扫码结果:', result);
-  };
+  const [versionList,setVersionList] = useState<any>([])
+  useEffect(()=>{
+    get_version_list({}).then(res=>{
+      if(res.code==200){
+        console.log(333);
+        
+        setVersionList(res.data)
+      }
+    })
+  },[])
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
       {/* 顶部导航栏 */}
-      <View className="flex-row items-center justify-between px-3 py-1 border-b border-tertiary-200" style={{backgroundColor:currentTheme.headerBg}}>
+      <View className="flex-row items-center justify-between px-3 py-1 border-b border-outline-100" style={{backgroundColor:currentTheme.headerBg}}>
         <TouchableOpacity
           onPress={() => router.back()}
           className="p-2"
         >
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>Add Device</Text>
+        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>新增设备</Text>
         <TouchableOpacity
-          onPress={handleScanPress}
+          onPress={() => router.push('/(logging-in)/(modal)/scannerModal')}
           className="p-2"
         >
           <Ionicons name="scan-outline" size={24} color={currentTheme.textColor} />
-          {/* <ScannerComponent onScanResult={handleScanResult} /> */}
         </TouchableOpacity>
       </View>
 
@@ -160,55 +79,63 @@ export default function AddDeviceModal() {
           tabBarInactiveTintColor: currentTheme.inactiveTint,
           tabBarIndicatorStyle: {
             backgroundColor: currentTheme.activeTint,
-            // height: 3,
-            // borderRadius: 1.5,
+            height: 2,
+            width: width / 3,
           },
           tabBarStyle: {
             backgroundColor: currentTheme.drawerBg,
             elevation: 0,
             shadowOpacity: 0,
-            borderBottomWidth: 0,
-            padding:0,
-            height:40,
+            borderBottomWidth: 1,
+            borderBottomColor: '#E5E7EB',
+            padding: 0,
+            height: 44,
           },
-          tabBarLabelStyle: {
-            fontSize: 16,
-            fontWeight: '500',
-            textTransform: 'none',
-            padding:0,
-            margin:0,
-          },
-          tabBarItemStyle:{
-            width: width * 0.3, // 两个标签各占40%总宽度
-            height: 40,
+          tabBarLabel: (props) => <CustomTab {...props} />,
+          tabBarItemStyle: {
+            width: width / 3,
+            height: 44,
             padding: 0,
             margin: 0,
-           
-          }
+          },
+          tabBarIndicatorContainerStyle: {
+            backgroundColor: currentTheme.drawerBg,
+          },
+          tabBarPressColor: 'transparent',
+          tabBarPressOpacity: 0.7,
         }}
       >
         <Tab.Screen
           name="ebox"
-          options={{ title: 'EBOX' }}
+          options={{ 
+            title: '集中器',
+          }}
           component={EboxForm}
         />
         <Tab.Screen
           name="smartLamp"
-          options={{ title: 'SmartLight' }}
+          options={{ 
+            title: '网关',
+          }}
           component={SmartLampForm}
+        />
+        <Tab.Screen
+          name="singleLamp"
+          options={{ 
+            title: '单灯',
+          }}
+          component={SingleLampForm}
         />
       </Tab.Navigator>
 
       {/* 底部提交按钮 */}
-      <View className="p-4 bg-secondary-200 border-t text-center border-outline-100">
+      <View className="p-4 bg-secondary-200 border-t border-t-outline-100 text-center border-outline-100">
         <TouchableOpacity 
-          className="h-11  rounded-lg items-center justify-center bg-primary-100"
-          // style={{ backgroundColor: currentTheme.activeTint }}
-          onPress={()=>{
+          className="h-11 rounded-lg items-center justify-center bg-blue-500"
+          onPress={() => {
             showWarning({
-              message:"提交失败",
-              
-            })
+              message: "提交失败",
+            });
           }}
         >
           <Text className="text-base font-semibold text-tertiary-100">提交</Text>

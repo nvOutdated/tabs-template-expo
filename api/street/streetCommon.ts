@@ -36,3 +36,11 @@ export const light_container_attach_remove=(query:any)=>{
         body:query
     })
 }
+
+//集中器版本协议
+export const get_version_list=(params:any)=>{
+    return request('/smart/light/device/query/version',{
+        method:"post",
+        body:params
+    })
+}

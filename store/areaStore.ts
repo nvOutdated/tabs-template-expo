@@ -6,12 +6,14 @@ import { create } from 'zustand';
 interface AreaState {
   areaList: Area[];
   areaWithDevicesList: Area[];
+  allAreaList: Area[];
   isLoading: boolean;
   error: string | null;
   fetchAreaList: () => Promise<void>;
 }
 
 export const useAreaStore = create<AreaState>((set) => ({
+  allAreaList:[],
   areaList: [],
   areaWithDevicesList: [],
   isLoading: false,
@@ -23,6 +25,7 @@ export const useAreaStore = create<AreaState>((set) => ({
       if (res.code === 200) {
         const treeList = listToTree(res.data, 'pid', 'area_id');
         set({
+          allAreaList:res.data,
           areaList: treeList,
           areaWithDevicesList: treeList,
           isLoading: false
