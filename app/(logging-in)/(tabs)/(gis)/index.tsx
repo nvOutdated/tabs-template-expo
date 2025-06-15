@@ -4,6 +4,7 @@ import AMapWebView from "@/components/gis/AMapWebView";
 import MapMessage from "@/components/gis/MapMessage";
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -13,30 +14,16 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
-const MIN_HEIGHT = height * 0.1;
-const MAX_HEIGHT = height * 0.5;
-const MAP_HEIGHT = height * 0.9;
-const MAX_OFFSET = height * 0.4; // 最大偏移量  
-
-// 修改 clamp 函数为 worklet
-function clamp(val: number, min: number, max: number): number {
-  'worklet';
-  return Math.min(Math.max(val, min), max);
-}
+// const MAP_HEIGHT = height * 0.9;
 
 interface DeviceQuantity {
   total: number;
@@ -47,6 +34,7 @@ interface DeviceQuantity {
   otherLampNum: number;
   lampHolderNum: number;
 }
+
 export default function GisIndexScreen() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
@@ -71,64 +59,13 @@ export default function GisIndexScreen() {
     lampHolderNum: 0
   });
 
-  // 修改动画相关状态
-  const translateY = useSharedValue(height * 0.2);
-  const prevTranslateY = useSharedValue(0);
-
-  const animatedStyles = useAnimatedStyle(() => {
-    'worklet';
-    return {
-      transform: [{ translateY: translateY.value }],
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: MAX_HEIGHT,
-      backgroundColor: 'transparent',
-      zIndex: 1000,
-    };
-  });
+  // BottomSheet 相关
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = ['15%', '47%'];
 
   const searchAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: searchAnimation.value }],
   }));
-
-  const pan = Gesture.Pan()
-    .minDistance(1)
-    .onStart(() => {
-      'worklet';
-      prevTranslateY.value = translateY.value;
-    })
-    .onUpdate((event) => {
-      'worklet';
-      translateY.value = clamp(
-        prevTranslateY.value + event.translationY,
-        0,
-        MAX_OFFSET
-      );
-    })
-    .onEnd(() => {
-      'worklet';
-      if (translateY.value > MAX_OFFSET / 2) {
-        translateY.value = withSpring(MAX_OFFSET, {
-          damping: 20,
-          stiffness: 200,
-          mass: 0.5,
-          velocity: 0,
-          restDisplacementThreshold: 0.01,
-          restSpeedThreshold: 0.01,
-        });
-      } else {
-        translateY.value = withSpring(0, {
-          damping: 20,
-          stiffness: 200,
-          mass: 0.5,
-          velocity: 0,
-          restDisplacementThreshold: 0.01,
-          restSpeedThreshold: 0.01,
-        });
-      }
-    });
 
   // 修改搜索动画
   useEffect(() => {
@@ -136,7 +73,8 @@ export default function GisIndexScreen() {
       duration: 300,
     });
   }, [showSearch]);
-  const bdToGaoDe = (bd_lat: number, bd_lng: number)=>{
+
+  const bdToGaoDe = (bd_lat: number, bd_lng: number) => {
     const x_pi = (3.14159265358979324 * 3000.0) / 180.0;
     const x = bd_lng - 0.0065;
     const y = bd_lat - 0.006;
@@ -146,21 +84,23 @@ export default function GisIndexScreen() {
     const gg_lat = z * Math.sin(theta);
     return { lat: gg_lat, lng: gg_lng };
   }
-  const fetchContainerList = async() => {
+
+  const fetchContainerList = async () => {
     try {
       const res = await get_container_list({});
-      if(res.code === 200) {
+      if (res.code === 200) {
         const convertedData = res.data.map((item: any) => ({
           ...item,
-          searchName:'集中器: '+`${item.device_code}`+`,(${item.name})`,
+          searchName: '集中器: ' + `${item.device_code}` + `,(${item.name})`,
           ...bdToGaoDe(item.lat, item.lng)
         }));
         setContainerList(convertedData);
       }
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
   }
+
   const fetchAllLightData = async () => {
     try {
       setLoadingLight(true);
@@ -180,7 +120,7 @@ export default function GisIndexScreen() {
         if (res.code === 200 && res.data && res.data.length > 0) {
           const convertedData = res.data.map((item: any) => ({
             ...item,
-            searchName:'单灯: '+`${item.name}`+`,(${item.container_id})`,
+            searchName: '单灯: ' + `${item.name}` + `,(${item.container_id})`,
             ...bdToGaoDe(item.lat, item.lng)
           }));
           allLights = [...allLights, ...convertedData];
@@ -196,19 +136,20 @@ export default function GisIndexScreen() {
       console.log(error);
     }
   };
+
   const fetchDeviceQuantityByArea = async () => {
     try {
       const res = await deviceQuantity_queryByArea({
         areaId: 1
       });
-      if(res.code === 200) {
+      if (res.code === 200) {
         setDeviceQuantity(res.data);
       }
     } catch (error) {
       console.log(error);
     }
   }
-  
+
   useEffect(() => {
     fetchContainerList();
     fetchAllLightData()
@@ -226,10 +167,10 @@ export default function GisIndexScreen() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    console.log(containerList[0],lightList[0]);
-    
-    if(text.length>0){
-      const filtered = [...containerList,...lightList].filter(item =>
+    console.log(containerList[0], lightList[0]);
+
+    if (text.length > 0) {
+      const filtered = [...containerList, ...lightList].filter(item =>
         item.searchName && item.searchName.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 10);
       setSearchResults(filtered);
@@ -246,18 +187,21 @@ export default function GisIndexScreen() {
   };
 
   const handleSelectResult = (item: any) => {
-    if(item.container_type==='lamp'){
+    if (item.container_type === 'lamp') {
       setSearchText(item.name);
-    }else{
+    } else {
       setSearchText(item.device_code);
     }
     setShowSearchResults(false);
     setSelectedMarker(item);
   };
+
+
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1" style={{ paddingTop: insets.top }}>
-        <View style={{ height: MAP_HEIGHT }}>
+        <View style={{ height: height }}>
           {/* 蒙层 */}
           {loadingLight && (
             <View
@@ -281,7 +225,7 @@ export default function GisIndexScreen() {
               </Text>
             </View>
           )}
-          <AMapWebView 
+          <AMapWebView
             markers={[
               ...containerList.map((item, index) => ({
                 id: `container_${item.id}_${index}`,
@@ -345,7 +289,7 @@ export default function GisIndexScreen() {
           <Animated.View
             className="absolute h-11 top-2 left-2 right-12 z-10 bg-background-300 rounded-full px-3 flex-row items-center"
             style={searchAnimatedStyle}
-          >      
+          >
             <View className="flex-1 flex-row items-center">
               <TextInput
                 ref={useInputRef}
@@ -386,34 +330,25 @@ export default function GisIndexScreen() {
           </Animated.View>
         </View>
 
-        <GestureDetector gesture={pan}>
-          <Animated.View 
-            style={animatedStyles}
-          >
-            {/* 添加顶部拖动句柄 */}
-            <View 
-              style={{
-                height: 20,
-                width: '100%',
-                backgroundColor: 'transparent',
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <View 
-                style={{
-                  width: 40,
-                  height: 4,
-                  backgroundColor: currentTheme.activeTint,
-                  borderRadius: 2,
-                }}
-              />
-            </View>
+        {/* BottomSheet */}
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enablePanDownToClose={false}
+          handleIndicatorStyle={{
+            backgroundColor: currentTheme.activeTint,
+            width: 40,
+            height: 4,
+          }}
+          backgroundStyle={{
+            backgroundColor: 'transparent',
+          }}
+        >
+          <BottomSheetView style={{ flex: 1 }}>
             <MapMessage deviceQuantity={deviceQuantity} containerList={containerList} />
-          </Animated.View>
-        </GestureDetector>
+          </BottomSheetView>
+        </BottomSheet>
       </View>
     </GestureHandlerRootView>
   );

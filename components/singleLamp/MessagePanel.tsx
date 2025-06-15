@@ -32,7 +32,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClearMessages }
   }, []);
 
   const renderHeader = useCallback(() => (
-    <View className="flex-row items-center justify-between px-2 border-b border-gray-200">
+    <View className="flex-row items-center justify-between px-2 border border-gray-200 py-2">
       <Text className="text-lg font-semibold">消息列表 ({messages.length})</Text>
       <TouchableOpacity
         onPress={onClearMessages}
@@ -51,8 +51,12 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClearMessages }
         index={0}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
-        handleIndicatorStyle={styles.handleIndicator}
-        backgroundStyle={{backgroundColor:currentTheme.activeBg}}
+        handleIndicatorStyle={{
+          backgroundColor: currentTheme.activeTint,
+          width: 40,
+          height: 4,
+        }}
+        backgroundStyle={{backgroundColor:'transparent'}}
       >
         <BottomSheetFlatList
           data={messages}
@@ -60,6 +64,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClearMessages }
           renderItem={renderItem}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.contentContainer}
+          style={{backgroundColor:currentTheme.headerBg}}
         />
       </BottomSheet>
     </View>
@@ -73,10 +78,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '100%',
-  },
-  handleIndicator: {
-    backgroundColor: '#999',
-    width: 40,
   },
   background: {
     borderTopLeftRadius: 20,
