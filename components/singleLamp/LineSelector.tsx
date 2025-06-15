@@ -167,20 +167,11 @@ const LineSelector = ({
           className={`h-10 px-3 rounded-md justify-center items-center ${
             currentOperation === 'all' 
               ? 'bg-blue-500' 
-              : selectedCount === 0 
-                ? 'bg-gray-300' 
-                : 'bg-blue-500'
+              : 'bg-blue-500'
           }`}
           onPress={onEdit}
-          disabled={currentOperation === 'controller' && selectedCount === 0}
         >
-          <Text className={`text-sm ${
-            currentOperation === 'all' 
-              ? 'text-white' 
-              : selectedCount === 0 
-                ? 'text-gray-500' 
-                : 'text-white'
-          }`}>
+          <Text className={`text-sm text-white`}>
             {currentOperation === 'all' ? '线路管理' : '操作'}
           </Text>
         </TouchableOpacity>

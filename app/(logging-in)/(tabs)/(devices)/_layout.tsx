@@ -15,6 +15,7 @@ import CameraScreen from "./camera";
 import EleBoxScreen from "./ebox";
 import SingleLampScreen from "./singleLamp";
 import SmartLampScreen from "./smartLamp";
+
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get("window");
 
@@ -36,8 +37,7 @@ export default function TabConfigurationLayout() {
       0
     );
     const AVAILABLE_WIDTH = width * 0.8;
-    const TOTAL_GAP = AVAILABLE_WIDTH - TOTAL_CONTENT_WIDTH;
-    const GAP_BETWEEN_TABS = TOTAL_GAP / (TOTAL_TABS - 1);
+    const GAP_BETWEEN_TABS = 10;
     return { AVAILABLE_WIDTH, GAP_BETWEEN_TABS };
   }, [width]);
   
@@ -85,17 +85,17 @@ export default function TabConfigurationLayout() {
             backgroundColor: currentTheme.activeTint,
             height: 2,
             width: 70,
+            display: 'none'
           },
           tabBarStyle: {
             backgroundColor: "transparent",
             height: 40,
             padding: 0,
-            width: AVAILABLE_WIDTH,
+            width: width * 0.8,
             marginTop: insets.top - 10,
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
-            borderRadius: 1,
           },
           tabBarItemStyle: {
             height: 40,
@@ -103,22 +103,31 @@ export default function TabConfigurationLayout() {
             margin: 0,
             justifyContent: "center",
             alignItems: "center",
+            width: 70,
           },
           tabBarLabel: renderLabel,
-          tabBarGap: GAP_BETWEEN_TABS,
-          lazy: true,
-          lazyPlaceholder: () => (
-            <View style={{ flex: 1, backgroundColor: currentTheme.headerBg }} />
-          ),
+          tabBarPressColor: "transparent",
+          tabBarPressOpacity: 1,
+          tabBarScrollEnabled: true,
+          tabBarBounces: false,
+          lazy: false,
+          swipeEnabled: true,
+          animationEnabled: true,
+          tabBarIndicatorContainerStyle: {
+            display: 'none'
+          },
+          tabBarGap: 0,
+          tabBarLabelStyle: {
+            textTransform: 'none'
+          }
         }}
       >
-        {TAB_CONFIG.map((tab, index) => (
+        {TAB_CONFIG.map((tab) => (
           <Tab.Screen
             key={tab.name}
             name={tab.name}
             options={{
               title: tab.title,
-              lazy: index !== 0, // 第一个tab不懒加载，其他tab懒加载
             }}
             component={
               tab.name === "index"

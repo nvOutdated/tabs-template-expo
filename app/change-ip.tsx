@@ -2,6 +2,7 @@ import { SERVER_ADDRESSES } from "@/constants/defaultConfig"
 import { useGlobalStore } from "@/store/globalStateStore"
 import { saveAccessAddress, saveToken, saveUserInfo, useAccessAddressState } from "@/utils/useStorageState"
 import { useRouter } from "expo-router"
+import React from "react"
 import { ScrollView, StatusBar, Text, TouchableOpacity, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 export default function ChangeIp() {
@@ -21,10 +22,11 @@ export default function ChangeIp() {
     }
 
     return (
-        <ScrollView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-            <StatusBar backgroundColor="transparent"
+       <>
+        <StatusBar backgroundColor="transparent"
                 translucent={true} barStyle="dark-content" />
-            <View className="p-4" >
+        <ScrollView className="flex-1 bg-white" style={{ paddingTop: insets.top }}>        
+            <View className="p-4 pt-1" >
                 <Text className="text-lg font-bold mb-4">选择服务器地址</Text>
                 {SERVER_ADDRESSES.map((server) => (
                     <TouchableOpacity
@@ -44,5 +46,6 @@ export default function ChangeIp() {
                 ))}
             </View>
         </ScrollView>
+       </>
     )
 }

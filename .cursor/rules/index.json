@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {
+      "name": "project-rules",
+      "file": "project-rules.mdc",
+      "description": "React Native Expo 项目规则",
+      "priority": 1
+    }
+  ]
+} 

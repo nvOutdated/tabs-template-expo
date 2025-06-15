@@ -1,0 +1,79 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# React Native Expo 项目规则
+
+## 项目规范
+
+### 1. 目录结构
+- `/app` - 页面和路由
+- `/components` - 可复用组件
+- `/store` - 状态管理
+- `/api` - API 调用
+- `/hooks` - 自定义 Hooks
+- `/utils` - 工具函数
+- `/constants` - 常量定义
+- `/types` - TypeScript 类型
+- `/assets` - 静态资源
+
+### 2. 技术规范
+- UI 框架：NativeWind (TailwindCSS)
+- 状态管理：Zustand
+- 动画：react-native-reanimated
+- 手势：react-native-gesture-handler
+
+### 3. 组件开发
+```typescript
+// 组件命名：PascalCase
+// 位置：/components/[ComponentName].tsx
+import React from 'react';
+import { View } from 'react-native';
+
+interface Props {
+  // 属性定义
+}
+
+export const ComponentName: React.FC<Props> = ({ prop1 }) => {
+  return (
+    <View className="flex-1">
+      {/* 组件内容 */}
+    </View>
+  );
+};
+```
+
+### 4. 样式规范
+- 使用 NativeWind 类名
+- 避免内联样式
+- 复杂样式使用 className 组合
+- 主题配置参考 tailwind.config.js
+
+### 5. 代码规范
+- 使用 TypeScript
+- 使用 ESLint 和 Prettier
+- 组件 Props 必须定义类型
+- 使用中文注释
+- 保持代码简洁清晰
+
+### 6. 性能优化
+- 使用 React.memo 优化重渲染
+- 使用 useMemo 和 useCallback
+- 图片资源优化
+- 避免不必要的重渲染
+
+### 7. Git 规范
+- feat: 新功能
+- fix: 修复
+- docs: 文档
+- style: 格式
+- refactor: 重构
+- test: 测试
+- chore: 构建
+
+### 8. 分支管理
+- main: 主分支
+- develop: 开发分支
+- feature/*: 功能分支
+- bugfix/*: 修复分支

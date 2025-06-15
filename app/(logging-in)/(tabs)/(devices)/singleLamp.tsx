@@ -358,9 +358,10 @@ export default function SingleLampScreen() {
   }, [selectedDevice, selectedLine, loadSingleLamps]);
 
   const handleEdit = useCallback(() => {
-    if (selectedControllers.length > 0) {
-      setShowBatchControlModal(true);
-    }
+    // if (selectedControllers.length > 0) {
+    //   setShowBatchControlModal(true);
+    // }
+    setShowBatchControlModal(true);
   }, [selectedControllers]);
 
   const handleBatchControlConfirm = useCallback((formData: BatchControlFormData) => {

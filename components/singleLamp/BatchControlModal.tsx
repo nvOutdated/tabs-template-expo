@@ -51,7 +51,7 @@ export default function BatchControlModal({
   const [activeTab, setActiveTab] = useState<'single' | 'concentrator'>('single');
   const [concentratorParams, setConcentratorParams] = useState(1);
   const [formData, setFormData] = useState<BatchControlFormData>({
-    comm: "COMM_NORMAL",
+    comm: "COMM_GROUP",
     group: 1,
     method: "MD_ON",
     dimming: 20,
@@ -77,33 +77,33 @@ export default function BatchControlModal({
       });
       return;
     }
-     try{
-        /* 绕过密码验证 */
-        showLoading();
-    const response = await lightPole_devicectrl_sendSingleControlCmd({
-      ...formData,
-      deviceId: deviceInfo?.device_info.id,
-      id: controllerId?.toString(),
-    });
-    
-    if (response.code === 200) {
-      onConfirm(formData);
-      showMessageModal({
-        type: 'success',
-        message: '设置成功'
+    try {
+      /* 绕过密码验证 */
+      showLoading();
+      const response = await lightPole_devicectrl_sendSingleControlCmd({
+        ...formData,
+        deviceId: deviceInfo?.device_info.id,
+        id: controllerId?.toString(),
       });
-     } else {
-      showMessageModal({
-        type: 'error',
-        message: response.message || '设置失败'
-      });
-     }
-    /* 11 */
-     }catch(e){
-       console.log(e);
-     }finally{
+
+      if (response.code === 200) {
+        onConfirm(formData);
+        showMessageModal({
+          type: 'success',
+          message: '设置成功'
+        });
+      } else {
+        showMessageModal({
+          type: 'error',
+          message: response.message || '设置失败'
+        });
+      }
+      /* 11 */
+    } catch (e) {
+      console.log(e);
+    } finally {
       hideLoading();
-     }
+    }
     setShowPasswordModal(true);
   };
 
@@ -129,7 +129,7 @@ export default function BatchControlModal({
         deviceId: deviceInfo?.device_info.id,
         id: controllerId?.toString(),
       });
-      
+
       if (response.code === 200) {
         onConfirm(formData);
         showMessageModal({
@@ -252,9 +252,17 @@ export default function BatchControlModal({
                   <View style={styles.pickerContainer}>
                     <Picker
                       selectedValue={formData.comm}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, comm: value })
-                      }
+                      onValueChange={(value) => {
+                        // 如果切换到单控模式但没有选择控制器，显示提示
+                        if (value === "COMM_NORMAL" && !controllerId) {
+                          showMessageModal({
+                            type: 'warning',
+                            message: '单控模式需要选择控制器'
+                          });
+                          return;
+                        }
+                        setFormData({ ...formData, comm: value });
+                      }}
                       style={styles.picker}
                       itemStyle={{
                         height: 40,
@@ -264,7 +272,11 @@ export default function BatchControlModal({
                       }}
                       mode="dropdown"
                     >
-                      <Picker.Item label="单控" value="COMM_NORMAL" />
+                      <Picker.Item
+                        label="单控"
+                        value="COMM_NORMAL"
+                        enabled={!!controllerId}
+                      />
                       <Picker.Item label="组控" value="COMM_GROUP" />
                       <Picker.Item label="广播" value="COMM_BROADCAST" />
                     </Picker>
@@ -320,7 +332,7 @@ export default function BatchControlModal({
                         padding: 0,
                         margin: 0,
                         includeFontPadding: false,
-                        textAlignVertical:'center'
+                        textAlignVertical: 'center'
                       }}
                       mode="dropdown"
                     >
@@ -365,44 +377,38 @@ export default function BatchControlModal({
                   <Text style={styles.label}>AB灯选项</Text>
                   <View className="flex-1 flex-row gap-3">
                     <TouchableOpacity
-                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${
-                        formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                      }`}
+                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                        }`}
                       onPress={() =>
                         setFormData({ ...formData, enabledA: !formData.enabledA })
                       }
                     >
-                      <View className={`h-5 w-5 items-center justify-center rounded border ${
-                        formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                      }`}>
+                      <View className={`h-5 w-5 items-center justify-center rounded border ${formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                        }`}>
                         {formData.enabledA && (
                           <Ionicons name="checkmark" size={16} color="#1890ff" />
                         )}
                       </View>
-                      <Text className={`text-sm ${
-                        formData.enabledA ? 'text-blue-500' : 'text-gray-600'
-                      }`}>
+                      <Text className={`text-sm ${formData.enabledA ? 'text-blue-500' : 'text-gray-600'
+                        }`}>
                         A灯
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${
-                        formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                      }`}
+                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                        }`}
                       onPress={() =>
                         setFormData({ ...formData, enabledB: !formData.enabledB })
                       }
                     >
-                      <View className={`h-5 w-5 items-center justify-center rounded border ${
-                        formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                      }`}>
+                      <View className={`h-5 w-5 items-center justify-center rounded border ${formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                        }`}>
                         {formData.enabledB && (
                           <Ionicons name="checkmark" size={16} color="#1890ff" />
                         )}
                       </View>
-                      <Text className={`text-sm ${
-                        formData.enabledB ? 'text-blue-500' : 'text-gray-600'
-                      }`}>
+                      <Text className={`text-sm ${formData.enabledB ? 'text-blue-500' : 'text-gray-600'
+                        }`}>
                         B灯
                       </Text>
                     </TouchableOpacity>
@@ -475,7 +481,7 @@ export default function BatchControlModal({
         </View>
       </View>
 
-     {/*  <PasswordModal
+      {/*  <PasswordModal
         visible={showPasswordModal}
         onClose={() => {
           setShowPasswordModal(false);
@@ -557,7 +563,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 12,
     fontSize: 14,
-    lineHeight:40,
+    lineHeight: 40,
   },
   footer: {
     flexDirection: "row",

@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "autoApply": true,
+    "defaultRules": "project-rules.mdc",
+    "applyTo": ["chat", "command"]
+  },
+  "chat": {
+    "defaultContext": "project-rules.mdc"
+  },
+  "command": {
+    "defaultContext": "project-rules.mdc"
+  }
+} 
