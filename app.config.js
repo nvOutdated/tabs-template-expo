@@ -51,6 +51,7 @@ module.exports = ({ config }) => {
         "expo-build-properties",
         {
           android: {
+            kotlinVersion: "1.8.0",
             enableProguardInReleaseBuilds: true,
             enableShrinkResources: true,
             enableR8: true,

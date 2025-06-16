@@ -44,3 +44,11 @@ export const get_version_list=(params:any)=>{
         body:params
     })
 }
+
+//add Ebox
+export const add_ebox=(params:any)=>{
+    return request('/smart/light/ebox/add',{
+        method:"post",
+        body:params
+    })
+}

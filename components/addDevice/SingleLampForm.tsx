@@ -1,7 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
+import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-export default function SingleLampForm() {
+export interface SingleLampFormData {
+  pole_code: string;
+  pole_type: string;
+  location: string;
+  area_id: string;
+  lat: string;
+  lng: string;
+}
+
+const SingleLampForm = forwardRef((props, ref) => {
+  const [formData, setFormData] = useState<SingleLampFormData>({
+    pole_code: '',
+    pole_type: '',
+    location: '',
+    area_id: '',
+    lat: '',
+    lng: '',
+  });
+
+  useImperativeHandle(ref, () => ({
+    setFormData: (updater: (prev: SingleLampFormData) => SingleLampFormData) => {
+      setFormData(updater);
+    },
+    getFormData: () => formData
+  }));
+
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">
       <View className="mb-6">
@@ -11,6 +37,8 @@ export default function SingleLampForm() {
             className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-parimay-500"
             placeholder="请输入灯杆编号"
             placeholderTextColor="#999"
+            value={formData.pole_code}
+            onChangeText={(value) => setFormData({ ...formData, pole_code: value })}
           />
         </View>
       </View>
@@ -30,6 +58,8 @@ export default function SingleLampForm() {
             className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-parimay-500"
             placeholder="请输入安装位置"
             placeholderTextColor="#999"
+            value={formData.location}
+            onChangeText={(value) => setFormData({ ...formData, location: value })}
           />
         </View>
       </View>
@@ -42,6 +72,34 @@ export default function SingleLampForm() {
           </Pressable>
         </View>
       </View>
+      <View className="mb-6">
+        <View className="flex-row items-center mb-2">
+          <Text className="text-base text-parimay-500 w-20">纬度</Text>
+          <TextInput
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-parimay-500"
+            placeholder="请输入纬度"
+            placeholderTextColor="#999"
+            value={formData.lat}
+            onChangeText={(value) => setFormData({ ...formData, lat: value })}
+          />
+        </View>
+      </View>
+      <View className="mb-6">
+        <View className="flex-row items-center mb-2">
+          <Text className="text-base text-parimay-500 w-20">经度</Text>
+          <TextInput
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-parimay-500"
+            placeholder="请输入经度"
+            placeholderTextColor="#999"
+            value={formData.lng}
+            onChangeText={(value) => setFormData({ ...formData, lng: value })}
+          />
+        </View>
+      </View>
     </ScrollView>
   );
-} 
+});
+
+SingleLampForm.displayName = 'SingleLampForm';
+
+export default SingleLampForm; 

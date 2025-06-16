@@ -3,7 +3,7 @@ import { useAreaStore } from '@/store/areaStore';
 import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useEffect, useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 const gatewayTypes = [
@@ -54,8 +54,24 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function EboxForm() {
-  const [formData, setFormData] = useState({
+export interface EboxFormData {
+  device_code: string;
+  device_type: string;
+  name: string;
+  sn: string;
+  ebox_type: string;
+  area_id: string;
+  version: string;
+  install_time: Date | undefined;
+  lng: string;
+  lat: string;
+  model: string;
+  e_meter: string;
+  remark: string;
+}
+
+const EboxForm = forwardRef((props, ref) => {
+  const [formData, setFormData] = useState<EboxFormData>({
     device_code: "",
     device_type: "Central",
     name: "",
@@ -63,31 +79,39 @@ export default function EboxForm() {
     ebox_type: "CABINET",
     area_id: "",
     version: "",
-    install_time: undefined as Date|undefined,
+    install_time: undefined,
     lng: "",
     lat: "",
     model: "",
     e_meter: "",
     remark: "",
   });
-  const [versionList,setVersionList] = useState<string[]>([]);
-  const {allAreaList}  =useAreaStore()
+  const [versionList, setVersionList] = useState<string[]>([]);
+  const { allAreaList } = useAreaStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  useEffect(()=>{
-    get_version_list({}).then(res=>{
-      if(res.code==200){
-        const data = res.data.map((item:string)=>{  
+
+  useImperativeHandle(ref, () => ({
+    setFormData: (updater: (prev: EboxFormData) => EboxFormData) => {
+      setFormData(updater);
+    },
+    getFormData: () => formData
+  }));
+
+  useEffect(() => {
+    get_version_list({}).then(res => {
+      if (res.code == 200) {
+        const data = res.data.map((item: string) => {
           return {
-            label:item,
-            value:item
+            label: item,
+            value: item
           }
         })
-        setFormData({...formData,version:data[0].value})
+        setFormData({ ...formData, version: data[0].value })
         setVersionList(data)
       }
     })
-  },[]) 
-  
+  }, [])
+
   return (
     <>
     {
@@ -99,6 +123,7 @@ export default function EboxForm() {
             if (event.type === 'set' && date) {
               setFormData({ ...formData, install_time: date });
             }
+            setShowDatePicker(false)
           }}
         />
       )
@@ -108,7 +133,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">网关编号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="1-11个数字(必填)"
             placeholderTextColor="#999"
             value={formData.device_code}
@@ -147,7 +172,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备名称</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="1-20个字(必填)"
             placeholderTextColor="#999"
             value={formData.name}
@@ -160,7 +185,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备编号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="1-12个字(必填)"
             placeholderTextColor="#999"
             value={formData.sn}
@@ -247,7 +272,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">安装时间</Text>
           <Pressable onPress={() => setShowDatePicker(true)}  
-          className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 flex-row items-center justify-between">
+          className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 flex-row items-center justify-between">
             <Text className="text-base text-primary-400">{formData.install_time ? transferDate((formData.install_time).getTime()) : '请选择安装时间'}</Text>
             <Ionicons name="calendar-outline" size={20} color="#666" />
           </Pressable>
@@ -258,7 +283,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备经度</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="请输入经度"
             placeholderTextColor="#999"
             value={formData.lng}
@@ -271,7 +296,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备纬度</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="请输入纬度"
             placeholderTextColor="#999"
             value={formData.lat}
@@ -284,7 +309,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">容器型号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="请输入容器型号"
             placeholderTextColor="#999"
             value={formData.model}
@@ -297,7 +322,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">电表地址</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="请输入电表地址"
             placeholderTextColor="#999"
             value={formData.e_meter}
@@ -312,7 +337,7 @@ export default function EboxForm() {
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">备注</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="请输入备注"
             placeholderTextColor="#999"
             value={formData.remark}
@@ -325,4 +350,8 @@ export default function EboxForm() {
     </ScrollView>
     </>
   );
-}
+});
+
+EboxForm.displayName = 'EboxForm';
+
+export default EboxForm;

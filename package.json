@@ -65,6 +65,7 @@
     "react-native": "0.79.2",
     "react-native-css-interop": "^0.1.22",
     "react-native-element-dropdown": "^2.12.4",
+    "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gifted-charts": "^1.4.61",
     "react-native-pager-view": "6.7.1",

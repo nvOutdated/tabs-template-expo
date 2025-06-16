@@ -121,7 +121,7 @@ export default function SingleLampScreen() {
      if(WS_CentralParamsResp_Data&&currentOperation === 'controller'){
         const {data,deviceName,sn} = WS_CentralParamsResp_Data;
         if(data&&deviceName&&sn){
-          const messageContent = ` ${deviceName}(${sn})  循环次数：${data.lamp_circle_no},接收超时：${data.lamp_timeout},重试次数：${data.lamp_retry},手自动状态：${data.auto}`;
+          const messageContent = ` ${deviceName}(${sn})  循环次数：${data.lamp_circle_no},接收超时：${data.lamp_timeout},重试次数：${data.lamp_retry},手自动状态：${data.auto?'自动':'手动'}`;
           const newMessage = {
             id: Date.now().toString(),
             content: messageContent,
