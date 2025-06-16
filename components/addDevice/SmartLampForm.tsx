@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 export interface SmartLampFormData {
@@ -12,24 +12,12 @@ export interface SmartLampFormData {
   lng: string;
 }
 
-const SmartLampForm = forwardRef((props, ref) => {
-  const [formData, setFormData] = useState<SmartLampFormData>({
-    name: '',
-    device_code: '',
-    location: '',
-    gateway_code: '',
-    area_id: '',
-    lat: '',
-    lng: '',
-  });
+interface SmartLampFormProps {
+  formData: SmartLampFormData;
+  onFormDataChange: (data: SmartLampFormData) => void;
+}
 
-  useImperativeHandle(ref, () => ({
-    setFormData: (updater: (prev: SmartLampFormData) => SmartLampFormData) => {
-      setFormData(updater);
-    },
-    getFormData: () => formData
-  }));
-
+const SmartLampForm = ({ formData, onFormDataChange }: SmartLampFormProps) => {
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">
       <View className="mb-6">
@@ -40,7 +28,7 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入设备名称"
             placeholderTextColor="#999"
             value={formData.name}
-            onChangeText={(value) => setFormData({ ...formData, name: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, name: value })}
           />
         </View>
       </View>
@@ -52,7 +40,7 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入设备编号"
             placeholderTextColor="#999"
             value={formData.device_code}
-            onChangeText={(value) => setFormData({ ...formData, device_code: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, device_code: value })}
           />
         </View>
       </View>
@@ -64,7 +52,7 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入安装位置"
             placeholderTextColor="#999"
             value={formData.location}
-            onChangeText={(value) => setFormData({ ...formData, location: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, location: value })}
           />
         </View>
       </View>
@@ -76,7 +64,7 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入网关编号"
             placeholderTextColor="#999"
             value={formData.gateway_code}
-            onChangeText={(value) => setFormData({ ...formData, gateway_code: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, gateway_code: value })}
           />
         </View>
       </View>
@@ -97,7 +85,7 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入纬度"
             placeholderTextColor="#999"
             value={formData.lat}
-            onChangeText={(value) => setFormData({ ...formData, lat: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lat: value })}
           />
         </View>
       </View>
@@ -109,14 +97,12 @@ const SmartLampForm = forwardRef((props, ref) => {
             placeholder="请输入经度"
             placeholderTextColor="#999"
             value={formData.lng}
-            onChangeText={(value) => setFormData({ ...formData, lng: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lng: value })}
           />
         </View>
       </View>
     </ScrollView>
   );
-});
-
-SmartLampForm.displayName = 'SmartLampForm';
+};
 
 export default SmartLampForm;

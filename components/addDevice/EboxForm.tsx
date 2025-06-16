@@ -1,11 +1,11 @@
-import { get_version_list } from '@/api/street/streetCommon';
 import { useAreaStore } from '@/store/areaStore';
 import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
+
 const gatewayTypes = [
   { label: "集中控制器", value: "Central" },
   { label: "景观灯控制器", value: "LandscapeLamp" },
@@ -69,49 +69,15 @@ export interface EboxFormData {
   e_meter: string;
   remark: string;
 }
+interface EboxFormProps {
+  formData: EboxFormData;
+  onFormDataChange: (data: EboxFormData) => void;
+  versionList:string[]
+}
 
-const EboxForm = forwardRef((props, ref) => {
-  const [formData, setFormData] = useState<EboxFormData>({
-    device_code: "",
-    device_type: "Central",
-    name: "",
-    sn: "",
-    ebox_type: "CABINET",
-    area_id: "",
-    version: "",
-    install_time: undefined,
-    lng: "",
-    lat: "",
-    model: "",
-    e_meter: "",
-    remark: "",
-  });
-  const [versionList, setVersionList] = useState<string[]>([]);
+const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
   const { allAreaList } = useAreaStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  useImperativeHandle(ref, () => ({
-    setFormData: (updater: (prev: EboxFormData) => EboxFormData) => {
-      setFormData(updater);
-    },
-    getFormData: () => formData
-  }));
-
-  useEffect(() => {
-    get_version_list({}).then(res => {
-      if (res.code == 200) {
-        const data = res.data.map((item: string) => {
-          return {
-            label: item,
-            value: item
-          }
-        })
-        setFormData({ ...formData, version: data[0].value })
-        setVersionList(data)
-      }
-    })
-  }, [])
-
   return (
     <>
     {
@@ -121,7 +87,7 @@ const EboxForm = forwardRef((props, ref) => {
           mode="date"
           onChange={(event, date) => {
             if (event.type === 'set' && date) {
-              setFormData({ ...formData, install_time: date });
+              onFormDataChange({ ...formData, install_time: date });
             }
             setShowDatePicker(false)
           }}
@@ -138,7 +104,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholderTextColor="#999"
             value={formData.device_code}
             onChangeText={(value) =>
-              setFormData({ ...formData, device_code: value })
+              onFormDataChange({ ...formData, device_code: value })
             }
           />
         </View>
@@ -161,7 +127,7 @@ const EboxForm = forwardRef((props, ref) => {
               searchPlaceholder="搜索..."
               value={formData.device_type}
               onChange={(item) => {
-                setFormData({ ...formData, device_type: item.value });
+                onFormDataChange({ ...formData, device_type: item.value });
               }}
             />
       
@@ -176,7 +142,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholder="1-20个字(必填)"
             placeholderTextColor="#999"
             value={formData.name}
-            onChangeText={(value) => setFormData({ ...formData, name: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, name: value })}
           />
         </View>
       </View>
@@ -189,7 +155,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholder="1-12个字(必填)"
             placeholderTextColor="#999"
             value={formData.sn}
-            onChangeText={(value) => setFormData({ ...formData, sn: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, sn: value })}
           />
         </View>
       </View>
@@ -211,7 +177,7 @@ const EboxForm = forwardRef((props, ref) => {
               searchPlaceholder="搜索..."
               value={formData.ebox_type}
               onChange={(item) => {
-                setFormData({ ...formData, ebox_type: item.value });
+                onFormDataChange({ ...formData, ebox_type: item.value });
               }}
             />
         
@@ -238,7 +204,7 @@ const EboxForm = forwardRef((props, ref) => {
               mode='default'
               value={formData.area_id}
               onChange={(item) => {
-                setFormData({ ...formData, area_id: item.value });
+                onFormDataChange({ ...formData, area_id: item.value });
               }}
             /> 
         </View>
@@ -261,7 +227,7 @@ const EboxForm = forwardRef((props, ref) => {
               searchPlaceholder="搜索..."
               value={formData.version}
               onChange={(item) => {
-                setFormData({ ...formData, version: item.value });
+                onFormDataChange({ ...formData, version: item.value });
               }}
             /> 
          
@@ -287,7 +253,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholder="请输入经度"
             placeholderTextColor="#999"
             value={formData.lng}
-            onChangeText={(value) => setFormData({ ...formData, lng: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lng: value })}
           />
         </View>
       </View>
@@ -300,7 +266,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholder="请输入纬度"
             placeholderTextColor="#999"
             value={formData.lat}
-            onChangeText={(value) => setFormData({ ...formData, lat: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lat: value })}
           />
         </View>
       </View>
@@ -313,7 +279,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholder="请输入容器型号"
             placeholderTextColor="#999"
             value={formData.model}
-            onChangeText={(value) => setFormData({ ...formData, model: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, model: value })}
           />
         </View>
       </View>
@@ -327,7 +293,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholderTextColor="#999"
             value={formData.e_meter}
             onChangeText={(value) =>
-              setFormData({ ...formData, e_meter: value })
+              onFormDataChange({ ...formData, e_meter: value })
             }
           />
         </View>
@@ -342,7 +308,7 @@ const EboxForm = forwardRef((props, ref) => {
             placeholderTextColor="#999"
             value={formData.remark}
             onChangeText={(value) =>
-              setFormData({ ...formData, remark: value })
+              onFormDataChange({ ...formData, remark: value })
             }
           />
         </View>
@@ -350,7 +316,7 @@ const EboxForm = forwardRef((props, ref) => {
     </ScrollView>
     </>
   );
-});
+};
 
 EboxForm.displayName = 'EboxForm';
 

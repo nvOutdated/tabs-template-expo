@@ -8,7 +8,7 @@ import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, PermissionsAndroid, Platform, Text, TouchableOpacity, View } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -53,6 +53,40 @@ export default function AddDeviceModal() {
   const [currentTab, setCurrentTab] = useState('ebox');
   const [location, setLocation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 表单数据状态
+  const [eboxFormData, setEboxFormData] = useState<EboxFormData>({
+    device_code: '',
+    device_type: 'Central',
+    name: '',
+    sn: '',
+    ebox_type: 'CABINET',
+    area_id: '',
+    version: '',
+    install_time: undefined,
+    lng: '',
+    lat: '',
+    model: '',
+    e_meter: '',
+    remark: '',
+  });
+  const [smartLampFormData, setSmartLampFormData] = useState<SmartLampFormData>({
+    name: '',
+    device_code: '',
+    location: '',
+    gateway_code: '',
+    area_id: '',
+    lat: '',
+    lng: '',
+  });
+  const [singleLampFormData, setSingleLampFormData] = useState<SingleLampFormData>({
+    pole_code: '',
+    pole_type: '',
+    location: '',
+    area_id: '',
+    lat: '',
+    lng: '',
+  });
 
   const requestPermission = async () => {
     if (Platform.OS === 'android') {
@@ -101,35 +135,7 @@ export default function AddDeviceModal() {
     );
     console.log(location,"获取位置结束");
   };
-  // 创建表单引用
-  const eboxFormRef = useRef<{
-    handleSubmit(): unknown;
-    setFormData: (updater: (prev: EboxFormData) => EboxFormData) => void;
-    getFormData: () => EboxFormData;
-  }>(null);
-  const smartLampFormRef = useRef<{
-    handleSubmit(): unknown;
-    setFormData: (updater: (prev: SmartLampFormData) => SmartLampFormData) => void;
-    getFormData: () => SmartLampFormData;
-  }>(null);
-  const singleLampFormRef = useRef<{
-    handleSubmit(): unknown;
-    setFormData: (updater: (prev: SingleLampFormData) => SingleLampFormData) => void;
-    getFormData: () => SingleLampFormData;
-  }>(null);
- 
 
-  useEffect(() => {
-    get_version_list({}).then(res => {
-      if (res.code == 200) {
-        setVersionList(res.data)
-      }
-    })
-  }, [])
-  
-  // useEffect(()=>{
-  //   getLocation()
-  // },[])
   const getCurrentLocation = async () => {
     try {
       setIsLoadingLocation(true);
@@ -146,31 +152,25 @@ export default function AddDeviceModal() {
         // 根据当前选中的tab，更新对应的表单
         switch (currentTab) {
           case 'ebox':
-            if (eboxFormRef.current) {
-              eboxFormRef.current.setFormData((prev: EboxFormData) => ({
-                ...prev,
-                lat: location.coords.latitude.toString(),
-                lng: location.coords.longitude.toString()
-              }));
-            }
+            setEboxFormData(prev => ({
+              ...prev,
+              lat: location.coords.latitude.toString(),
+              lng: location.coords.longitude.toString()
+            }));
             break;
           case 'smartLamp':
-            if (smartLampFormRef.current) {
-              smartLampFormRef.current.setFormData((prev: SmartLampFormData) => ({
-                ...prev,
-                lat: location.coords.latitude.toString(),
-                lng: location.coords.longitude.toString()
-              }));
-            }
+            setSmartLampFormData(prev => ({
+              ...prev,
+              lat: location.coords.latitude.toString(),
+              lng: location.coords.longitude.toString()
+            }));
             break;
           case 'singleLamp':
-            if (singleLampFormRef.current) {
-              singleLampFormRef.current.setFormData((prev: SingleLampFormData) => ({
-                ...prev,
-                lat: location.coords.latitude.toString(),
-                lng: location.coords.longitude.toString()
-              }));
-            }
+            setSingleLampFormData(prev => ({
+              ...prev,
+              lat: location.coords.latitude.toString(),
+              lng: location.coords.longitude.toString()
+            }));
             break;
         }
         console.log(location,"地址");
@@ -194,36 +194,35 @@ export default function AddDeviceModal() {
   const handleSubmit = () => {
     switch (currentTab) {
       case 'ebox':
-        const eboxData = eboxFormRef.current?.getFormData();
-        console.log(eboxData,"eboxData");
-        
-        if (eboxData) {
-          add_ebox(eboxData).then(res => {
-            if (res.code == 200) {
-              showSuccess({
-                message: '添加成功',
-              });
-              router.back();
-            }
-          });
-        }
+        add_ebox(eboxFormData).then(res => {
+          if (res.code == 200) {
+            showSuccess({ message: '添加成功' });
+            router.back();
+          }
+        });
         break;
       case 'smartLamp':
-        const smartLampData = smartLampFormRef.current?.getFormData();
-        if (smartLampData) {
-          // 处理智能灯表单提交
-          console.log('Smart Lamp Data:', smartLampData);
-        }
+        // 处理智能灯表单提交
+        console.log('Smart Lamp Data:', smartLampFormData);
         break;
       case 'singleLamp':
-        const singleLampData = singleLampFormRef.current?.getFormData();
-        if (singleLampData) {
-          // 处理单灯表单提交
-          console.log('Single Lamp Data:', singleLampData);
-        }
+        // 处理单灯表单提交
+        console.log('Single Lamp Data:', singleLampFormData);
         break;
     }
   };
+
+  useEffect(() => {
+    get_version_list({}).then(res => {
+      if (res.code == 200) {
+        setVersionList(res.data)
+      }
+    })
+  }, [])
+  
+  // useEffect(()=>{
+  //   getLocation()
+  // },[])
 
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
@@ -288,27 +287,21 @@ export default function AddDeviceModal() {
       >
         <Tab.Screen
           name="ebox"
-          options={{ 
-            title: '集中器',
-          }}
+          options={{ title: '集中器' }}
         >
-          {() => <EboxForm ref={eboxFormRef} />}
+          {() => <EboxForm formData={eboxFormData} versionList={versionList} onFormDataChange={setEboxFormData} />}
         </Tab.Screen>
         <Tab.Screen
           name="smartLamp"
-          options={{ 
-            title: '网关',
-          }}
+          options={{ title: '网关' }}
         >
-          {() => <SmartLampForm ref={smartLampFormRef} />}
+          {() => <SmartLampForm formData={smartLampFormData} onFormDataChange={setSmartLampFormData} />}
         </Tab.Screen>
         <Tab.Screen
           name="singleLamp"
-          options={{ 
-            title: '单灯',
-          }}
+          options={{ title: '单灯' }}
         >
-          {() => <SingleLampForm ref={singleLampFormRef} />}
+          {() => <SingleLampForm formData={singleLampFormData} onFormDataChange={setSingleLampFormData} />}
         </Tab.Screen>
       </Tab.Navigator>
 

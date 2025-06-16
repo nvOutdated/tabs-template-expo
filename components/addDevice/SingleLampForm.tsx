@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 export interface SingleLampFormData {
@@ -11,23 +11,12 @@ export interface SingleLampFormData {
   lng: string;
 }
 
-const SingleLampForm = forwardRef((props, ref) => {
-  const [formData, setFormData] = useState<SingleLampFormData>({
-    pole_code: '',
-    pole_type: '',
-    location: '',
-    area_id: '',
-    lat: '',
-    lng: '',
-  });
+interface SingleLampFormProps {
+  formData: SingleLampFormData;
+  onFormDataChange: (data: SingleLampFormData) => void;
+}
 
-  useImperativeHandle(ref, () => ({
-    setFormData: (updater: (prev: SingleLampFormData) => SingleLampFormData) => {
-      setFormData(updater);
-    },
-    getFormData: () => formData
-  }));
-
+const SingleLampForm = ({ formData, onFormDataChange }: SingleLampFormProps) => {
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">
       <View className="mb-6">
@@ -38,7 +27,7 @@ const SingleLampForm = forwardRef((props, ref) => {
             placeholder="请输入灯杆编号"
             placeholderTextColor="#999"
             value={formData.pole_code}
-            onChangeText={(value) => setFormData({ ...formData, pole_code: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, pole_code: value })}
           />
         </View>
       </View>
@@ -59,7 +48,7 @@ const SingleLampForm = forwardRef((props, ref) => {
             placeholder="请输入安装位置"
             placeholderTextColor="#999"
             value={formData.location}
-            onChangeText={(value) => setFormData({ ...formData, location: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, location: value })}
           />
         </View>
       </View>
@@ -80,7 +69,7 @@ const SingleLampForm = forwardRef((props, ref) => {
             placeholder="请输入纬度"
             placeholderTextColor="#999"
             value={formData.lat}
-            onChangeText={(value) => setFormData({ ...formData, lat: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lat: value })}
           />
         </View>
       </View>
@@ -92,14 +81,12 @@ const SingleLampForm = forwardRef((props, ref) => {
             placeholder="请输入经度"
             placeholderTextColor="#999"
             value={formData.lng}
-            onChangeText={(value) => setFormData({ ...formData, lng: value })}
+            onChangeText={(value) => onFormDataChange({ ...formData, lng: value })}
           />
         </View>
       </View>
     </ScrollView>
   );
-});
-
-SingleLampForm.displayName = 'SingleLampForm';
+};
 
 export default SingleLampForm; 
