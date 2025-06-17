@@ -71,7 +71,7 @@ export default function SmartLampScreen() {
     operations,
     addOperation,
   } = useSmartLightStore();
-
+  
   const { areaList, areaWithDevicesList } = useAreaStore();
   const currentServer = useGlobalStore(state => state.currentServer);
 

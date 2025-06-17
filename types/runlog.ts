@@ -6,6 +6,32 @@ export interface AlarmMessage {
   timestamp: number;
   isRead: boolean;
   module: string;
+  status: 'pending' | 'processing' | 'completed';
+  sn: string;
+  deviceName: string;
+  data: {
+    phase3Voltage: number[];
+    phase3Electric: number[];
+    power: number;
+    dateTime: string;
+    powerOff: string;
+    powerOn: string;
+    loops: boolean[];
+    ios: boolean[];
+    enabledWeekly: boolean;
+    enabledAlways: boolean;
+    enabledLocation: boolean;
+    enabledMultiple: boolean;
+    enabledLight: boolean;
+    enabledWater: boolean;
+    enabledOneByOne: boolean;
+    mode: string;
+    optTime: string;
+    eventType: string;
+    reportTime: string;
+    description: string;
+    warn: boolean;
+  };
 }
 
 export interface LogEntry {

@@ -17,7 +17,7 @@ const formatDate = (timestamp: number) => {
 };
 
 const AlarmList: React.FC = () => {
-  const { alarms, markAlarmAsRead, markAllAlarmsAsRead, addMockAlarm } = useRunLogStore();
+  const { alarms, markAlarmAsRead } = useRunLogStore();
   const [selectedAlarms, setSelectedAlarms] = useState<Set<string>>(new Set());
 
   const toggleSelect = (id: string) => {
@@ -127,12 +127,6 @@ const AlarmList: React.FC = () => {
               )}
             </>
           )}
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={addMockAlarm}
-          >
-            <Text style={styles.mockButton} className="text-info-500">模拟报警</Text>
-          </TouchableOpacity>
         </View>
       </View>
       <FlatList
@@ -177,9 +171,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   clearButton: {
-    fontSize: 14,
-  },
-  mockButton: {
     fontSize: 14,
   },
   list: {

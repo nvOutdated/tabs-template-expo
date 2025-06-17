@@ -1,12 +1,12 @@
 import { light_central_detect_status, light_eleBox_ctrl_switch, smart_personal_matchOptCode } from '@/api/street/configuration';
 import { useCustomToast } from '@/components/public/UIComponents/ToastComponent';
 import PasswordModal from '@/components/ui/PasswordModal';
-import { DEVICE_STATUS, useEboxStore } from '@/store/eboxStore';
+import { DEVICE_STATUS, useSmartLightStore } from '@/store/smartLightStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -66,16 +66,6 @@ type EboxOperationListProps = {
   onWebSocketUpdate?: (data: any) => void;
 };
 
-const formatDate = (timestamp: number) => {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
 
 const EboxOperationList: React.FC<EboxOperationListProps> = ({
   operations,
@@ -90,22 +80,19 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentOperation, setCurrentOperation] = useState<'open' | 'close' | 'check' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { selectedDevices, isEditMode, selectedOperations, toggleEditMode, toggleOperationSelect, clearSelectedOperations, deleteOperations } = useEboxStore();
+  const { selectedDevices, isEditMode, selectedOperations, toggleEditMode, toggleOperationSelect, clearSelectedOperations, deleteOperations } = useSmartLightStore();
   const toast = useCustomToast();
-  const [filteredOperations, setFilteredOperations] = useState<EboxOperation[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedModule, setSelectedModule] = useState<string>('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
   const listRef = useRef<FlashList<EboxOperation>>(null);
   const isMounted = useRef(true);
   const searchTimeout = useRef<NodeJS.Timeout>(null);
-  const lastOperationId = useRef<string | null>(null);
-  const [showFilter, setShowFilter] = useState(false);
+
+  // 统计信息
+  const stats = useMemo(() => {
+    const total = operations.length;
+    const warning = operations.filter(op => op.type === 'warning').length;
+    const info = operations.filter(op => op.type === 'info').length;
+    return { total, warning, info };
+  }, [operations]);
 
   useEffect(() => {
     return () => {
@@ -116,134 +103,39 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     };
   }, []);
 
-  const filterOperations = useCallback((ops: EboxOperation[]) => {
-    return ops.filter(op => {
-      const matchesSearch = searchQuery === '' || 
-        op.sn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        op.deviceName.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = selectedStatus === 'all' || op.status === selectedStatus;
-      const matchesType = selectedType === 'all' || op.type === selectedType;
-      const matchesModule = selectedModule === 'all' || op.module === selectedModule;
-      
-      return matchesSearch && matchesStatus && matchesType && matchesModule;
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedOperations.size === 0) {
+      toast.showError({
+        message: '请先选择要删除的记录',
+      });
+      return;
+    }
+
+    // 删除选中的操作记录
+    deleteOperations(selectedOperations);
+    
+    toast.showSuccess({
+      message: `已删除 ${selectedOperations.size} 条记录`,
     });
-  }, [searchQuery, selectedStatus, selectedType, selectedModule]);
+    clearSelectedOperations();
+    toggleEditMode();
+  }, [selectedOperations, toast, clearSelectedOperations, toggleEditMode, deleteOperations]);
 
-  const loadOperations = useCallback(async (pageNum: number, isRefresh = false) => {
-    if (!isMounted.current) return;
-    
-    try {
-      setIsLoading(true);
-      const startIndex = (pageNum - 1) * PAGE_SIZE;
-      const endIndex = startIndex + PAGE_SIZE;
-      
-      let newOperations: EboxOperation[];
-      if (isRefresh) {
-        newOperations = operations.slice(0, endIndex);
-      } else {
-        newOperations = operations.slice(startIndex, endIndex);
-      }
-      
-      if (isMounted.current) {
-        setFilteredOperations(prev => {
-          const filtered = filterOperations(newOperations);
-          return isRefresh ? filtered : [...prev, ...filtered];
-        });
-        setHasMore(endIndex < operations.length);
-        setPage(pageNum);
-      }
-    } catch (error) {
-      console.error('Error loading operations:', error);
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    }
-  }, [operations, filterOperations]);
-
-  const handleRefresh = useCallback(async () => {
-    if (!isMounted.current) return;
-    
-    setIsRefreshing(true);
-    setPage(1);
-    await loadOperations(1, true);
-  }, [loadOperations]);
-
-  const handleLoadMore = useCallback(async () => {
-    if (!isMounted.current || isLoading || !hasMore) return;
-    
-    await loadOperations(page + 1);
-  }, [isLoading, hasMore, page, loadOperations]);
-
-  const handleSearch = useCallback((text: string) => {
-    if (!isMounted.current) return;
-    
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
-    
-    searchTimeout.current = setTimeout(() => {
-      if (isMounted.current) {
-        setSearchQuery(text);
-        setPage(1);
-        loadOperations(1, true);
-      }
-    }, 300) as unknown as NodeJS.Timeout;
-  }, [loadOperations]);
-
-  const handleFilterChange = useCallback((type: string, value: string) => {
-    if (!isMounted.current) return;
-    
-    switch (type) {
-      case 'status':
-        setSelectedStatus(value);
-        break;
-      case 'type':
-        setSelectedType(value);
-        break;
-      case 'module':
-        setSelectedModule(value);
-        break;
-    }
-    setPage(1);
-    loadOperations(1, true);
-  }, [loadOperations]);
-
-  const handleDelete = useCallback(async () => {
-    if (!isMounted.current) return;
-    
-    try {
-      await deleteOperations(selectedOperations);
-      setPage(1);
-      loadOperations(1, true);
-    } catch (error) {
-      console.error('Error deleting operations:', error);
-    }
-  }, [deleteOperations, selectedOperations, loadOperations]);
-
-  const handleSelectAll = useCallback(() => {
-    if (!isMounted.current) return;
-    
-    const currentPageOperations = filteredOperations.slice(0, page * PAGE_SIZE);
-    currentPageOperations.forEach(op => {
-      if (!selectedOperations.has(op.id)) {
-        toggleOperationSelect(op.id);
+ // 添加全选/取消全选的处理函数
+ const handleSelectAll = useCallback(() => {
+  if (selectedOperations.size === operations.length) {
+    // 如果已经全选，则取消全选
+    clearSelectedOperations();
+  } else {
+    // 否则全选所有操作
+    operations.forEach(operation => {
+      if (!selectedOperations.has(operation.id)) {
+        toggleOperationSelect(operation.id);
       }
     });
-  }, [filteredOperations, page, selectedOperations, toggleOperationSelect]);
-
-  const handleDeselectAll = useCallback(() => {
-    if (!isMounted.current) return;
-    
-    const currentPageOperations = filteredOperations.slice(0, page * PAGE_SIZE);
-    currentPageOperations.forEach(op => {
-      if (selectedOperations.has(op.id)) {
-        toggleOperationSelect(op.id);
-      }
-    });
-  }, [filteredOperations, page, selectedOperations, toggleOperationSelect]);
+  }
+}, [operations, selectedOperations, clearSelectedOperations, toggleOperationSelect]);
 
   const updateLoopButton = useCallback((index: number, isActive: boolean) => {
     setLoopButtons(prev => {
@@ -319,7 +211,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         const response = await light_central_detect_status({
           devices: deviceIds
         });
-
+      
         if (response.code === 200) {
           console.log(response);
           toast.showSuccess({
@@ -465,7 +357,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     const animatedOpacity = useSharedValue(0);
     const MAX_HEIGHT = 400;
     const isMounted = useRef(true);
-    const { isEditMode, selectedOperations, toggleOperationSelect } = useEboxStore();
+    const { isEditMode, selectedOperations, toggleOperationSelect } = useSmartLightStore();
     
     useEffect(() => {
       return () => {
@@ -736,150 +628,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     <OperationItem item={item} />
   ), []);
 
-  const keyExtractor = useCallback((item: EboxOperation) => item.id, []);
-
-  const EmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="list-outline" size={48} className="text-tertiary-500" />
-      <Text style={styles.emptyText} className="text-tertiary-500">暂无操作记录</Text>
-    </View>
-  );
-
-  const ListFooterComponent = () => (
-    <View style={styles.footer}>
-      {operations.length > 0 ? (
-        <Text style={styles.footerText} className="text-tertiary-500">
-          暂无更多操作记录
-        </Text>
-      ) : null}
-    </View>
-  );
-
-  const ItemSeparatorComponent = () => (
-    <View style={{ height: 8 }} />
-  );
-
-  const renderHeader = useCallback(() => (
-    <View className="px-4 py-2">
-      <View className="flex-row items-center mb-4">
-        <View className="flex-1 mr-2">
-          <TextInput
-            className="bg-white px-4 py-2 rounded-lg border border-gray-200"
-            placeholder="搜索设备SN或名称"
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-        </View>
-        <TouchableOpacity 
-          onPress={() => setShowFilter((prev: boolean) => !prev)}
-          className="bg-white p-2 rounded-lg border border-gray-200"
-        >
-          <Ionicons name="filter" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-
-      {showFilter && (
-        <View className="bg-white p-4 rounded-lg mb-4">
-          <View className="mb-4">
-            <Text className="text-sm text-gray-500 mb-2">状态</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {['all', 'online', 'offline'].map(status => (
-                <TouchableOpacity
-                  key={status}
-                  onPress={() => handleFilterChange('status', status)}
-                  className={`px-3 py-1 rounded-full ${
-                    selectedStatus === status ? 'bg-blue-500' : 'bg-gray-100'
-                  }`}
-                >
-                  <Text className={selectedStatus === status ? 'text-white' : 'text-gray-600'}>
-                    {status === 'all' ? '全部' : status === 'online' ? '在线' : '离线'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View className="mb-4">
-            <Text className="text-sm text-gray-500 mb-2">类型</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {['all', 'normal', 'warning'].map(type => (
-                <TouchableOpacity
-                  key={type}
-                  onPress={() => handleFilterChange('type', type)}
-                  className={`px-3 py-1 rounded-full ${
-                    selectedType === type ? 'bg-blue-500' : 'bg-gray-100'
-                  }`}
-                >
-                  <Text className={selectedType === type ? 'text-white' : 'text-gray-600'}>
-                    {type === 'all' ? '全部' : type === 'normal' ? '正常' : '警告'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View>
-            <Text className="text-sm text-gray-500 mb-2">模块</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {['all', ...Object.values(DEVICE_STATUS).map(status => status.module)].map(module => (
-                <TouchableOpacity
-                  key={module}
-                  onPress={() => handleFilterChange('module', module)}
-                  className={`px-3 py-1 rounded-full ${
-                    selectedModule === module ? 'bg-blue-500' : 'bg-gray-100'
-                  }`}
-                >
-                  <Text className={selectedModule === module ? 'text-white' : 'text-gray-600'}>
-                    {module === 'all' ? '全部' : module}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-      )}
-
-      {isEditMode && (
-        <View className="flex-row justify-between items-center mb-4">
-          <View className="flex-row">
-            <TouchableOpacity
-              onPress={handleSelectAll}
-              className="mr-2 px-3 py-1 bg-blue-500 rounded-lg"
-            >
-              <Text className="text-white">全选</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDeselectAll}
-              className="px-3 py-1 bg-gray-500 rounded-lg"
-            >
-              <Text className="text-white">取消全选</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            onPress={handleDelete}
-            className="px-3 py-1 bg-red-500 rounded-lg"
-            disabled={selectedOperations.size === 0}
-          >
-            <Text className="text-white">删除</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  ), [
-    searchQuery,
-    showFilter,
-    selectedStatus,
-    selectedType,
-    selectedModule,
-    isEditMode,
-    selectedOperations.size,
-    handleSearch,
-    handleFilterChange,
-    handleSelectAll,
-    handleDeselectAll,
-    handleDelete
-  ]);
-
   const renderFooter = useCallback(() => {
     if (!isLoading) return null;
     return (
@@ -896,18 +644,54 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   ), []);
 
   return (
-    <View className="flex-1 bg-background-50">
+    <View style={styles.container} className="bg-background-50">
+      {/* 统计信息 */}
+      <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+        <View className="flex-row items-center">
+          <Text className="text-base text-warning-500 mr-4">警告: {stats.warning}</Text>
+          <Text className="text-base text-success-500">信息: {stats.info}</Text>
+        </View>
+        <View className="flex-row items-center">
+          {isEditMode ? (
+            <>
+              <TouchableOpacity 
+                onPress={handleSelectAll}
+                className="bg-primary-500 px-3 py-1 rounded-full mr-2"
+              >
+                <Text className="text-white">
+                  {selectedOperations.size === operations.length ? '取消全选' : '全选'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleDeleteSelected}
+                className="bg-error-500 px-3 py-1 rounded-full mr-2"
+              >
+                <Text className="text-white">删除</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={toggleEditMode}
+                className="bg-gray-500 px-3 py-1 rounded-full"
+              >
+                <Text className="text-white">完成</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity 
+              onPress={toggleEditMode}
+              className="bg-primary-500 px-3 py-1 rounded-full"
+            >
+              <Text className="text-white">编辑</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <FlashList
         ref={listRef}
-        data={filteredOperations}
+        data={operations}
         renderItem={renderItem}
         estimatedItemSize={200}
         keyExtractor={item => item.id}
-        onRefresh={handleRefresh}
-        refreshing={isRefreshing}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         overrideItemLayout={(layout, item) => {

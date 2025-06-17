@@ -51,6 +51,8 @@ const createMessageHandlers = (set: any): MessageHandler[] => [
   {
     type: MessageType.WARNING,
     handle: (message: WebSocketMessage) => {
+      console.log(message,"收到报警消息");
+      
       set({ WS_SmartLight_Data: message.device_content });
     }
   },
@@ -138,7 +140,7 @@ export const useWebSocketStore = create<WebSocketState>((set) => {
     WS_DetectDatetimeParamsResp_Data: null,
     init: () => {
       websocketManager.reset();
-
+     
       websocketManager.addStatusHandler((isConnected) => {
         set({ isConnected });
       });
