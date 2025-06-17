@@ -1,5 +1,4 @@
-import * as Location from 'expo-location';
-import { Platform } from 'react-native';
+
 
 interface LocationCoords {
   longitude: number;
@@ -30,7 +29,7 @@ interface LocationOptions {
   useIPFallback?: boolean;
   useCachedLocation?: boolean;
   maxCacheAge?: number;
-  accuracy?: Location.Accuracy;
+  // accuracy?: Location.Accuracy;
   maxAge?: number;
 }
 
@@ -60,38 +59,6 @@ export class ExpoAmapLocationService {
     this.locationCache = new Map();
   }
 
-  // 获取定位权限
-  private async requestLocationPermission(): Promise<boolean> {
-    try {
-      const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
-      
-      if (foregroundStatus !== 'granted') {
-        throw new Error('需要定位权限才能使用此功能');
-      }
-
-      if (Platform.OS === 'android') {
-        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-        console.log('后台定位权限状态:', backgroundStatus);
-      }
-
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // 检查定位服务是否可用
-  private async checkLocationServices(): Promise<boolean> {
-    try {
-      const enabled = await Location.hasServicesEnabledAsync();
-      if (!enabled) {
-        throw new Error('请开启设备定位服务');
-      }
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  }
 
   // 通过IP定位获取大概位置
   private async getLocationByIP(): Promise<LocationResult> {
@@ -172,54 +139,6 @@ export class ExpoAmapLocationService {
     }
   }
 
-  // 使用Expo Location获取精确位置
-  private async getLocationByGPS(options: LocationOptions = {}): Promise<LocationResult> {
-    const {
-      accuracy = Location.Accuracy.High,
-      timeout = 15000,
-      maxAge = 300000
-    } = options;
-
-    try {
-      await this.requestLocationPermission();
-      await this.checkLocationServices();
-
-      const locationOptions: Location.LocationOptions = {
-        accuracy,
-        timeInterval: 0,
-        distanceInterval: 0,
-      };
-
-      const location = await Location.getCurrentPositionAsync(locationOptions);
-      console.log(location,"2222");
-      
-      const convertedCoords = await this.convertCoordinates(
-        location.coords.longitude,
-        location.coords.latitude
-      );
-      
-      const result: LocationResult = {
-        coords: {
-          longitude: convertedCoords.longitude,
-          latitude: convertedCoords.latitude,
-          accuracy: location.coords.accuracy,
-          altitude: location.coords.altitude === null ? undefined : location.coords.altitude,
-          altitudeAccuracy: location.coords.altitudeAccuracy === null ? undefined : location.coords.altitudeAccuracy,
-          heading: location.coords.heading === null ? undefined : location.coords.heading,
-          speed: location.coords.speed === null ? undefined : location.coords.speed,
-        },
-        timestamp: location.timestamp,
-        source: 'gps'
-      };
-
-      this.lastKnownLocation = result;
-      return result;
-    } catch (error) {
-        console.log(error,"322121");
-        
-      throw error;
-    }
-  }
 
   // 坐标转换：WGS84转GCJ02
   private async convertCoordinates(
@@ -421,56 +340,11 @@ export class ExpoAmapLocationService {
   // 修改综合定位方法，添加H5定位
   async getCurrentLocation(options: LocationOptions = {}): Promise<LocationResult> {
     const {
-      enableHighAccuracy = true,
-      timeout = 15000,
       useIPFallback = true,
-      useCachedLocation = true,
-      maxCacheAge = 300000
     } = options;
-
-    const locationOptions: LocationOptions = {
-      accuracy: enableHighAccuracy ? Location.Accuracy.High : Location.Accuracy.Balanced,
-      maxAge: maxCacheAge
-    };
 
     let lastError: Error | null = null;
 
-    // 1. 尝试GPS定位
-    try {
-      const location = await this.getLocationByGPS(locationOptions);
-      try {
-        const address = await this.reverseGeocode(
-          location.coords.longitude,
-          location.coords.latitude
-        );
-        return {
-          ...location,
-          address: address.formattedAddress,
-          addressDetail: {
-            province: address.province,
-            city: address.city,
-            district: address.district,
-            adcode: address.adcode
-          }
-        };
-      } catch (addressError) {
-        console.log(addressError,'反解析失败');
-        return location;
-      }
-    } catch (gpsError) {
-      lastError = gpsError as Error;
-    }
-
-    // 2. 尝试使用缓存的位置
-    if (useCachedLocation && this.lastKnownLocation) {
-      const cacheAge = Date.now() - this.lastKnownLocation.timestamp;
-      if (cacheAge < maxCacheAge * 2) {
-        return {
-          ...this.lastKnownLocation,
-          source: 'cache'
-        };
-      }
-    }
 
     // 3. 尝试H5定位
     try {

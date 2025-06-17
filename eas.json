@@ -14,8 +14,8 @@
       },
       "ios": {},
       "env": {
-        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp.dev",
-        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp.dev",
+        "ANDROID_PACKAGE_NAME": "com.xdd123.xddApp.dev",
+        "IOS_BUNDLE_ID": "com.xdd123.xddApp.dev",
         "EAS_BUILD_PROFILE": "development"
       }
     },
@@ -28,8 +28,8 @@
       },
       "ios": {},
       "env": {
-        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp.preview",
-        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp.preview",
+        "ANDROID_PACKAGE_NAME": "com.xdd123.xddApp.preview",
+        "IOS_BUNDLE_ID": "com.xdd123.xddApp.preview",
         "EAS_BUILD_PROFILE": "preview"
       }
     },
@@ -42,8 +42,8 @@
       },
       "ios": {},
       "env": {
-        "ANDROID_PACKAGE_NAME": "com.xdd11.tabscomponentapp",
-        "IOS_BUNDLE_ID": "com.xdd11.tabscomponentapp",
+        "ANDROID_PACKAGE_NAME": "com.xdd123.xddApp",
+        "IOS_BUNDLE_ID": "com.xdd123.xddApp",
         "EAS_BUILD_PROFILE": "production"
       }
     }

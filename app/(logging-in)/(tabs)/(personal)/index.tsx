@@ -60,7 +60,7 @@ export default function PersonIndex() {
      <View className="items-center mb-8">
         
         <Image
-          source={require("@/assets/images/images/amzing.png")}
+          source={require("@/assets/images/images/kabudaxiangsu.jpg")}
           className="w-24 h-24 rounded-full mb-4"
         />
         <Text className={`text-xl font-bold text-typography-700`}>

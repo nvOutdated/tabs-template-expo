@@ -2,11 +2,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Modal, Text, View } from 'react-native';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
@@ -87,7 +87,7 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
   type,
   message,
   title,
-  duration = 3000,
+  duration = 2000,
   onClose,
   position = 'top'
 }) => {
@@ -103,7 +103,7 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
   });
 
   const show = useCallback(() => {
-    opacity.value = withTiming(1, { duration: 300 });
+    opacity.value = withTiming(1, { duration: 100 });
     translateY.value = withSpring(0, {
       damping: 15,
       stiffness: 100,
@@ -111,7 +111,7 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
   }, []);
 
   const hide = useCallback(() => {
-    opacity.value = withTiming(0, { duration: 300 });
+    opacity.value = withTiming(0, { duration: 100 });
     translateY.value = withSpring(-100, {
       damping: 15,
       stiffness: 100,

@@ -1,18 +1,18 @@
 {
   "expo": {
     "name": "xddApp",
-    "slug": "tabs-component-app",
+    "slug": "xddapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "assets/images/icon.png",
-    "scheme": "tabscomponentapp",
+    "scheme": "xddApp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "bitcode": false,
-      "bundleIdentifier": "com.xdd11.tabscomponentapp",
+      "bundleIdentifier": "com.xdd123.xddApp",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "需要获取您的位置信息以显示地图",
         "NSLocationAlwaysUsageDescription": "需要获取您的位置信息以显示地图",
@@ -41,7 +41,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.xdd11.tabscomponentapp",
+      "package": "com.xdd123.xddApp",
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResources": true,
       "enableR8": true,
@@ -68,16 +68,9 @@
       "expo-secure-store",
       "@config-plugins/react-native-webrtc",
       [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
-        }
-      ],
-      [
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.8.22",
             "usesCleartextTraffic": true
           }
         }
@@ -89,10 +82,10 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "751ef87f-7da2-4c26-940d-f3c42e960ef7"
+        "projectId": "bcf2c2c0-f6f9-4c45-b5aa-a96df804e4a1"
       },
       "enableDevTools": true
     },
-    "owner": "xdd11"
+    "owner": "xdd123"
   }
 }

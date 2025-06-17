@@ -11,11 +11,11 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    name: "tabs-component-app",
+    name: "xddApp",
     icon: iconPath,
     android: {
       ...config.android,
-      package: process.env.ANDROID_PACKAGE_NAME || "com.xdd11.tabscomponentapp",
+      package: process.env.ANDROID_PACKAGE_NAME || "com.xdd123.xddApp",
       adaptiveIcon: {
         foregroundImage: iconPath,
         backgroundColor: "#ffffff"
@@ -27,7 +27,7 @@ module.exports = ({ config }) => {
     },
     ios: {
       ...config.ios,
-      bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.xdd11.tabscomponentapp",
+      bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.xdd123.xddApp",
       infoPlist: {
         ...config.ios?.infoPlist,
         NSAppTransportSecurity: {
@@ -51,7 +51,6 @@ module.exports = ({ config }) => {
         "expo-build-properties",
         {
           android: {
-            kotlinVersion: "1.8.22",
             enableProguardInReleaseBuilds: true,
             enableShrinkResources: true,
             enableR8: true,

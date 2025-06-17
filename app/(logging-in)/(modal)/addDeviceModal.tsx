@@ -4,63 +4,133 @@ import SingleLampForm, { SingleLampFormData } from '@/components/addDevice/Singl
 import SmartLampForm, { SmartLampFormData } from '@/components/addDevice/SmartLampForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
+import { useAreaStore } from '@/store/areaStore';
+import useLoadingStore from '@/store/loadingStore';
 import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { createMaterialTopTabNavigator, MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, PermissionsAndroid, Platform, Text, TouchableOpacity, View } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const Tab = createMaterialTopTabNavigator();
 
-// 初始化高德地图定位服务
-const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836'); // 请替换为您的实际高德地图 API Key
+// 定义tab标题
+const TAB_CONFIG = [
+  { name: "ebox", title: "集中器" },
+  { name: "smartLamp", title: "网关" },
+  { name: "singleLamp", title: "单灯" },
+] as const;
 
-// 自定义Tab组件
-const CustomTab = ({ focused, color, children }: { focused: boolean; color: string; children: string }) => {
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      backgroundColor: focused ? color + '10' : 'transparent',
-      transform: [{ scale: withSpring(focused ? 1.02 : 1) }],
-    };
-  });
+// 初始化高德地图定位服务
+const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
+
+// 自定义TabBar组件
+function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
+  const currentTheme = useCurrentTheme();
+  const insets = useSafeAreaInsets();
+ 
+  const tabWidth = useMemo(() => {
+    const availableWidth = width;
+    return availableWidth / TAB_CONFIG.length;
+  }, []);
 
   return (
-    <Animated.View style={[{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }, animatedStyle]}>
-      <Text
-        style={{
-          color,
-          fontSize: 15,
-          fontWeight: focused ? '600' : '500',
-          textAlign: 'center',
-        }}
-      >
-        {children}
-      </Text>
-    </Animated.View>
+    <View
+      style={{
+        flexDirection: 'row',
+        backgroundColor: currentTheme.drawerBg,
+        height: 44,
+        width: width,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+      }}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label = options.tabBarLabel || options.title || route.name;
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        // 从配置中获取标题
+        const tabConfig = TAB_CONFIG.find(tab => tab.name === route.name);
+        const displayLabel = typeof label === 'string' ? label : (tabConfig?.title || route.name);
+
+        return (
+          <View
+            key={route.key}
+            style={{
+              width: tabWidth,
+              height: 44,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <TouchableOpacity
+              onPress={onPress}
+              style={{
+                width: '100%',
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              activeOpacity={1}
+            >
+              <Text
+                style={{
+                  color: isFocused ? currentTheme.activeTint : currentTheme.inactiveTint,
+                  fontSize: isFocused ? 16 : 14,
+                  fontWeight: isFocused ? "700" : "400",
+                  textAlign: 'center',
+                  borderBottomWidth: 2,
+                  borderBottomColor: isFocused ? currentTheme.activeTint : 'transparent'
+                }}
+              >
+                {displayLabel}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        );
+      })}
+    </View>
   );
-};
+}
 
 export default function AddDeviceModal() {
   const insets = useSafeAreaInsets();
   const currentTheme = useCurrentTheme();
-  const { showWarning,showSuccess } = useCustomToast();
+  const { showWarning, showSuccess } = useCustomToast();
   const [versionList, setVersionList] = useState<any>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const {showLoading,hideLoading,isLoading} = useLoadingStore()
   const [currentTab, setCurrentTab] = useState('ebox');
   const [location, setLocation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-
+  
+  const { allAreaList } = useAreaStore();
+  const [allAreaListprops,setAllAreaListprops] = useState<any>([])
   // 表单数据状态
   const [eboxFormData, setEboxFormData] = useState<EboxFormData>({
-    device_code: '',
-    device_type: 'Central',
+    device_info:{
+      device_code:"",
+      device_type:"Central",
+      e_meter:"",
+    },
+    ebox_type: 'CABINET',
     name: '',
     sn: '',
-    ebox_type: 'CABINET',
     area_id: '',
     version: '',
     install_time: undefined,
@@ -103,37 +173,6 @@ export default function AddDeviceModal() {
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     }
     return true;
-  };
-
-  const getLocation = async () => {
-    const hasPermission = await requestPermission();
-    if (!hasPermission) {
-      setError('未授予位置权限');
-      return;
-    }
-    console.log(hasPermission,"开始获取位置");
-    
-    Geolocation.getCurrentPosition(
-      (position) => {
-        console.log(position,"位置");
-        
-        setLocation(position);
-        setError(null);
-      },
-      (err) => {
-        console.log(err,"错误");
-        
-        setError(err.message);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000,
-        forceRequestLocation: true,
-        showLocationDialog: true,
-      }
-    );
-    console.log(location,"获取位置结束");
   };
 
   const getCurrentLocation = async () => {
@@ -194,12 +233,20 @@ export default function AddDeviceModal() {
   const handleSubmit = () => {
     switch (currentTab) {
       case 'ebox':
-        add_ebox(eboxFormData).then(res => {
-          if (res.code == 200) {
-            showSuccess({ message: '添加成功' });
-            router.back();
-          }
-        });
+        try {
+          showLoading()
+          add_ebox({...eboxFormData}).then(res => {
+            if (res.code == 200) {
+              showSuccess({ message: '添加成功' });
+            }else{
+              showWarning({ message: res.message || '添加失败' });
+            }
+          });
+        } catch (error:any) {
+          showWarning({ message: error.message || '添加失败' });
+        }finally{
+          hideLoading()
+        }
         break;
       case 'smartLamp':
         // 处理智能灯表单提交
@@ -209,16 +256,42 @@ export default function AddDeviceModal() {
         // 处理单灯表单提交
         console.log('Single Lamp Data:', singleLampFormData);
         break;
+      default:
+        break;
     }
   };
 
   useEffect(() => {
     get_version_list({}).then(res => {
-      if (res.code == 200) {
-        setVersionList(res.data)
+      if (res.code === 200) {
+        const setVersionListData = res.data.map((item:any)=>{
+          return {
+            key:item,
+            value:item,
+            label:item,
+          }
+        })
+        setVersionList(setVersionListData)
+        setEboxFormData((prev:any)=>{
+          return {
+            ...prev,
+            version:setVersionListData[0].value
+          }
+        })  
       }
     })
   }, [])
+
+  useEffect(()=>{
+    const setAllAreaListpropsData = allAreaList.map((item:any)=>{
+      return {
+        key:item.area_id,
+        value:item.area_id,
+        label:item.name,
+      }
+    })
+    setAllAreaListprops(setAllAreaListpropsData)
+  },[allAreaList])
   
   // useEffect(()=>{
   //   getLocation()
@@ -245,35 +318,11 @@ export default function AddDeviceModal() {
 
       {/* 设备类型选择 */}
       <Tab.Navigator
+        tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
-          tabBarActiveTintColor: currentTheme.activeTint,
-          tabBarInactiveTintColor: currentTheme.inactiveTint,
-          tabBarIndicatorStyle: {
-            backgroundColor: currentTheme.activeTint,
-            height: 2,
-            width: width / 3,
-          },
-          tabBarStyle: {
-            backgroundColor: currentTheme.drawerBg,
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E5E7EB',
-            padding: 0,
-            height: 44,
-          },
-          tabBarLabel: (props) => <CustomTab {...props} />,
-          tabBarItemStyle: {
-            width: width / 3,
-            height: 44,
-            padding: 0,
-            margin: 0,
-          },
-          tabBarIndicatorContainerStyle: {
-            backgroundColor: currentTheme.drawerBg,
-          },
-          tabBarPressColor: 'transparent',
-          tabBarPressOpacity: 0.7,
+          lazy: false,
+          swipeEnabled: true,
+          animationEnabled: true,
         }}
         screenListeners={{
           state: (e) => {
@@ -285,24 +334,28 @@ export default function AddDeviceModal() {
           },
         }}
       >
-        <Tab.Screen
-          name="ebox"
-          options={{ title: '集中器' }}
-        >
-          {() => <EboxForm formData={eboxFormData} versionList={versionList} onFormDataChange={setEboxFormData} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="smartLamp"
-          options={{ title: '网关' }}
-        >
-          {() => <SmartLampForm formData={smartLampFormData} onFormDataChange={setSmartLampFormData} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="singleLamp"
-          options={{ title: '单灯' }}
-        >
-          {() => <SingleLampForm formData={singleLampFormData} onFormDataChange={setSingleLampFormData} />}
-        </Tab.Screen>
+        {TAB_CONFIG.map((tab) => (
+          <Tab.Screen
+            key={tab.name}
+            name={tab.name}
+            options={{
+              title: tab.title,
+            }}
+          >
+            {() => {
+              switch (tab.name) {
+                case 'ebox':
+                  return <EboxForm formData={eboxFormData} versionList={versionList} onFormDataChange={setEboxFormData} allAreaList={allAreaListprops} />;
+                case 'smartLamp':
+                  return <SmartLampForm formData={smartLampFormData} onFormDataChange={setSmartLampFormData} allAreaList={allAreaListprops} />;
+                case 'singleLamp':
+                  return <SingleLampForm formData={singleLampFormData} onFormDataChange={setSingleLampFormData} allAreaList={allAreaListprops} />;
+                default:
+                  return null;
+              }
+            }}
+          </Tab.Screen>
+        ))}
       </Tab.Navigator>
 
       {/* 底部按钮区域 */}

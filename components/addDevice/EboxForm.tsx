@@ -1,4 +1,3 @@
-import { useAreaStore } from '@/store/areaStore';
 import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -55,11 +54,14 @@ const styles = StyleSheet.create({
 });
 
 export interface EboxFormData {
-  device_code: string;
-  device_type: string;
+  device_info: {
+    device_code:string,
+    device_type:string,
+    e_meter:string,
+  },
+  ebox_type: string;
   name: string;
   sn: string;
-  ebox_type: string;
   area_id: string;
   version: string;
   install_time: Date | undefined;
@@ -72,11 +74,12 @@ export interface EboxFormData {
 interface EboxFormProps {
   formData: EboxFormData;
   onFormDataChange: (data: EboxFormData) => void;
-  versionList:string[]
+  versionList:string[];
+  allAreaList:any[];
 }
 
-const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
-  const { allAreaList } = useAreaStore();
+const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormProps) => {
+  
   const [showDatePicker, setShowDatePicker] = useState(false);
   return (
     <>
@@ -102,9 +105,9 @@ const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
             className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
             placeholder="1-11个数字(必填)"
             placeholderTextColor="#999"
-            value={formData.device_code}
+            value={formData.device_info?.device_code || ''}
             onChangeText={(value) =>
-              onFormDataChange({ ...formData, device_code: value })
+              onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code:value} })
             }
           />
         </View>
@@ -125,9 +128,9 @@ const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
               valueField="value"
               placeholder="请选择网关类型"
               searchPlaceholder="搜索..."
-              value={formData.device_type}
+              value={formData.device_info?.device_type}
               onChange={(item) => {
-                onFormDataChange({ ...formData, device_type: item.value });
+                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_type:item.value} });
               }}
             />
       
@@ -173,7 +176,7 @@ const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
               maxHeight={300}
               labelField="label"
               valueField="value"
-              placeholder="请选择容器类型"
+              placeholder="请选择容器类型" 
               searchPlaceholder="搜索..."
               value={formData.ebox_type}
               onChange={(item) => {
@@ -197,8 +200,8 @@ const EboxForm =({formData, onFormDataChange,versionList}:EboxFormProps) => {
               data={allAreaList}
               search
               maxHeight={300}
-              labelField="name"
-              valueField="area_id"
+              labelField="label"
+              valueField="value"
               placeholder="请选择区域"
               searchPlaceholder="搜索..."
               mode='default'

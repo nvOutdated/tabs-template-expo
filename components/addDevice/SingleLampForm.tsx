@@ -14,9 +14,10 @@ export interface SingleLampFormData {
 interface SingleLampFormProps {
   formData: SingleLampFormData;
   onFormDataChange: (data: SingleLampFormData) => void;
+  allAreaList:any[];
 }
 
-const SingleLampForm = ({ formData, onFormDataChange }: SingleLampFormProps) => {
+const SingleLampForm = ({ formData, onFormDataChange,allAreaList }: SingleLampFormProps) => {
   return (
     <ScrollView className="flex-1 p-4 bg-background-50">
       <View className="mb-6">
