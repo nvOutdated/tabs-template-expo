@@ -79,8 +79,10 @@ type Props = {
   loading: boolean;
   hasMore?: boolean;
   onUpdateEbox?: (updatedEbox: any) => void;
-  onEditEbox?: (ebox: ElectricItem) => void;
+  onEditEbox?: (ebox: any) => void;
   onDeleteEbox?: (ebox: ElectricItem) => void;
+  setIsAnyItemEditing:(params:boolean)=>void;
+  isAnyItemEditing:boolean
 };
 
 const { width } = Dimensions.get("window");
@@ -96,12 +98,14 @@ export default function EboxList({
   hasMore = true,
   onUpdateEbox,
   onEditEbox,
-  onDeleteEbox
+  onDeleteEbox,
+  setIsAnyItemEditing,
+  isAnyItemEditing,
 }: Props){
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedEbox, setSelectedEbox] = useState<ElectricItem | null>(null);
-  const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
+  // const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
 
   const handleImagePress = useCallback((images: ImageSource[], ebox: ElectricItem) => {
     setSelectedImages(images);
@@ -622,6 +626,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+    marginLeft:5,
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,

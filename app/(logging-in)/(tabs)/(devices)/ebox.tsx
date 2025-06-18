@@ -1,10 +1,13 @@
 import { getEboxListApi } from "@/api/street/configuration";
+import { get_version_list } from "@/api/street/streetCommon";
+import { EboxFormData } from "@/components/addDevice/EboxForm";
 import AreaDrawer, { Area, Device } from "@/components/ebox/AreaDrawer";
 import DeviceDrawer from "@/components/ebox/DeviceDrawer";
 import EboxList from "@/components/ebox/EboxList";
 import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
+import PublicEditModal from "@/components/public/publicModal/publicEditModal";
 import { useAreaStore } from "@/store/areaStore";
 import {
   DEVICE_STATUS,
@@ -49,7 +52,7 @@ export default function EboxScreen() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedEbox, setSelectedEbox] = useState<any>(null);
+  // const [selectedEbox, setSelectedEbox] = useState<any>(null);
   const [selectedArea, setSelectedArea] = useState<Area>({
     area_id: 0,
     name: "",
@@ -76,20 +79,57 @@ export default function EboxScreen() {
     operations,
     addOperation,
   } = useEboxStore();
+  const [versionList, setVersionList] = useState<any>([]);
+  const { areaList, areaWithDevicesList,allAreaList } = useAreaStore();
+  const [allAreaListprops,setAllAreaListprops] = useState<any>([])
+  const [editItem,setEditItem] =  useState<EboxFormData>()
 
-  const { areaList, areaWithDevicesList } = useAreaStore();
-
+  const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
   const currentServer = useGlobalStore((state) => state.currentServer);
-
+  
   const isScreenFocused = useRef(true);
   
-  const onEditBox = (item:any)=>{
-    setSelectedEbox(item);
+  useEffect(() => {
+    get_version_list({}).then(res => {
+      if (res.code === 200) {
+        const setVersionListData = res.data.map((item:any)=>{
+          return {
+            key:item,
+            value:item,
+            label:item,
+          }
+        })
+        setVersionList(setVersionListData)
+      }
+    })
+    const setAllAreaListpropsData = allAreaList.map((item:any)=>{
+      return {
+        key:item.area_id,
+        value:item.area_id,
+        label:item.name,
+      }
+    })
+    setAllAreaListprops(setAllAreaListpropsData)
+  }, [])
+   
+  const onEditBox = (item:EboxFormData)=>{
+    console.log("点击修改",item);
+    
+    setEditItem(item);
     setEditModalVisible(true);
   }
 
   const onRemoveBox = (item:any)=>{
     console.log(item,"点击删除");
+  }
+  
+  const closeEditModal = ()=>{
+    setEditModalVisible(false)
+  }
+
+  const saveEdit = ()=>{
+    console.log("保存成功");
+    
   }
 
   const handleSaveEdit = (data: any) => {
@@ -174,6 +214,7 @@ export default function EboxScreen() {
     setHasMore(true);
     endReachedRef.current = false;
     loadEleBoxList(1, true);
+    setIsAnyItemEditing(false)
   }, []);
 
   useEffect(() => {
@@ -544,6 +585,8 @@ export default function EboxScreen() {
             onUpdateEbox={handleUpdateEbox}
             onEditEbox={onEditBox}
             onDeleteEbox={onRemoveBox}
+            setIsAnyItemEditing={setIsAnyItemEditing}
+            isAnyItemEditing={isAnyItemEditing}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
@@ -568,6 +611,15 @@ export default function EboxScreen() {
         selectedDevices={selectedDevices}
         onDeviceSelect={handleDeviceSelect}
         onAreaSelect={handleAreaSelect}
+      />
+
+      <PublicEditModal
+       visible={editModalVisible}
+       onClose={closeEditModal}
+       onSave={saveEdit}
+       initialData={editItem || {} as EboxFormData}
+       versionList={versionList}
+       allAreaList={allAreaListprops}
       />
     </GestureHandlerRootView>
   );

@@ -36,7 +36,7 @@ export interface EboxFormData {
   model: string;
   e_meter: string;
   remark: string;
-}
+} 
 interface EboxFormProps {
   formData: EboxFormData;
   onFormDataChange: (data: EboxFormData) => void;
