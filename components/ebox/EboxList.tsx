@@ -12,6 +12,15 @@ import {
   Text,
   View
 } from "react-native";
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
 import ImageModal from "../public/ImageModal";
 
 type ImageSource = {
@@ -70,6 +79,8 @@ type Props = {
   loading: boolean;
   hasMore?: boolean;
   onUpdateEbox?: (updatedEbox: any) => void;
+  onEditEbox?: (ebox: ElectricItem) => void;
+  onDeleteEbox?: (ebox: ElectricItem) => void;
 };
 
 const { width } = Dimensions.get("window");
@@ -83,11 +94,14 @@ export default function EboxList({
   refreshControl,
   loading,
   hasMore = true,
-  onUpdateEbox
+  onUpdateEbox,
+  onEditEbox,
+  onDeleteEbox
 }: Props){
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedEbox, setSelectedEbox] = useState<ElectricItem | null>(null);
+  const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
 
   const handleImagePress = useCallback((images: ImageSource[], ebox: ElectricItem) => {
     setSelectedImages(images);
@@ -112,15 +126,108 @@ export default function EboxList({
 
   // 优化后的 ElectricItem 组件
   const ElectricItem = memo(({ item }: { item: ElectricItem }) => {
+    const [showActions, setShowActions] = useState(false);
+    const translateX = useSharedValue(0);
+    const scale = useSharedValue(1);
+    const opacity = useSharedValue(0);
+
     const handleConfigPress = useCallback(() => {
       getConfigurationDetails(item);
     }, [item]);
 
     const handleImagePressLocal = useCallback(() => {
-      // 传递所有附件图片，如果没有则传递空数组
       const images = item.computed.attachments || [];
       handleImagePress(images, item);
     }, [item.computed.attachments, handleImagePress]);
+
+    const handleEdit = useCallback(() => {
+      if (onEditEbox) {
+        onEditEbox(item);
+      }
+      // setShowActions(false);
+    }, [item, onEditEbox]);
+
+    const handleDelete = useCallback(() => {
+      if (onDeleteEbox) {
+        onDeleteEbox(item);
+      }
+      // setShowActions(false);
+    }, [item, onDeleteEbox]);
+
+    const toggleActions = useCallback(() => {
+      const newShowActions = !showActions;
+      setShowActions(newShowActions);
+      setIsAnyItemEditing(newShowActions);
+      
+      if (newShowActions) {
+        translateX.value = withSpring(40, {
+          damping: 15,
+          stiffness: 100,
+          mass: 0.5
+        });
+        scale.value = withSpring(0.98, {
+          damping: 15,
+          stiffness: 100,
+          mass: 0.5
+        });
+        opacity.value = withTiming(1, {
+          duration: 200,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
+      } else {
+        translateX.value = withSpring(0, {
+          damping: 15,
+          stiffness: 100,
+          mass: 0.5
+        });
+        scale.value = withSpring(1, {
+          damping: 15,
+          stiffness: 100,
+          mass: 0.5
+        });
+        opacity.value = withTiming(40, {
+          duration: 200,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
+      }
+    }, [showActions]);
+
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(500)
+      .onStart(() => {
+        runOnJS(toggleActions)();
+      });
+
+    const tapGesture = Gesture.Tap()
+      .onStart(() => {
+        if (showActions) {
+          runOnJS(toggleActions)();
+        }
+      });
+
+    const composed = Gesture.Simultaneous(longPressGesture, tapGesture);
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          { translateX: translateX.value },
+          { scale: scale.value }
+        ],
+      };
+    });
+
+    // const actionButtonsStyle = useAnimatedStyle(() => {
+    //   return {
+    //     opacity: opacity.value,
+    //     transform: [
+    //       { translateX: withSpring(showActions ? 0 : 40, {
+    //         damping: 15,
+    //         stiffness: 100,
+    //         mass: 0.5
+    //       }) }
+    //     ]
+    //   };
+    // });
 
     // 在组件内部计算回路状态
     const loopElements = useMemo(() => {
@@ -140,76 +247,94 @@ export default function EboxList({
 
     return (
       <View>
-        <Pressable style={styles.card} className="bg-background-50">
-          <View style={styles.containerTitle}>
-            <Text
-              style={styles.title}
-              className="text-info-500"
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
-          </View>
-          
-          <View style={styles.pointConfig}>
-            <Pressable
-              style={styles.configButton}
-              onPress={handleConfigPress}
-            >
-              <Ionicons name="settings-outline" size={20} color="#409eff" />
-              <Text style={styles.configButtonText}>组态</Text>
-            </Pressable>
-          </View>
-          
-          <View style={styles.imageRowContainer}>
-            <Pressable
-              style={styles.thumbnailContainer}
-              onPress={handleImagePressLocal}
-            >
-              <Image
-                source={item.computed.thumbnailSource}
-                style={styles.thumbnail}
-                contentFit="contain"
-              />
-            </Pressable>
-
-            <View style={styles.infoContainer}>
-              <Text
-                style={styles.code}
-                className="text-tertiary-900"
-                numberOfLines={1}
-              >
-                编号: {item.device_info.device_code}
-              </Text>
-              <Text
-                style={styles.address}
-                className="text-tertiary-900"
-                numberOfLines={1}
-              >
-                位置: {item.addr}
-              </Text>
-              
-              <View style={styles.statusContainer}>
-                <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
-                {item.computed.deviceStatus && (
-                  <View className="flex-row items-center">
-                    <View style={[styles.statusDot, styles[item.computed.deviceStatus.dotStyle]]} />
-                    <Text style={[styles.statusText, styles[item.computed.deviceStatus.textStyle]]}>
-                      {item.computed.deviceStatus.label}
-                    </Text>
-                  </View>
-                )}
+        <GestureDetector gesture={composed}>
+          <Animated.View style={[styles.cardContainer, animatedStyle]}>
+            <Pressable style={styles.card} className="bg-background-50">
+              <View style={styles.containerTitle}>
+                <Text
+                  style={styles.title}
+                  className="text-info-500 ml-2"
+                  numberOfLines={1}
+                >
+                  {item.name}
+                </Text>
               </View>
               
-              <View style={styles.loopsContainer}>
-                <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
-                <View style={styles.loopsGrid}>
-                  {loopElements}
+              <View style={styles.pointConfig}>
+                <Pressable
+                  style={styles.configButton}
+                  onPress={handleConfigPress}
+                >
+                  <Ionicons name="settings-outline" size={20} color="#409eff" />
+                  <Text style={styles.configButtonText}>组态</Text>
+                </Pressable>
+              </View>
+              
+              <View style={styles.imageRowContainer}>
+                <Pressable
+                  style={styles.thumbnailContainer}
+                  onPress={handleImagePressLocal}
+                >
+                  <Image
+                    source={item.computed.thumbnailSource}
+                    style={styles.thumbnail}
+                    contentFit="contain"
+                  />
+                </Pressable>
+
+                <View style={styles.infoContainer}>
+                  <Text
+                    style={styles.code}
+                    className="text-tertiary-900"
+                    numberOfLines={1}
+                  >
+                    编号: {item.device_info.device_code}
+                  </Text>
+                  <Text
+                    style={styles.address}
+                    className="text-tertiary-900"
+                    numberOfLines={1}
+                  >
+                    位置: {item.addr}
+                  </Text>
+                  
+                  <View style={styles.statusContainer}>
+                    <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
+                    {item.computed.deviceStatus && (
+                      <View className="flex-row items-center">
+                        <View style={[styles.statusDot, styles[item.computed.deviceStatus.dotStyle]]} />
+                        <Text style={[styles.statusText, styles[item.computed.deviceStatus.textStyle]]}>
+                          {item.computed.deviceStatus.label}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.loopsContainer}>
+                    <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
+                    <View style={styles.loopsGrid}>
+                      {loopElements}
+                    </View>
+                  </View>
                 </View>
               </View>
-            </View>
-          </View>
-        </Pressable>
+            </Pressable>
+            <Animated.View style={[styles.actionButtons]}>
+              <Pressable 
+                style={[styles.actionButton, styles.editButton]} 
+                onPress={handleEdit}
+              >
+                <Ionicons name="create-outline" size={20} color="#fff" />
+              </Pressable>
+              <Pressable 
+                style={[styles.actionButton, styles.deleteButton]} 
+                onPress={handleDelete}
+              >
+                <Ionicons name="trash-outline" size={20} color="#fff" />
+              </Pressable>
+            </Animated.View>
+          </Animated.View>
+        </GestureDetector>
       </View>
     );
   });
@@ -250,12 +375,10 @@ export default function EboxList({
 
   return (
     <>
-      {/* FlashList Implementation */}
       <View className="flex-1">
         <FlashList
           data={electricBoxes}
           renderItem={renderItem}
-          // keyExtractor={keyExtractor}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.container}
           onEndReached={onEndReached}
@@ -263,8 +386,10 @@ export default function EboxList({
           refreshControl={refreshControl}
           ListEmptyComponent={ListEmptyComponent}
           ListFooterComponent={ListFooterComponent}
-          estimatedItemSize={CARD_HEIGHT}
+          estimatedItemSize={CARD_HEIGHT + CARD_MARGIN}
           removeClippedSubviews={true}
+          ItemSeparatorComponent={() => <View style={{ height: CARD_MARGIN }} />}
+          scrollEnabled={!isAnyItemEditing}
         />
       </View>
       <ImageModal
@@ -278,7 +403,9 @@ export default function EboxList({
       />
     </>
   );
-}const styles = StyleSheet.create({
+}
+
+const styles = StyleSheet.create({
   flashListContainer: {
     flex: 1,
     height: '100%',
@@ -296,6 +423,11 @@ export default function EboxList({
   container: {
     padding: CARD_MARGIN,
     paddingBottom: 50,
+  },
+  cardContainer: {
+    position: 'relative',
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
   },
   card: {
     width: CARD_WIDTH,
@@ -468,6 +600,37 @@ export default function EboxList({
     fontSize: 10,
     color: "#666",
     textAlign: "center",
+  },
+  actionButtons: {
+    position: 'absolute',
+    left: -50,
+    top: 0,
+    height: '100%',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  editButton: {
+    backgroundColor: '#409eff',
+  },
+  deleteButton: {
+    backgroundColor: '#f56c6c',
   },
 });
 

@@ -11,9 +11,9 @@ import { showMessageModal } from "@/components/ui/MessageGlobalModal";
 import useLoadingStore from '@/store/loadingStore';
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import CustomSelectPicker from '../public/CustomSelectPicker';
 
 interface BatchControlModalProps {
   visible: boolean;
@@ -61,6 +61,25 @@ export default function BatchControlModal({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { showLoading, hideLoading } = useLoadingStore();
+
+  const commOptions = [
+    { label: "单控", value: "COMM_NORMAL" },
+    { label: "组控", value: "COMM_GROUP" },
+    { label: "广播", value: "COMM_BROADCAST" }
+  ];
+
+  const methodOptions = [
+    { label: "开灯", value: "MD_ON" },
+    { label: "关灯", value: "MD_OFF" },
+    { label: "调光", value: "MD_DIM" },
+    { label: "查询", value: "MD_DETECT" }
+  ];
+
+  const groupOptions = Array.from({ length: 16 }, (_, i) => ({
+    label: `${i + 1}组`,
+    value: i + 1
+  }));
+
   const handleConfirm = async () => {
     if (!eboxId || !lineId) {
       showMessageModal({
@@ -246,102 +265,56 @@ export default function BatchControlModal({
           {activeTab === 'single' ? (
             <View style={styles.formContainer}>
               {/* 操作模式选择 */}
-              <View style={styles.formItem}>
-                <View style={styles.formItemRow}>
-                  <Text style={styles.label}>操作模式</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={formData.comm}
-                      onValueChange={(value) => {
-                        // 如果切换到单控模式但没有选择控制器，显示提示
-                        if (value === "COMM_NORMAL" && !controllerId) {
-                          showMessageModal({
-                            type: 'warning',
-                            message: '单控模式需要选择控制器'
-                          });
-                          return;
-                        }
-                        setFormData({ ...formData, comm: value });
-                      }}
-                      style={styles.picker}
-                      itemStyle={{
-                        height: 40,
-                        lineHeight: 40,
-                        padding: 0,
-                        margin: 0,
-                      }}
-                      mode="dropdown"
-                    >
-                      <Picker.Item
-                        label="单控"
-                        value="COMM_NORMAL"
-                        enabled={!!controllerId}
-                      />
-                      <Picker.Item label="组控" value="COMM_GROUP" />
-                      <Picker.Item label="广播" value="COMM_BROADCAST" />
-                    </Picker>
-                  </View>
+              <View className="mb-4">
+                <View className="flex-row items-center gap-3">
+                  <Text className="text-base text-gray-600 w-20">操作模式</Text>
+                  <CustomSelectPicker
+                    options={commOptions}
+                    value={formData.comm}
+                    onChange={(value: string) => {
+                      if (value === "COMM_NORMAL" && !controllerId) {
+                        showMessageModal({
+                          type: 'warning',
+                          message: '单控模式需要选择控制器'
+                        });
+                        return;
+                      }
+                      setFormData({ ...formData, comm: value as "COMM_NORMAL" | "COMM_GROUP" | "COMM_BROADCAST" });
+                    }}
+                    className="flex-1 h-12"
+                    placeholder="请选择操作模式"
+                    initialLabel="组控"
+                  />
                 </View>
               </View>
 
               {/* 组控模式选择 */}
-              <View style={styles.formItem}>
-                <View style={styles.formItemRow}>
-                  <Text style={styles.label}>组控模式</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={formData.group}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, group: value })
-                      }
-                      style={styles.picker}
-                      itemStyle={{
-                        height: 40,
-                        lineHeight: 40,
-                        padding: 0,
-                        margin: 0,
-                      }}
-                      mode="dropdown"
-                    >
-                      {Array.from({ length: 16 }, (_, i) => (
-                        <Picker.Item
-                          key={i + 1}
-                          label={`${i + 1}组`}
-                          value={i + 1}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
+              <View className="mb-4">
+                <View className="flex-row items-center gap-3">
+                  <Text className="text-base text-gray-600 w-20">组控模式</Text>
+                  <CustomSelectPicker
+                    options={groupOptions.map(opt => ({ ...opt, value: opt.value.toString() }))}
+                    value={formData.group.toString()}
+                    onChange={(value: string) => setFormData({ ...formData, group: parseInt(value) })}
+                    className="flex-1 h-12"
+                    placeholder="请选择组控模式"
+                    initialLabel="1组"
+                  />
                 </View>
               </View>
 
               {/* 控制方式选择 */}
-              <View style={styles.formItem}>
-                <View style={styles.formItemRow}>
-                  <Text style={styles.label}>控制方式</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={formData.method}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, method: value })
-                      }
-                      style={styles.picker}
-                      itemStyle={{
-                        height: 30,
-                        lineHeight: 1,
-                        padding: 0,
-                        margin: 0,
-                        includeFontPadding: false,
-                        textAlignVertical: 'center'
-                      }}
-                      mode="dropdown"
-                    >
-                      <Picker.Item label="开灯" value="MD_ON" />
-                      <Picker.Item label="关灯" value="MD_OFF" />
-                      <Picker.Item label="调光" value="MD_DIM" />
-                      <Picker.Item label="查询" value="MD_DETECT" />
-                    </Picker>
-                  </View>
+              <View className="mb-4">
+                <View className="flex-row  items-center gap-3">
+                  <Text className="text-base text-gray-600 w-20">控制方式</Text>
+                  <CustomSelectPicker
+                    options={methodOptions}
+                    value={formData.method}
+                    onChange={(value: string) => setFormData({ ...formData, method: value as "MD_ON" | "MD_OFF" | "MD_DIM" | "MD_DETECT" })}
+                    className="flex-1 h-12"
+                    placeholder="请选择控制方式"
+                    initialLabel="开灯"
+                  />
                 </View>
               </View>
 
@@ -389,7 +362,7 @@ export default function BatchControlModal({
                           <Ionicons name="checkmark" size={16} color="#1890ff" />
                         )}
                       </View>
-                      <Text className={`text-sm ${formData.enabledA ? 'text-blue-500' : 'text-gray-600'
+                      <Text className={`text-base ${formData.enabledA ? 'text-blue-500' : 'text-gray-600'
                         }`}>
                         A灯
                       </Text>
@@ -407,7 +380,7 @@ export default function BatchControlModal({
                           <Ionicons name="checkmark" size={16} color="#1890ff" />
                         )}
                       </View>
-                      <Text className={`text-sm ${formData.enabledB ? 'text-blue-500' : 'text-gray-600'
+                      <Text className={`text-base ${formData.enabledB ? 'text-blue-500' : 'text-gray-600'
                         }`}>
                         B灯
                       </Text>

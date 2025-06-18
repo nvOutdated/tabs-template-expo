@@ -1,7 +1,6 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator, MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
-
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
@@ -9,7 +8,7 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CameraScreen from "./camera";
@@ -130,6 +129,7 @@ export default function TabConfigurationLayout() {
           animationEnabled: true,
         }}
       >
+        
         {TAB_CONFIG.map((tab) => (
           <Tab.Screen
             key={tab.name}

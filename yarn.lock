@@ -1801,11 +1801,6 @@
   resolved "https://registry.npmmirror.com/@react-native-community/slider/-/slider-4.5.6.tgz"
   integrity sha512-UhLPFeqx0YfPLrEz8ffT3uqAyXWu6iqFjohNsbp4cOU7hnJwg2RXtDnYHoHMr7MOkZDVdlLMdrSrAuzY6KGqrg==
 
-"@react-native-picker/picker@^2.11.0":
-  version "2.11.0"
-  resolved "https://registry.npmmirror.com/@react-native-picker/picker/-/picker-2.11.0.tgz"
-  integrity sha512-QuZU6gbxmOID5zZgd/H90NgBnbJ3VV6qVzp6c7/dDrmWdX8S0X5YFYgDcQFjE3dRen9wB9FWnj2VVdPU64adSg==
-
 "@react-native/assets-registry@0.79.2":
   version "0.79.2"
   resolved "https://registry.npmmirror.com/@react-native/assets-registry/-/assets-registry-0.79.2.tgz"
@@ -2228,11 +2223,6 @@
   version "0.0.29"
   resolved "https://registry.npmmirror.com/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
-
-"@types/lodash@^4.17.16":
-  version "4.17.17"
-  resolved "https://registry.npmmirror.com/@types/lodash/-/lodash-4.17.17.tgz"
-  integrity sha512-RRVJ+J3J+WmyOTqnz3PiBLA501eKwXl2noseKOrNo/6+XEHjTAxO4xHvxQB6QuNm+s4WRbn6rSiap8+EA+ykFQ==
 
 "@types/node@*":
   version "24.0.3"
@@ -4208,7 +4198,7 @@ expo-image-picker@~16.1.4:
 
 expo-image@~2.3.0:
   version "2.3.0"
-  resolved "https://registry.npmmirror.com/expo-image/-/expo-image-2.3.0.tgz#8533273acdae43d730b28cb78b6d3564d334c291"
+  resolved "https://registry.npmmirror.com/expo-image/-/expo-image-2.3.0.tgz"
   integrity sha512-muL8OSbgCskQJsyqenKPNULWXwRm5BY2ruS6WMo/EzFyI3iXI/0mXgb2J/NXUa8xCEYxSyoGkGZFyCBvGY1ofA==
 
 expo-json-utils@~0.15.0:
@@ -5772,11 +5762,6 @@ lodash.throttle@^4.1.1:
   resolved "https://registry.npmmirror.com/lodash.throttle/-/lodash.throttle-4.1.1.tgz"
   integrity sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==
 
-lodash@^4.17.21:
-  version "4.17.21"
-  resolved "https://registry.npmmirror.com/lodash/-/lodash-4.17.21.tgz"
-  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
-
 log-symbols@^2.2.0:
   version "2.2.0"
   resolved "https://registry.npmmirror.com/log-symbols/-/log-symbols-2.2.0.tgz"
@@ -6857,13 +6842,6 @@ react-native-edge-to-edge@1.6.0:
   version "1.6.0"
   resolved "https://registry.npmmirror.com/react-native-edge-to-edge/-/react-native-edge-to-edge-1.6.0.tgz"
   integrity sha512-2WCNdE3Qd6Fwg9+4BpbATUxCLcouF6YRY7K+J36KJ4l3y+tWN6XCqAC4DuoGblAAbb2sLkhEDp4FOlbOIot2Og==
-
-react-native-element-dropdown@^2.12.4:
-  version "2.12.4"
-  resolved "https://registry.npmmirror.com/react-native-element-dropdown/-/react-native-element-dropdown-2.12.4.tgz"
-  integrity sha512-abZc5SVji9FIt7fjojRYrbuvp03CoeZJrgvezQoDoSOrpiTqkX69ix5m+j06W2AVncA0VWvbT+vCMam8SoVadw==
-  dependencies:
-    lodash "^4.17.21"
 
 react-native-gesture-handler@~2.24.0:
   version "2.24.0"

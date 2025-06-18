@@ -3,15 +3,15 @@ import { themeColors } from '@/constants/themeColors';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Pressable, StatusBar, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ImageBackground, Pressable, StatusBar, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
+  withDelay,
   withSequence,
-  withTiming
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,88 +19,119 @@ type CustomHeaderProps = {
   title: string;
 };
 
-
 export function CustomHeader({ title }: CustomHeaderProps) {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const currentTheme = themeColors[theme as keyof typeof themeColors];
   const insets = useSafeAreaInsets();
-  const titleOffset = useSharedValue(0);
-  useEffect(() => { 
-    // 设置标题轮播动画
-    titleOffset.value = withRepeat(
-      withSequence(
-        withTiming(0, { duration: 1000, easing: Easing.linear }),
-        withTiming(-20, { duration: 1000, easing: Easing.linear }),
-        withTiming(-20, { duration: 1000, easing: Easing.linear }), // 增加停留时间
-        withTiming(10, { duration: 2000, easing: Easing.linear })
-      ),
-      -1,
-      true
+  
+  // 广告牌内容数组
+  const billboardTexts = [title, 'CREATED BY XDD'];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef<number | null>(null);
+
+  // 简化的动画值
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  const startAnimation = () => {
+    // 简单的上下滑动效果
+    translateY.value = withSequence(
+      withTiming(-40, { duration: 600, easing: Easing.inOut(Easing.quad) }),
+      withTiming(40, { duration: 0 }), // 立即移到下方
+      withTiming(0, { duration: 600, easing: Easing.inOut(Easing.quad) })
     );
+
+    opacity.value = withSequence(
+      withTiming(0, { duration: 300 }),
+      withDelay(100, withTiming(1, { duration: 100 }))
+    );
+  };
+
+  useEffect(() => {
+    // 延迟启动动画
+    const startTimer = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        startAnimation();
+        
+        // 在动画中途更新文本内容
+        setTimeout(() => {
+          setCurrentIndex(prev => (prev + 1) % billboardTexts.length);
+        }, 300);
+      }, 5000);
+    }, 5000);
+
+    return () => {
+      clearTimeout(startTimer);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
-  const animatedTitleStyle = useAnimatedStyle(() => {
+  const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: titleOffset.value }],
+      transform: [{ translateY: translateY.value }],
+      opacity: opacity.value,
     };
   });
 
   const pathToMessage = () => {
-    router.push('/(logging-in)/(modal)/messageModal')
-  }
+    router.push('/(logging-in)/(modal)/messageModal');
+  };
 
-  return (     
+  return (
+    <View className='relative w-full'>
+    <ImageBackground
+      source={require('@/assets/images/background/imageBgc.png')}
+      style={{
+        width: '100%',
+        minHeight: 35 + insets.top,
+      }}
+      resizeMode="cover"
+    >
+      <StatusBar backgroundColor="transparent" translucent />
       <View style={{ 
-        padding: 12,
+        padding: 5,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        // backgroundColor:"transparent",
         paddingTop: insets.top,
-        backgroundColor:currentTheme.headerBg,
+        backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0, 0, 0, 0.1)',
       }}>
-         <StatusBar backgroundColor="transparent" translucent />
-        <View style={{ flex: 3/5, height: 30, overflow: 'hidden' }}>
+        
+        
+        <View style={{ 
+          flex: 3/5, 
+          height: 30, 
+          overflow: 'hidden',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
           <Animated.View style={[
-            { 
-              height: 40,
+            {
+              width: '100%',
               justifyContent: 'center',
-              alignItems: 'center'
-            }, 
-            animatedTitleStyle
+              alignItems: 'flex-start',
+              height: 30,
+            },
+            animatedStyle,
           ]}>
-            <View style={{ height: 30, justifyContent: 'center' }}>
-              <Text style={{ 
-                fontSize: 20,
-                fontWeight: 'bold',
-                color: currentTheme.textColor,
-                textAlign: 'center'
-              }}>
-                {title}
-              </Text>
-            </View>
-            <View style={{ height: 30, justifyContent: 'center' }}>
-              <Text style={{ 
-                fontSize: 20,
-                fontWeight: 'bold',
-                color: currentTheme.textColor,
-                textAlign: 'center'
-              }}>
-                {'CREAT BY XDD'}
-              </Text>
-            </View>
+            <Text style={{ 
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: currentTheme.textColor,
+              textAlign: 'left',
+              marginLeft: 10,
+            }}>
+              {billboardTexts[currentIndex]}
+            </Text>
           </Animated.View>
         </View>
         
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-         {/*  <Text style={{ 
-            fontSize: 12,
-            color: '#666',
-            marginRight: 10
-          }}>
-            CREAT BY XDD
-          </Text> */}
+        <View className='flex-row align-middle mr-2' >
           <Pressable onPress={pathToMessage}>
             <View>
               <AntDesign 
@@ -112,6 +143,7 @@ export function CustomHeader({ title }: CustomHeaderProps) {
           </Pressable>
         </View>
       </View>
-  /*   </ImageBackground> */
+    </ImageBackground>
+    </View>
   );
 }

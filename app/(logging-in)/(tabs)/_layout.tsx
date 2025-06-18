@@ -43,7 +43,7 @@ export default function TabLoggingLayout() {
             height: isLandscape ? 50 : 60,
           }}>
             <ImageBackground
-              source={require('@/assets/images/background/birdBgc.png')}
+              source={require('@/assets/images/background/imageBgc.png')}
               style={{
                 width: '100%',
                 height: '100%',
@@ -55,7 +55,19 @@ export default function TabLoggingLayout() {
         ),
       }}
     >
-      
+        <Tabs.Screen
+        name="(firstPage)"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }: any) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              color={color}
+              size={isLandscape ? 30 : 20}
+            />
+          ),
+        }}
+      />
        <Tabs.Screen
         name="(devices)"
         options={{
@@ -72,19 +84,7 @@ export default function TabLoggingLayout() {
         }}
       />
       
-      <Tabs.Screen
-        name="(plan)"
-        options={{
-          title: "plan",
-          tabBarIcon: ({ color, focused }: any) => (
-            <Ionicons
-              name={focused ? "document-text" : "document-text-outline"}
-              color={color}
-              size={isLandscape ? 30 : 20}
-            />
-          ),
-        }}
-      />
+    
        <Tabs.Screen
         name="(gis)"
         options={{

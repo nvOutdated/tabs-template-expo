@@ -23,7 +23,7 @@ export default function AuthLayout(): JSX.Element {
 
   // 监听 WebSocket 报警数据
   useEffect(() => {
-    if (WS_SmartLight_Data?.type === "warning"||WS_SmartLight_Data?.type === "dataChange" && isConnected) {
+    if (WS_SmartLight_Data?.type === "warning"&& isConnected) {
       const deviceInfo = {
         online: WS_SmartLight_Data.data?.online ?? true,
         open: WS_SmartLight_Data.data?.open ?? false,
@@ -69,8 +69,6 @@ export default function AuthLayout(): JSX.Element {
           warn: deviceInfo.warn,
         },
       };
-      console.log("添加报警记录");
-      
       addAlarm(newAlarm);
     }
   }, [WS_SmartLight_Data, isConnected, addAlarm]);

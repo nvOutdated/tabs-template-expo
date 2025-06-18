@@ -2,8 +2,8 @@ import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Dropdown } from 'react-native-element-dropdown';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import CustomSelectPicker from '../public/CustomSelectPicker';
 
 const gatewayTypes = [
   { label: "集中控制器", value: "Central" },
@@ -18,40 +18,6 @@ const containerTypes = [
   { value: 'TRANSFORMER', label: "箱变" },
   { value: "OTHER", label: "其他" }
 ];
-
-const styles = StyleSheet.create({
-  dropdown: {
-    height: 40,
-    borderColor: '#E5E5E5',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    textAlign: 'center',
-    backgroundColor: '#fff',
-    flex: 1,
-    fontSize: 14,
-  },
-  icon: {
-    marginRight: 5,
-  },
-  placeholderStyle: {
-    fontSize: 14,
-    color: '#999',
-  },
-  selectedTextStyle: {
-    fontSize: 14,
-    color: '#333',
-  },
-  iconStyle: {
-    width: 20,
-    height: 20,
-  },
-  inputSearchStyle: {
-    height: 50,
-    fontSize: 14,
-    color: '#333',
-  },
-});
 
 export interface EboxFormData {
   device_info: {
@@ -74,8 +40,8 @@ export interface EboxFormData {
 interface EboxFormProps {
   formData: EboxFormData;
   onFormDataChange: (data: EboxFormData) => void;
-  versionList:string[];
-  allAreaList:any[];
+  versionList: { label: string; value: string; }[];
+  allAreaList: { label: string; value: string; }[];
 }
 
 const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormProps) => {
@@ -115,23 +81,16 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
 
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">网关类型</Text>
-      
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              iconStyle={styles.iconStyle}
-              data={gatewayTypes}
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="请选择网关类型"
-              searchPlaceholder="搜索..."
+          <Text className="text-base text-primary-500 w-20 ">网关类型</Text>
+            <CustomSelectPicker
+              options={gatewayTypes}
               value={formData.device_info?.device_type}
-              onChange={(item) => {
-                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_type:item.value} });
-              }}
+              initialLabel={'集中控制器'}
+              onChange={(value) =>
+                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_type:value} })
+              }
+              className='flex-1'
+              placeholder="请选择网关类型"
             />
       
         </View>
@@ -166,74 +125,49 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">容器类型</Text>
-       
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              iconStyle={styles.iconStyle}
-              data={containerTypes}
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="请选择容器类型" 
-              searchPlaceholder="搜索..."
-              value={formData.ebox_type}
-              onChange={(item) => {
-                onFormDataChange({ ...formData, ebox_type: item.value });
-              }}
-            />
-        
+          <CustomSelectPicker
+            options={containerTypes}
+            value={formData.ebox_type}
+            initialLabel={'配电箱'}
+            onChange={(value) =>
+              onFormDataChange({ ...formData, ebox_type: value })
+            }
+            className='flex-1'
+            placeholder="请选择容器类型"
+          />
         </View>
       </View>
 
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">区域名称</Text>
-          
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              inputSearchStyle={styles.inputSearchStyle}
-              iconStyle={styles.iconStyle}
-              data={allAreaList}
-              search
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="请选择区域"
-              searchPlaceholder="搜索..."
-              mode='default'
-              value={formData.area_id}
-              onChange={(item) => {
-                onFormDataChange({ ...formData, area_id: item.value });
-              }}
-            /> 
+          <CustomSelectPicker
+            options={allAreaList}
+            value={formData.area_id}
+            initialLabel={allAreaList[0]?.label || ''}
+            onChange={(value) =>
+              onFormDataChange({ ...formData, area_id: value })
+            }
+            className='flex-1'
+            placeholder="请选择区域"
+            searchable={true}
+          />
         </View>
       </View>
 
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">版本协议</Text>
-          
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              iconStyle={styles.iconStyle}
-              data={versionList}
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="请选择版本协议"
-              searchPlaceholder="搜索..."
-              value={formData.version}
-              onChange={(item) => {
-                onFormDataChange({ ...formData, version: item.value });
-              }}
-            /> 
-         
+          <CustomSelectPicker
+            options={versionList}
+            value={formData.version}
+            initialLabel={versionList[0]?.label || ''}
+            onChange={(value) =>
+              onFormDataChange({ ...formData, version: value })
+            }
+            className='flex-1'
+            placeholder="请选择版本协议"
+          />
         </View>
       </View>
 
@@ -316,6 +250,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
           />
         </View>
       </View>
+      
     </ScrollView>
     </>
   );

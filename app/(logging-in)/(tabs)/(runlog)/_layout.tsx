@@ -11,8 +11,9 @@ const { width } = Dimensions.get("window");
 
 // 定义tab标题
 const TAB_CONFIG = [
-  { name: "lampLog", title: "路灯日志" },
   { name: "alarm", title: "实时报警" },
+  { name: "lampLog", title: "路灯日志" },
+
 ] as const;
 
 // 自定义TabBar组件

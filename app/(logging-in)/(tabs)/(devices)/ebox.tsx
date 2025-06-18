@@ -48,6 +48,8 @@ export default function EboxScreen() {
   const [loading, setLoading] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showDeviceDrawer, setShowDeviceDrawer] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedEbox, setSelectedEbox] = useState<any>(null);
   const [selectedArea, setSelectedArea] = useState<Area>({
     area_id: 0,
     name: "",
@@ -80,6 +82,20 @@ export default function EboxScreen() {
   const currentServer = useGlobalStore((state) => state.currentServer);
 
   const isScreenFocused = useRef(true);
+  
+  const onEditBox = (item:any)=>{
+    setSelectedEbox(item);
+    setEditModalVisible(true);
+  }
+
+  const onRemoveBox = (item:any)=>{
+    console.log(item,"点击删除");
+  }
+
+  const handleSaveEdit = (data: any) => {
+    handleUpdateEbox(data);
+    setEditModalVisible(false);
+  }
 
   // 添加页面焦点监听
   useFocusEffect(
@@ -204,7 +220,6 @@ export default function EboxScreen() {
           ) {
             // 更新设备状态
             // findEboxItems.
-            console.log('更新列表状态');
             setElectricBoxes((pre)=>{
               const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
               if(index!==-1){
@@ -527,6 +542,8 @@ export default function EboxScreen() {
             hasMore={hasMore}
             onEndReached={onEndReached}
             onUpdateEbox={handleUpdateEbox}
+            onEditEbox={onEditBox}
+            onDeleteEbox={onRemoveBox}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
