@@ -27,8 +27,8 @@ const TAB_CONFIG = [
   { name: "camera", title: "摄像头" },
 ] as const;
 
-// 自定义TabBar组件
-function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
+// 自定义TabBar组件 - 优化版本
+function CustomTabBar({ state, descriptors, navigation, position }: MaterialTopTabBarProps) {
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   
@@ -44,7 +44,8 @@ function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps
         backgroundColor: 'transparent',
         height: 40,
         width: width * 0.8,
-        marginTop: insets.top -5,
+        marginTop: insets.top - 5,
+        position: 'relative',
       }}
     >
       {state.routes.map((route, index) => {
@@ -85,8 +86,9 @@ function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps
                 height: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
+                paddingHorizontal: 4, // 添加内边距防止文字被截断
               }}
-              activeOpacity={1} // 完全禁用按压透明度变化
+              activeOpacity={0.7}
             >
               <Text
                 style={{
@@ -94,9 +96,11 @@ function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps
                   fontSize: isFocused ? 16 : 14,
                   fontWeight: isFocused ? "700" : "400",
                   textAlign: 'center',
-                  borderBottomWidth:2,
-                  borderBottomColor:isFocused ? currentTheme.activeTint:'transparent'
+                  // 添加过渡效果，让文字变化更平滑
+                  opacity: isFocused ? 1 : 0.7,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {displayLabel}
               </Text>
@@ -128,14 +132,15 @@ export default function TabConfigurationLayout() {
           swipeEnabled: true,
           animationEnabled: true,
         }}
+        initialLayout={{ width }}
       >
-        
         {TAB_CONFIG.map((tab) => (
           <Tab.Screen
             key={tab.name}
             name={tab.name}
             options={{
               title: tab.title,
+              lazy: false,
             }}
             component={
               tab.name === "index"
@@ -167,7 +172,7 @@ export default function TabConfigurationLayout() {
           onPress={() => {
             router.push("/(logging-in)/(modal)/addDeviceModal");
           }}
-          activeOpacity={1}
+          activeOpacity={0.7}
         >
           <Ionicons name="add" size={22} color={currentTheme.activeTint} />
         </TouchableOpacity>
