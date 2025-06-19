@@ -79,6 +79,9 @@ export interface EboxStore {
   addOperation: (operation: EboxOperation) => void;
   deleteOperations: (operationIds: Set<string>) => void;
   initializeEboxTree: () => Promise<void>;
+  updateEboxNode: (updatedEbox: ElectricItem) => void;
+  removeEboxNode: (deviceId: number) => void;
+  addEboxNode: (ebox: ElectricItem) => void;
 }
 
 // 添加设备状态比较函数
@@ -186,6 +189,17 @@ export const useEboxStore = create<EboxStore>((set, get) => ({
       )
     }));
   },
+  removeEboxNode: (deviceId: number) => {
+    set(state => ({
+      allEboxes: state.allEboxes.filter(ebox => ebox.id !== deviceId)
+    }));
+  },
+  addEboxNode:(ebox:ElectricItem)=>{
+    set(state => ({
+      allEboxes: [...state.allEboxes, ebox]
+    }));
+  }
+
 }));
 
 // 设备状态映射

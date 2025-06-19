@@ -5,6 +5,7 @@ import SmartLampForm, { SmartLampFormData } from '@/components/addDevice/SmartLa
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { useAreaStore } from '@/store/areaStore';
+import { useEboxStore } from '@/store/eboxStore';
 import useLoadingStore from '@/store/loadingStore';
 import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -118,7 +119,7 @@ export default function AddDeviceModal() {
   const [currentTab, setCurrentTab] = useState('ebox');
   const [location, setLocation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  
+  const { addEboxNode } = useEboxStore();
   const { allAreaList } = useAreaStore();
   const [allAreaListprops,setAllAreaListprops] = useState<any>([])
   // 表单数据状态
@@ -212,7 +213,6 @@ export default function AddDeviceModal() {
             }));
             break;
         }
-        console.log(location,"地址");
         
         showSuccess({
           message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
@@ -237,6 +237,8 @@ export default function AddDeviceModal() {
           showLoading()
           add_ebox({...eboxFormData}).then(res => {
             if (res.code == 200) {
+              const addEboxData:any = {...eboxFormData,id:res?.data?.id}
+              addEboxNode(addEboxData) 
               showSuccess({ message: '添加成功' });
             }else{
               showWarning({ message: res.message || '添加失败' });

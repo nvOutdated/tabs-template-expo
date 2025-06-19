@@ -3,18 +3,25 @@ import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Tabs } from "expo-router";
+import { Tabs, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { ImageBackground, View, useWindowDimensions } from "react-native";
+
 export default function TabLoggingLayout() {
   const currentTheme = useCurrentTheme();
   const {theme} = useTheme()
+  const segments = useSegments();
   // const currentTheme = themeColors[theme as keyof typeof themeColors];
   const { width, height } = useWindowDimensions();
   const [isLandscape, setIsLandscape] = useState(false);
+
+  // 检查当前是否在首页
+  const isHomePage = segments.includes('(firstPage)' as never);
+
   useEffect(() => {
     setIsLandscape(width > height);
   }, [width, height]);
+
   return (
     <Tabs
       screenOptions={{
@@ -42,15 +49,17 @@ export default function TabLoggingLayout() {
             backgroundColor: currentTheme.drawerBg,
             height: isLandscape ? 50 : 60,
           }}>
-            <ImageBackground
-              source={require('@/assets/images/background/imageBgc.png')}
-              style={{
-                width: '100%',
-                height: '100%',
-                opacity: theme === 'dark' ? 0.3 : 0.5,
-              }}
-              resizeMode="cover"
-            />
+            {isHomePage && (
+              <ImageBackground
+                source={require('@/assets/images/background/imageBgc.png')}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  opacity: theme === 'dark' ? 0.3 : 0.5,
+                }}
+                resizeMode="cover"
+              />
+            )}
           </View>
         ),
       }}

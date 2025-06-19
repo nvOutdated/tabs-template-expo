@@ -1,5 +1,5 @@
 import { getEboxListApi } from "@/api/street/configuration";
-import { get_version_list } from "@/api/street/streetCommon";
+import { edit_ebox, get_version_list, remove_ebox } from "@/api/street/streetCommon";
 import { EboxFormData } from "@/components/addDevice/EboxForm";
 import AreaDrawer, { Area, Device } from "@/components/ebox/AreaDrawer";
 import DeviceDrawer from "@/components/ebox/DeviceDrawer";
@@ -8,14 +8,17 @@ import EboxOperationList from "@/components/ebox/EboxOperationList";
 import NormalHeader from "@/components/ebox/NormalHeader";
 import OperationHeader from "@/components/ebox/OperationHeader";
 import PublicEditModal from "@/components/public/publicModal/publicEditModal";
+import RemoveTipModal from "@/components/public/publicModal/removeTipmodal";
+import { showMessageModal } from "@/components/ui/MessageGlobalModal";
 import { useAreaStore } from "@/store/areaStore";
 import {
   DEVICE_STATUS,
   EboxOperation,
   ElectricItem,
-  useEboxStore,
+  useEboxStore
 } from "@/store/eboxStore";
 import { useGlobalStore } from "@/store/globalStateStore";
+import useLoadingStore from "@/store/loadingStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -60,9 +63,7 @@ export default function EboxScreen() {
   });
   const [selectedDevice, setSelectedDevice] = useState<Device | undefined>();
   const [isOperationMode, setIsOperationMode] = useState(false);
-  const [electricBoxes, setElectricBoxes] = useState<ExtendedElectricItem[]>(
-    []
-  );
+  const [electricBoxes, setElectricBoxes] = useState<ExtendedElectricItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(20);
@@ -78,6 +79,8 @@ export default function EboxScreen() {
     updateDeviceStatus,
     operations,
     addOperation,
+    updateEboxNode,
+    removeEboxNode
   } = useEboxStore();
   const [versionList, setVersionList] = useState<any>([]);
   const { areaList, areaWithDevicesList,allAreaList } = useAreaStore();
@@ -85,9 +88,14 @@ export default function EboxScreen() {
   const [editItem,setEditItem] =  useState<EboxFormData>()
 
   const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
+
+  const {showLoading,hideLoading} = useLoadingStore() 
   const currentServer = useGlobalStore((state) => state.currentServer);
   
   const isScreenFocused = useRef(true);
+  
+  const [removeModalVisible, setRemoveModalVisible] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<any>(null);
   
   useEffect(() => {
     get_version_list({}).then(res => {
@@ -112,24 +120,49 @@ export default function EboxScreen() {
     setAllAreaListprops(setAllAreaListpropsData)
   }, [])
    
-  const onEditBox = (item:EboxFormData)=>{
-    console.log("点击修改",item);
+  const onEditBox = (item:EboxFormData) => {
+    // Ensure install_time is initialized as a Date object
+    const formData = {
+      ...item,
+      install_time: item.install_time ? new Date(item.install_time) : new Date()
+    };
     
-    setEditItem(item);
+    setEditItem(formData);
     setEditModalVisible(true);
   }
 
   const onRemoveBox = (item:any)=>{
-    console.log(item,"点击删除");
+    setRemoveTarget(item);
+    setRemoveModalVisible(true);
   }
   
   const closeEditModal = ()=>{
     setEditModalVisible(false)
   }
 
-  const saveEdit = ()=>{
-    console.log("保存成功");
-    
+  const  saveEdit = async(item:any)=>{
+    try{
+    showLoading()
+     const response = await edit_ebox({...item})
+     if(response.code===200){
+      updateEboxNode(item)
+      showMessageModal({
+        type:'success',
+        message:"修改成功"
+      })
+     }else{
+      showMessageModal({
+        type:'error',
+        message:response.message||'修改失败'
+      })
+     }
+    }catch(e){
+      console.log(e);
+    }finally{
+      closeEditModal()
+      hideLoading()
+    }
+     
   }
 
   const handleSaveEdit = (data: any) => {
@@ -142,12 +175,9 @@ export default function EboxScreen() {
     useCallback(() => {
       // 页面获得焦点
       isScreenFocused.current = true;
-      console.log("集中器页面获得焦点");
-
       // 返回清理函数，在页面失去焦点时执行
       return () => {
         isScreenFocused.current = false;
-        console.log("集中器页面失去焦点");
         // 清理状态
         setRefreshing(false);
         setLoading(false);
@@ -552,6 +582,32 @@ export default function EboxScreen() {
     [currentServer, loadEleBoxList]
   );
 
+  const handleRemoveConfirm = async () => {
+    if (!removeTarget) return;
+    try {
+      showLoading();
+      const response = await remove_ebox({ id: removeTarget.id });
+      if (response.code === 200) {
+        removeEboxNode(removeTarget.id)
+        onRefresh()
+        showMessageModal({ type: 'success', message: '删除成功' });
+      } else {
+        showMessageModal({ type: 'error', message: response.message || '删除失败' });
+      }
+    } catch (e) {
+      showMessageModal({ type: 'error', message: '网络错误，删除失败' });
+    } finally {
+      setRemoveModalVisible(false);
+      setRemoveTarget(null);
+      hideLoading();
+    }
+  };
+
+  const handleRemoveCancel = () => {
+    setRemoveModalVisible(false);
+    setRemoveTarget(null);
+  };
+
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
@@ -620,6 +676,14 @@ export default function EboxScreen() {
        initialData={editItem || {} as EboxFormData}
        versionList={versionList}
        allAreaList={allAreaListprops}
+      />
+      {/* 删除确认Modal */}
+      <RemoveTipModal
+        visible={removeModalVisible}
+        onCancel={handleRemoveCancel}
+        onConfirm={handleRemoveConfirm}
+        title="删除确认"
+        message={`确定要删除${removeTarget?.name}(${removeTarget?.device_info.device_code})吗？此操作不可撤销。`}
       />
     </GestureHandlerRootView>
   );

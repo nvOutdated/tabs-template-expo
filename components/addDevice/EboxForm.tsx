@@ -14,12 +14,12 @@ const gatewayTypes = [
 ];
 
 const containerTypes = [
-  { value: 'CABINET', label: "配电箱" },
-  { value: 'TRANSFORMER', label: "箱变" },
-  { value: "OTHER", label: "其他" }
+  { value: 'CABINET', label: "配电箱"},
+  { value: 'TRANSFORMER', label: "箱变"},
+  { value: "OTHER", label: "其他"}
 ];
 
-export interface EboxFormData {
+export type EboxFormData = {
   device_info: {
     device_code:string,
     device_type:string,

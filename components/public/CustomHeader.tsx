@@ -1,10 +1,10 @@
 import { useTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { themeColors } from '@/constants/themeColors';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { ImageBackground, Pressable, StatusBar, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ImageBackground, Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -33,6 +33,30 @@ export function CustomHeader({ title }: CustomHeaderProps) {
   // 简化的动画值
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
+
+  // 确定StatusBar样式
+  const getStatusBarStyle = () => {
+    if (theme === 'dark') {
+      return 'light-content';
+    }
+    return 'dark-content';
+  };
+
+  // 方案1: 使用useFocusEffect确保每次聚焦时重新设置StatusBar
+  useFocusEffect(
+    useCallback(() => {
+      // 页面聚焦时设置StatusBar
+      StatusBar.setBarStyle(getStatusBarStyle(), true);
+      if (Platform.OS === 'android') {
+        StatusBar.setTranslucent(true);
+        StatusBar.setBackgroundColor('transparent', true);
+      }
+      
+      return () => {
+        // 页面失焦时的清理工作（可选）
+      };
+    }, [theme])
+  );
 
   const startAnimation = () => {
     // 简单的上下滑动效果
@@ -82,68 +106,74 @@ export function CustomHeader({ title }: CustomHeaderProps) {
 
   return (
     <View className='relative w-full'>
-    <ImageBackground
-      source={require('@/assets/images/background/imageBgc.png')}
-      style={{
-        width: '100%',
-        minHeight: 35 + insets.top,
-      }}
-      resizeMode="cover"
-    >
-      <StatusBar backgroundColor="transparent" translucent />
-      <View style={{ 
-        padding: 5,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: insets.top,
-        backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)',
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-      }}>
-        
+      <ImageBackground
+        source={require('@/assets/images/background/imageBgc.png')}
+        style={{
+          width: '100%',
+          minHeight: 35 + insets.top,
+        }}
+        resizeMode="cover"
+      >
+        {/* 方案2: 使用多个StatusBar组件确保样式正确应用 */}
+        <StatusBar 
+          backgroundColor="transparent" 
+          translucent 
+          barStyle={getStatusBarStyle()}
+          animated={true}
+        />
         
         <View style={{ 
-          flex: 3/5, 
-          height: 30, 
-          overflow: 'hidden',
-          justifyContent: 'center',
+          padding: 5,
+          flexDirection: 'row',
           alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: insets.top,
+          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(0, 0, 0, 0.1)',
         }}>
-          <Animated.View style={[
-            {
-              width: '100%',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              height: 30,
-            },
-            animatedStyle,
-          ]}>
-            <Text style={{ 
-              fontSize: 20,
-              fontWeight: 'bold',
-              color: currentTheme.textColor,
-              textAlign: 'left',
-              marginLeft: 10,
-            }}>
-              {billboardTexts[currentIndex]}
-            </Text>
-          </Animated.View>
+          
+          <View style={{ 
+            flex: 3/5, 
+            height: 30, 
+            overflow: 'hidden',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Animated.View style={[
+              {
+                width: '100%',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                height: 30,
+              },
+              animatedStyle,
+            ]}>
+              <Text style={{ 
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: currentTheme.textColor,
+                textAlign: 'left',
+                marginLeft: 10,
+              }}>
+                {billboardTexts[currentIndex]}
+              </Text>
+            </Animated.View>
+          </View>
+          
+          <View className='flex-row align-middle mr-2' >
+            <Pressable onPress={pathToMessage}>
+              <View>
+                <AntDesign 
+                  name="message1" 
+                  size={24} 
+                  color={currentTheme.textColor}
+                />
+              </View>
+            </Pressable>
+          </View>
         </View>
-        
-        <View className='flex-row align-middle mr-2' >
-          <Pressable onPress={pathToMessage}>
-            <View>
-              <AntDesign 
-                name="message1" 
-                size={24} 
-                color={currentTheme.textColor}
-              />
-            </View>
-          </Pressable>
-        </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
     </View>
   );
 }

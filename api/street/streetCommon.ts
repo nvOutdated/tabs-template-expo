@@ -52,3 +52,20 @@ export const add_ebox=(params:any)=>{
         body:params
     })
 }
+
+//edit Ebox
+export const edit_ebox=(params:any)=>{
+    return request('/smart/light/ebox/update',{
+        method:'post',
+        body:params
+    })
+}
+
+//remove Ebox
+
+export const remove_ebox=(params:any)=>{
+    return request('/smart/light/ebox/remove',{
+        method:'post',
+        body:params
+    })
+}

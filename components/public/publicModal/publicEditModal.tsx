@@ -22,7 +22,8 @@ const PublicEditModal: React.FC<PublicEditModalProps> = ({
   allAreaList,
 }) => {
   const [formData, setFormData] = React.useState<EboxFormData>(initialData);
-
+  // console.log(initialData,"修改数据");
+  
   React.useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
