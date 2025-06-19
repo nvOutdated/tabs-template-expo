@@ -2,9 +2,10 @@ import { useTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { themeColors } from '@/constants/themeColors';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ImageBackground, Platform, Pressable, StatusBar, Text, View } from 'react-native';
+import { Platform, Pressable, StatusBar, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -106,13 +107,19 @@ export function CustomHeader({ title }: CustomHeaderProps) {
 
   return (
     <View className='relative w-full'>
-      <ImageBackground
-        source={require('@/assets/images/background/imageBgc.png')}
+      <LinearGradient
+        colors={
+          theme === 'dark'
+            ? ['#232526', '#414345'] // 深色模式下的渐变色
+            : ['#fffbe6', '#e0c3fc'] // 浅色模式下的渐变色
+        }
         style={{
           width: '100%',
           minHeight: 35 + insets.top,
+          padding: 0,
         }}
-        resizeMode="cover"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
       >
         {/* 方案2: 使用多个StatusBar组件确保样式正确应用 */}
         <StatusBar 
@@ -173,7 +180,7 @@ export function CustomHeader({ title }: CustomHeaderProps) {
             </Pressable>
           </View>
         </View>
-      </ImageBackground>
+      </LinearGradient>
     </View>
   );
 }

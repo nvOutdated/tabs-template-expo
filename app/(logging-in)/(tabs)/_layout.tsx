@@ -3,9 +3,10 @@ import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs, useSegments } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ImageBackground, View, useWindowDimensions } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 
 export default function TabLoggingLayout() {
   const currentTheme = useCurrentTheme();
@@ -13,16 +14,19 @@ export default function TabLoggingLayout() {
   const segments = useSegments();
   const { width, height } = useWindowDimensions();
   const [isLandscape, setIsLandscape] = useState(false);
-
+ 
   // 检查当前是否在首页 - 使用 useMemo 缓存结果
   const isHomePage = useMemo(() => 
     segments.includes('(firstPage)' as never), 
     [segments]
   );
-
+  
   useEffect(() => {
-    setIsLandscape(width > height);
-  }, [width, height]);
+    const newIsLandscape = width > height;
+    if (newIsLandscape !== isLandscape) {
+      setIsLandscape(newIsLandscape);
+    }
+  }, [width, height, isLandscape]);
 
   // 使用 useMemo 缓存 tabBarStyle
   const tabBarStyle = useMemo(() => ({
@@ -47,6 +51,7 @@ export default function TabLoggingLayout() {
     headerTintColor: currentTheme.textColor,
     headerShown: false,
     tabBarStyle,
+    lazy:true,
     tabBarBackground: () => (
       <TabBarBackground 
         isHomePage={isHomePage} 
@@ -140,9 +145,7 @@ export default function TabLoggingLayout() {
       />
     </Tabs>
   );
-}
-
-// 提取 TabBarBackground 组件避免重复渲染
+}// 提取 TabBarBackground 组件避免重复渲染
 const TabBarBackground = ({ 
   isHomePage, 
   isLandscape, 
@@ -159,16 +162,22 @@ const TabBarBackground = ({
     backgroundColor: currentTheme.drawerBg,
     height: isLandscape ? 50 : 60,
   }}>
-    {isHomePage && (
-      <ImageBackground
-        source={require('@/assets/images/background/imageBgc.png')}
+    {isHomePage ? (
+      <LinearGradient
+        colors={
+          theme === 'dark'
+            ? ['#232526', '#414345'] // 深色模式下的渐变色
+            : ['#fffbe6', '#e0c3fc'] // 浅色模式下的渐变色
+        }
         style={{
           width: '100%',
           height: '100%',
-          opacity: theme === 'dark' ? 0.3 : 0.5,
+          opacity: 0.8,
         }}
-        resizeMode="cover"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
       />
-    )}
+    ) : null}
   </View>
 );
+

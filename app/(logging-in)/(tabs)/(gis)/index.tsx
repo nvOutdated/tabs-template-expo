@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -199,7 +200,8 @@ export default function GisIndexScreen() {
 
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1,backgroundColor:currentTheme.headerBg }}>
+        <StatusBar translucent backgroundColor='transparent' barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}/>
       <View className="flex-1" style={{ paddingTop: insets.top }}>
         <View style={{ height: height }}>
           {/* 蒙层 */}
