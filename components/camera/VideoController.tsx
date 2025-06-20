@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, PanResponder } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { cameraControl } from '@/api/camera/cameraApi';
 import { MaterialIcons } from '@expo/vector-icons';
-import { cameraControl } from '@/api/camera/cameraApi'
+import React, { useEffect, useRef, useState } from 'react';
+import { PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 type VideoControllerProps = {
   channelId: string;
   onZoomIn?: () => void;
@@ -33,9 +33,9 @@ export default function VideoController({ channelId, onPanChange }: VideoControl
     { label: '快速', value: 5 }
   ]
   useEffect(() => {
-    console.log(direction, '方向');
+    //console.log(direction, '方向');
     cameraControl({ channel_id: channelId, type: direction, step: step }).then(res => {
-      console.log(res, '移动');
+      //console.log(res, '移动');
 
     })
   }, [direction])

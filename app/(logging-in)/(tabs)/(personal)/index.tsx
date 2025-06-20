@@ -35,7 +35,7 @@ export default function PersonIndex() {
     const fetchUserInfo = async () => {
       const info = await getUserInfo();
       if (info) {
-        console.log(info, "info");
+        //console.log(info, "info");
         setUserInfo(info.name || "未登录用户");
       }
     };

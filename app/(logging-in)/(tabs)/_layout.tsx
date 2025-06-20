@@ -14,7 +14,6 @@ export default function TabLoggingLayout() {
   const segments = useSegments();
   const { width, height } = useWindowDimensions();
   const [isLandscape, setIsLandscape] = useState(false);
- 
   // 检查当前是否在首页 - 使用 useMemo 缓存结果
   const isHomePage = useMemo(() => 
     segments.includes('(firstPage)' as never), 
@@ -41,26 +40,32 @@ export default function TabLoggingLayout() {
   }), [isLandscape]);
 
   // 使用 useMemo 缓存 screenOptions
-  const screenOptions = useMemo(() => ({
-    tabBarActiveTintColor: currentTheme.activeTint,
-    tabBarInactiveTintColor: currentTheme.inactiveTint,
-    headerStyle: {
-      backgroundColor: currentTheme.headerBg,
-    },
-    headerShadowVisible: false,
-    headerTintColor: currentTheme.textColor,
-    headerShown: false,
-    tabBarStyle,
-    lazy:true,
-    tabBarBackground: () => (
-      <TabBarBackground 
-        isHomePage={isHomePage} 
-        isLandscape={isLandscape}
-        currentTheme={currentTheme}
-        theme={theme}
-      />
-    ),
-  }), [currentTheme, tabBarStyle, isHomePage, isLandscape, theme]);
+  const screenOptions = useMemo(() => {
+    return ({
+      tabBarActiveTintColor: currentTheme.activeTint,
+      tabBarInactiveTintColor: currentTheme.inactiveTint,
+      headerStyle: {
+        backgroundColor: currentTheme.headerBg,
+      },
+      headerShadowVisible: false,
+      headerTintColor: currentTheme.textColor,
+      headerShown: false,
+      tabBarStyle,
+      lazy:true,
+      tabBarHideOnKeyboard: true,
+      animationEnabled: true,
+      animationTypeForReplace: 'push',
+      tabBarBackground: () => (
+        <TabBarBackground 
+          isHomePage={isHomePage} 
+          isLandscape={isLandscape}
+          currentTheme={currentTheme}
+          theme={theme}
+        />
+      ),
+    })
+
+  }, [currentTheme, tabBarStyle, isHomePage, isLandscape, theme]);
 
   // 使用 useCallback 缓存图标渲染函数
   const renderHomeIcon = useCallback(({ color, focused }: any) => (

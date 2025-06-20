@@ -168,7 +168,7 @@ export default function GisIndexScreen() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    console.log(containerList[0], lightList[0]);
+    //console.log(containerList[0], lightList[0]);
 
     if (text.length > 0) {
       const filtered = [...containerList, ...lightList].filter(item =>

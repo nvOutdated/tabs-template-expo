@@ -288,7 +288,7 @@ export default function SingleLampScreen() {
         }
       }
     } catch (error) {
-      console.log('加载线路列表失败:', error);
+      // console.log('加载线路列表失败:', error);
       setLines([]);
       setSelectedLine(null);
       setSingleLamps([]);
@@ -340,7 +340,7 @@ export default function SingleLampScreen() {
         setControllers(controllerList);
       }
     } catch (error) {
-      console.log('加载单灯列表失败:', error);
+      // console.log('加载单灯列表失败:', error);
       setSingleLamps([]);
       setControllers([]);
     } finally {

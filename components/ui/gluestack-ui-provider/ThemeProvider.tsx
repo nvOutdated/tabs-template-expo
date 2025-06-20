@@ -46,7 +46,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const newTheme = themeOrder[nextIndex];
     setTheme(newTheme);
     // setColorScheme(newTheme);
-    console.log(newTheme,"主题切换");
+    //console.log(newTheme,"主题切换");
     
     AsyncStorage.setItem("theme", newTheme);
   };

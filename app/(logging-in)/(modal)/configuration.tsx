@@ -131,7 +131,7 @@ export default function ConfigurationPage() {
         setError(response.msg || "获取配置失败");
       }
     } catch (err) {
-      console.log("获取配置失败:", err);
+      // console.log("获取配置失败:", err);
       setError("获取配置失败，请检查网络连接");
     } finally {
       setLoading(false);
@@ -142,7 +142,6 @@ export default function ConfigurationPage() {
   }, [params.item]);
   useEffect(()=>{
      const item = JSON.parse(params.item as string);
-     console.log(item.device_info.id,WS_SmartLight_Data?.did);
      if(item.device_info.id===WS_SmartLight_Data?.did){
       fetchConfig();
      }

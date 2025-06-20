@@ -183,7 +183,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         });
 
         if (response.code === 200) {
-          console.log(response);
+          //console.log(response);
           toast.showSuccess({
             message: '状态检测成功',
           });
@@ -232,7 +232,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         });
 
         if (response.code === 200) {
-          console.log(response);
+          //console.log(response);
           toast.showSuccess({
             message: '状态检测成功',
           });

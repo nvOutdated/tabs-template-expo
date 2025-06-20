@@ -217,7 +217,7 @@ export default function EboxScreen() {
           setCurrentPage(page);
         }
       } catch (error) {
-        console.log("加载电箱列表失败:", error);
+        // console.log("加载电箱列表失败:", error);
         if (isRefresh) {
           setElectricBoxes([]);
         }

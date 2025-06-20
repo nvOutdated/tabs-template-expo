@@ -128,7 +128,7 @@ export default function TabConfigurationLayout() {
       <Tab.Navigator
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
-          lazy: false,
+          lazy: true,
           swipeEnabled: true,
           animationEnabled: true,
         }}
@@ -140,7 +140,7 @@ export default function TabConfigurationLayout() {
             name={tab.name}
             options={{
               title: tab.title,
-              lazy: false,
+              lazy: true,
             }}
             component={
               tab.name === "index"

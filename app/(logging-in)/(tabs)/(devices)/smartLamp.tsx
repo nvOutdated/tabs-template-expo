@@ -109,7 +109,7 @@ export default function SmartLampScreen() {
           setCurrentPage(page);
         }
       } catch (error) {
-        console.log("加载智能灯列表失败:", error);
+        //console.log("加载智能灯列表失败:", error);
         if (isRefresh) {
           setSmartLights([]);
         }
@@ -138,12 +138,12 @@ export default function SmartLampScreen() {
     useCallback(() => {
       // 页面获得焦点
       isScreenFocused.current = true;
-      console.log("智能灯页面获得焦点");
+      //console.log("智能灯页面获得焦点");
 
       // 返回清理函数，在页面失去焦点时执行
       return () => {
         isScreenFocused.current = false;
-        console.log("智能灯页面失去焦点");
+        //console.log("智能灯页面失去焦点");
         // 清理状态
         setRefreshing(false);
         setLoading(false);
