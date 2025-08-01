@@ -396,9 +396,9 @@ export default function ConfigurationGraph({
           [];
 
         if (
-          node.cfg_type == "O" ||
-          node.cfg_type == "R" ||
-          node.cfg_type == "I"
+          node.cfg_type === "O" ||
+          node.cfg_type === "R" ||
+          node.cfg_type === "I"
         ) {
           if (
             node.selectTypeB === parent.selectTypeA
