@@ -5,12 +5,12 @@ import { DEVICE_STATUS, useEboxStore } from "@/store/eboxStore";
 import { useRunLogStore } from '@/store/runlogStore';
 import { useSmartLightStore } from "@/store/smartLightStore";
 import { useWebSocketStore } from '@/store/websocketStore';
+import { AlarmMessage } from '@/types/runlog';
 import { getToken } from '@/utils/useStorageState';
 import { Redirect, Stack } from 'expo-router';
 import React, { JSX, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-
-import { AlarmMessage } from '@/types/runlog';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AuthLayout(): JSX.Element {
   const { init, disconnect, isConnected, WS_SmartLight_Data } = useWebSocketStore();
@@ -20,7 +20,7 @@ export default function AuthLayout(): JSX.Element {
   const { initializeSmartLightTree } = useSmartLightStore();
   const { fetchAreaList } = useAreaStore();
   const { addAlarm } = useRunLogStore();
-
+  const insets = useSafeAreaInsets();
   // 监听 WebSocket 报警数据
   useEffect(() => {
     if (WS_SmartLight_Data?.type === "warning"&& isConnected) {
@@ -127,7 +127,7 @@ export default function AuthLayout(): JSX.Element {
   return (
     // <Slot/>
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false,contentStyle: { paddingBottom: insets.bottom } }} />
       <Stack.Screen name="(modal)" options={{ headerShown: false }} />
     </Stack>
   );
