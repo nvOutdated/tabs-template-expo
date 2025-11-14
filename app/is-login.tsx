@@ -330,6 +330,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#fff",
     fontSize: 16,
+    height: 55,
   },
   button: {
     backgroundColor: "#007AFF",

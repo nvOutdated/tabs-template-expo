@@ -11,24 +11,20 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import CameraScreen from "./camera";
 import EleBoxScreen from "./ebox";
 import SingleLampScreen from "./singleLamp";
-import SmartLampScreen from "./smartLamp";
 
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get("window");
 
-// 定义tab标题
+// 简化后的tab配置
 const TAB_CONFIG = [
   { name: "index", title: "集中器" },
-  { name: "smartLamp", title: "智慧网关" },
   { name: "singleLamp", title: "单灯" },
-  { name: "camera", title: "摄像头" },
 ] as const;
 
 // 自定义TabBar组件 - 优化版本
-function CustomTabBar({ state, descriptors, navigation, position }: MaterialTopTabBarProps) {
+function CustomTabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   
@@ -128,31 +124,28 @@ export default function TabConfigurationLayout() {
       <Tab.Navigator
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
-          lazy: true,
-          swipeEnabled: true,
-          animationEnabled: true,
+          tabBarShowLabel: false,
+          tabBarStyle: {
+            backgroundColor: 'transparent',
+            elevation: 0,
+            shadowOpacity: 0,
+          },
         }}
-        initialLayout={{ width }}
       >
-        {TAB_CONFIG.map((tab) => (
-          <Tab.Screen
-            key={tab.name}
-            name={tab.name}
-            options={{
-              title: tab.title,
-              lazy: true,
-            }}
-            component={
-              tab.name === "index"
-                ? EleBoxScreen
-                : tab.name === "smartLamp"
-                ? SmartLampScreen
-                : tab.name === "singleLamp"
-                ? SingleLampScreen
-                : CameraScreen
-            }
-          />
-        ))}
+        <Tab.Screen
+          name="index"
+          component={EleBoxScreen}
+          options={{
+            tabBarLabel: '集中器',
+          }}
+        />
+        <Tab.Screen
+          name="singleLamp"
+          component={SingleLampScreen}
+          options={{
+            tabBarLabel: '单灯',
+          }}
+        />
       </Tab.Navigator>
       <View
         style={{
