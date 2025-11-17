@@ -72,13 +72,13 @@ export const RemoveTipModal: React.FC<RemoveTipModalProps> = ({
             <Text className="text-base text-gray-700 mb-6 text-center">{message}</Text>
             <View className="flex-row justify-between">
               <TouchableOpacity
-                className="flex-1 py-2 mr-2 rounded bg-gray-200"
+                className="flex-1 py-1 mr-2 rounded bg-gray-200"
                 onPress={onCancel}
               >
                 <Text className="text-center text-gray-700">取消</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 py-2 ml-2 rounded bg-red-600"
+                className="flex-1 py-1 ml-2 rounded bg-red-600"
                 onPress={onConfirm}
               >
                 <Text className="text-center text-white">确定</Text>

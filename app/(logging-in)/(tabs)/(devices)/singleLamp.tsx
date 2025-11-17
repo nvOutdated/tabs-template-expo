@@ -1,18 +1,22 @@
 // singleLamp.tsx - 优化后的完整代码
-import { lightPole_query_list, ordinaryLamp_query_list, query_eleBox_line } from "@/api/street/singleLampApi";
+import { ebox_cfg_query_getEboxContactor, lightPole_query_list, ordinaryLamp_query_list, query_eleBox_line, remove_lightPole } from "@/api/street/singleLampApi";
+import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import BatchControlModal, { BatchControlFormData } from "@/components/singleLamp/BatchControlModal";
 import ControllerInfoCard from "@/components/singleLamp/ControllerInfoCard";
 import DeviceSelector from "@/components/singleLamp/DeviceSelector";
+import LineManageModal from "@/components/singleLamp/LineManageModal";
 import LineSelector from "@/components/singleLamp/LineSelector";
 import MessagePanel from "@/components/singleLamp/MessagePanel";
 import SingleLampDrawer, { Area, Device } from "@/components/singleLamp/SingleLampDrawer";
-import SingleLampList from "@/components/singleLamp/SingleLampList";
+import SingleLampEditModal from "@/components/singleLamp/SingleLampEditModal";
+import SingleLampList, { SingleLamp } from "@/components/singleLamp/SingleLampList";
 import { useAreaStore } from "@/store/areaStore";
 import { ElectricItem, useEboxStore } from "@/store/eboxStore";
 import { useGlobalStore } from '@/store/globalStateStore';
 import { useWebSocketStore } from "@/store/websocketStore";
+import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshControl, StyleSheet, Text, View } from "react-native";
+import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface Line {
@@ -53,20 +57,6 @@ interface Controller {
 interface OrdinaryLamp {
   id: number;
   lamp_attachments?: Attachment[];
-}
-
-interface SingleLamp {
-  id: number;
-  poleName: string;
-  poleCode: string;
-  poleType: string;
-  installTime: string | null;
-  lng: number;
-  lat: number;
-  addr: string | null;
-  direction: number;
-  controllers: Controller[];
-  lamp_attachments?: Attachment[];
   container_id: string;
 }
 
@@ -89,9 +79,29 @@ export default function SingleLampScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredSingleLamps, setFilteredSingleLamps] = useState<SingleLamp[]>([]);
   const [showBatchControlModal, setShowBatchControlModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingLampId, setEditingLampId] = useState<number | undefined>(undefined);
+  const [showLineManageModal, setShowLineManageModal] = useState(false);
+  const [contactorList, setContactorList] = useState<any[]>([]);
   const currentServer = useGlobalStore(state => state.currentServer);
   const singleLampOffline = require('@/assets/images/street/singleLamp/singleLampOfflin.png');
   const [messages, setMessages] = useState<{ id: string; content: string; timestamp: number }[]>([]);
+  const [lampInfo, setLampInfo] = useState<SingleLamp>({
+    id: 0,
+    poleName: '',
+    poleCode: '',
+    poleType: '1',
+    installTime: null,
+    lng: 0,
+    lat: 0,
+    addr: null,
+    direction: 1,
+    controllers: [],
+    lamp_attachments: [],
+    line_id: 0,
+    container_id: '',
+  });
+  const { showSuccess, showWarning } = useCustomToast();
   const getStateMessage = (state?: string): string => {
     const stateMap: Record<string, string> = {
       'SINGLE_STATE_ERR': '故障',
@@ -115,6 +125,7 @@ export default function SingleLampScreen() {
       setSelectedDevice(firstDevice);
       setSearchText(firstDevice.name);
       loadLines(firstDevice.id);
+      getCfgObject(firstDevice.id);
     }
   }, [allEboxes]);
   useEffect(()=>{
@@ -276,7 +287,7 @@ export default function SingleLampScreen() {
     try {
       setLoading(true);
       const res = await query_eleBox_line({ ebox_id: deviceId });
-      if (res.code === 200) {
+      if (res.code === 200&&res.data) {
         const lineList = res.data || [];
         setLines(lineList);
         if (lineList.length > 0) {
@@ -286,6 +297,10 @@ export default function SingleLampScreen() {
           setSingleLamps([]);
           setSelectedLine(null);
         }
+      }else{
+        setLines([]);
+        setSelectedLine(null);
+        setSingleLamps([]);
       }
     } catch (error) {
       // console.log('加载线路列表失败:', error);
@@ -381,6 +396,19 @@ export default function SingleLampScreen() {
     }, 0);
   }, [singleLamps]);
 
+  const getCfgObject = useCallback(async (eboxId: number) => {
+    try {
+      const res = await ebox_cfg_query_getEboxContactor({ cfg_id: eboxId });
+      if (res?.code === 200 && Array.isArray(res.data)) {
+        setContactorList(res.data);
+      } else {
+        setContactorList([]);
+      }
+    } catch (error) {
+      setContactorList([]);
+    }
+  }, []); 
+
   const handleSelectDevice = useCallback((device: Device) => {
     const eboxDevice = allEboxes.find(ebox => ebox.id === device.id);
     if (eboxDevice) {
@@ -388,8 +416,10 @@ export default function SingleLampScreen() {
       setSearchText(device.name);
       setShowDrawer(false);
       loadLines(eboxDevice.id);
+      // 切换集中器时加载交流接触器列表
+      getCfgObject(eboxDevice.id);
     }
-  }, [loadLines, allEboxes]);
+  }, [loadLines, allEboxes, getCfgObject]);
 
   const handleSelectLine = useCallback((line: Line) => {
     setSelectedLine(line);
@@ -459,6 +489,47 @@ export default function SingleLampScreen() {
     setMessages([]);
   }, []);
 
+  // 处理新增单灯
+  const handleAddLamp = useCallback(() => {
+    if (!selectedLine) {
+      showWarning({ message: '请先选择线路' });
+      return;
+    }
+    setEditingLampId(undefined);
+    setShowEditModal(true);
+  }, [selectedLine, showWarning]);
+
+  // 处理编辑单灯
+  const handleEditLamp = useCallback((lamp: SingleLamp) => {
+    setLampInfo(lamp);
+    setEditingLampId(lamp.id);
+    setShowEditModal(true);
+  }, []);
+
+  // 处理删除单灯
+  const handleDeleteLamp = useCallback(async (lamp: SingleLamp) => {
+    try {
+      const res = await remove_lightPole({ id: lamp.id });
+      if (res.code === 200) {
+        showSuccess({ message: '删除成功' });
+        // 刷新列表
+        if (selectedDevice && selectedLine) {
+          loadSingleLamps(selectedDevice.device_info.id, selectedLine.id);
+        }
+      } else {
+        showWarning({ message: res.message || '删除失败' });
+      }
+    } catch (error: any) {
+      showWarning({ message: error.message || '删除失败' });
+    }
+  }, [selectedDevice, selectedLine, loadSingleLamps, showSuccess, showWarning]);
+
+  // 处理编辑成功
+  const handleEditSuccess = useCallback(() => {
+    if (selectedDevice && selectedLine) {
+      loadSingleLamps(selectedDevice.device_info.id, selectedLine.id);
+    }
+  }, [selectedDevice, selectedLine, loadSingleLamps]);
 
 
   const renderEmptyState = () => {
@@ -471,14 +542,27 @@ export default function SingleLampScreen() {
     }
     if (lines.length === 0) {
       return (
-        <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-gray-500">该集中器下暂无线路数据</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Ionicons name="add-circle-outline" size={48} color="#999" />
+            <Text className="text-gray-500 mt-4 mb-4">该集中器下暂无线路数据</Text>
+            <TouchableOpacity
+              onPress={() => setShowLineManageModal(true)}
+              className="px-4 py-2 bg-blue-500 rounded-md flex-row items-center"
+            >
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text className="text-white ml-2">新增线路</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
     return (
-      <View className="flex-1 items-center justify-center p-4">
-        <Text className="text-gray-500">暂无单灯数据</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+        <View style={{ alignItems: 'center' }}>
+          <Ionicons name="add-circle-outline" size={48} color="#999" />
+          <Text className="text-gray-500 mt-4 mb-4">暂无单灯数据</Text>
+        </View>
       </View>
     );
   };
@@ -493,6 +577,8 @@ export default function SingleLampScreen() {
           onEdit={handleEdit}
           onOperationChange={handleOperationChange}
           currentOperation={currentOperation}
+          hasLine={!!selectedLine}
+          onAddLamp={handleAddLamp}
         />
 
         {selectedDevice && (
@@ -505,24 +591,40 @@ export default function SingleLampScreen() {
             selectedCount={selectedControllers.length}
             totalCount={totalControllerCount()}
             currentOperation={currentOperation}
+            eboxId={selectedDevice.device_info.id}
+            onRefreshLines={() => {
+              if (selectedDevice) {
+                loadLines(selectedDevice.device_info.id);
+              }
+            }}
           />
         )}
 
         {currentOperation === 'all' ? (
-          <SingleLampList
-            singleLamps={singleLamps}
-            loading={loading}
-            hasMore={false}
-            onEndReached={() => {}}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
+          <>
+            {!selectedDevice || lines.length === 0 || singleLamps.length === 0 ? (
+              <View style={{ flex: 1 }}>
+                {renderEmptyState()}
+              </View>
+            ) : (
+              <SingleLampList
+                singleLamps={singleLamps}
+                loading={loading}
+                hasMore={false}
+                onEndReached={() => {}}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                  />
+                }
+                ListEmptyComponent={undefined}
+                onUpdateSuccess={handleUpdateSingleLamp}
+                onEdit={handleEditLamp}
+                onDelete={handleDeleteLamp}
               />
-            }
-            ListEmptyComponent={renderEmptyState()}
-            onUpdateSuccess={handleUpdateSingleLamp}
-          />
+            )}
+          </>
         ) : (
           <View style={{ flex: 1 }}>
             <ControllerInfoCard 
@@ -560,6 +662,35 @@ export default function SingleLampScreen() {
         } : undefined}
         controllerId={selectedControllers[0]?.controllerId?.toString()}
       />
+
+      {selectedLine && (
+        <SingleLampEditModal
+          visible={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingLampId(undefined);
+          }}
+          onSuccess={handleEditSuccess}
+          lineId={selectedLine.id}
+          lampId={editingLampId}
+          lampInfo={lampInfo}
+          contactors={contactorList}
+        />
+      )}
+
+      {selectedDevice && (
+        <LineManageModal
+          visible={showLineManageModal}
+          onClose={() => setShowLineManageModal(false)}
+          lines={lines}
+          eboxId={selectedDevice.device_info.id}
+          onRefresh={() => {
+            if (selectedDevice) {
+              loadLines(selectedDevice.id);
+            }
+          }}
+        />
+      )}
     </GestureHandlerRootView>
   );
 }

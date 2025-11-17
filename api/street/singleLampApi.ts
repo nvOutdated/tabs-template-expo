@@ -46,3 +46,67 @@ export const lightPole_devicectrl_sendSingleControlCmd=(params:any)=>{
     })
 }
 
+// 添加线路
+export const add_line = (params: { ebox_id: number; name: string; line_index: number }) => {
+    return request("/smart/light/line/add", {
+        method: "post",
+        body: params
+    });
+}
+
+// 修改线路
+export const update_line = (params: { id: number; name: string; line_index: number }) => {
+    return request("/smart/light/line/update", {
+        method: "post",
+        body: params
+    });
+}
+
+// 删除线路
+export const remove_line = (params: { id: number }) => {
+    return request("/smart/light/line/remove", {
+        method: "post",
+        body: params
+    });
+}
+
+// 添加单灯
+export const add_lightPole = (params: any) => {
+    return request("/smart/light/lightPole/add", {
+        method: "post",
+        body: params
+    });
+}
+
+// 修改单灯
+export const update_lightPole = (params: any) => {
+    return request("/smart/light/lightPole/update", {
+        method: "post",
+        body: params
+    });
+}
+
+// 删除单灯
+export const remove_lightPole = (params: { id: number }) => {
+    return request("/smart/light/lightPole/remove", {
+        method: "post",
+        body: params
+    });
+}
+
+// 获取单灯详情
+export const lightPole_query_get = (params: { id: number }) => {
+    return request("/smart/light/lightPole/query/get", {
+        method: "post",
+        body: params
+    });
+}
+
+//查询交流接触器
+export function ebox_cfg_query_getEboxContactor(params:{cfg_id:number}) {
+    return request("/smart/light/ebox_cfg/query/getEboxContactor",{
+        method: 'post',
+        body:params
+    })
+};
+

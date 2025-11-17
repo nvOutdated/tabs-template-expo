@@ -6,10 +6,12 @@ import Animated, {
   useSharedValue,
   withSpring
 } from 'react-native-reanimated';
+import LineManageModal from './LineManageModal';
 
 interface Line {
   id: number;
   name: string;
+  line_index?: number;
 }
 
 interface LineSelectorProps {
@@ -21,6 +23,8 @@ interface LineSelectorProps {
   selectedCount: number;
   totalCount: number;
   currentOperation: 'all' | 'controller';
+  eboxId?: number;
+  onRefreshLines?: () => void;
 }
 
 const LineSelector = ({ 
@@ -32,9 +36,12 @@ const LineSelector = ({
   selectedCount,
   totalCount,
   currentOperation,
+  eboxId,
+  onRefreshLines,
 }: LineSelectorProps) => {
   const [searchText, setSearchText] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showLineManageModal, setShowLineManageModal] = useState(false);
   const searchWidth = useSharedValue(0);
   const searchOpacity = useSharedValue(0);
 
@@ -72,6 +79,20 @@ const LineSelector = ({
     onSearch(text);
   }, [onSearch]);
 
+  const handleLineManage = useCallback(() => {
+    if (currentOperation === 'all') {
+      setShowLineManageModal(true);
+    } else {
+      onEdit();
+    }
+  }, [currentOperation, onEdit]);
+
+  const handleRefreshLines = useCallback(() => {
+    if (onRefreshLines) {
+      onRefreshLines();
+    }
+  }, [onRefreshLines]);
+
   const searchAnimatedStyle = useAnimatedStyle(() => {
     return {
       width: `${searchWidth.value * 200}%`,
@@ -79,13 +100,13 @@ const LineSelector = ({
     };
   });
 
-  if (lines.length === 0) {
-    return (
-      <View className="h-12 bg-white border-b border-gray-200 justify-center">
-        <Text className="text-gray-500 text-center text-sm">暂无线路数据</Text>
-      </View>
-    );
-  }
+  // if (lines.length === 0) {
+  //   return (
+  //     <View className="h-12 bg-white border-b border-gray-200 justify-center">
+  //       <Text className="text-gray-500 text-center text-sm">暂无线路数据</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <View className="h-12 bg-white border-b border-gray-200 flex-row">
@@ -169,13 +190,24 @@ const LineSelector = ({
               ? 'bg-blue-500' 
               : 'bg-blue-500'
           }`}
-          onPress={onEdit}
+          onPress={handleLineManage}
         >
           <Text className={`text-sm text-white`}>
-            {currentOperation === 'all' ? '线路管理' : '操作'}
+            {currentOperation === 'all' ? '线路管理' : '控制'}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* 线路管理弹窗 */}
+      {eboxId && (
+        <LineManageModal
+          visible={showLineManageModal}
+          onClose={() => setShowLineManageModal(false)}
+          lines={lines}
+          eboxId={eboxId}
+          onRefresh={handleRefreshLines}
+        />
+      )}
     </View>
   );
 };

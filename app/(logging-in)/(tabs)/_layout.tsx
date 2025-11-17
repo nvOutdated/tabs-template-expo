@@ -118,21 +118,21 @@ export default function TabLoggingLayout() {
       <Tabs.Screen
         name="(devices)"
         options={{
-          title: "devices",
+          title: "设备",
           tabBarIcon: renderDevicesIcon,
         }}
       />
       <Tabs.Screen
         name="(runlog)"
         options={{
-          title: 'runLog',
+          title: '报警/运行日志',
           tabBarIcon: renderRunlogIcon,
         }}
       />
       <Tabs.Screen
         name="(personal)"
         options={{
-          title: "person",
+          title: "个人中心",
           tabBarIcon: renderPersonIcon,
         }}
       />

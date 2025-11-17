@@ -68,7 +68,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">网关编号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-12 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="1-11个数字(必填)"
             placeholderTextColor="#999"
             value={formData.device_info?.device_code || ''}
@@ -100,7 +100,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备名称</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="1-20个字(必填)"
             placeholderTextColor="#999"
             value={formData.name}
@@ -113,7 +113,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备编号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="1-12个字(必填)"
             placeholderTextColor="#999"
             value={formData.sn}
@@ -175,7 +175,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">安装时间</Text>
           <Pressable onPress={() => setShowDatePicker(true)}  
-          className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 flex-row items-center justify-between">
+          className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 flex-row items-center justify-between">
             <Text className="text-base text-primary-400">{formData.install_time ? transferDate((formData.install_time).getTime()) : '请选择安装时间'}</Text>
             <Ionicons name="calendar-outline" size={20} color="#666" />
           </Pressable>
@@ -186,7 +186,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备经度</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="请输入经度"
             placeholderTextColor="#999"
             value={formData.lng}
@@ -199,7 +199,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备纬度</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="请输入纬度"
             placeholderTextColor="#999"
             value={formData.lat}
@@ -212,7 +212,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">容器型号</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="请输入容器型号"
             placeholderTextColor="#999"
             value={formData.model}
@@ -225,7 +225,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">电表地址</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="请输入电表地址"
             placeholderTextColor="#999"
             value={formData.e_meter}
@@ -240,7 +240,7 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">备注</Text>
           <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-2 text-base text-primary-500"
+            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
             placeholder="请输入备注"
             placeholderTextColor="#999"
             value={formData.remark}

@@ -58,13 +58,13 @@ const PublicEditModal: React.FC<PublicEditModalProps> = ({
           <View className="flex-row justify-end gap-4 p-4 border-t border-outline-100">
             <Pressable
               onPress={onClose}
-              className="px-6 py-2 rounded-lg border border-outline-100"
+              className="px-6 py-1 rounded-lg border border-outline-100"
             >
               <Text className="text-base text-primary-500">取消</Text>
             </Pressable>
             <Pressable
               onPress={() => onSave(formData)}
-              className="px-6 py-2 rounded-lg bg-primary-500"
+              className="px-6 py-1 rounded-lg bg-primary-500"
             >
               <Text className="text-base text-white">保存</Text>
             </Pressable>

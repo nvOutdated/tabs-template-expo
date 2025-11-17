@@ -618,7 +618,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="list-outline" size={48} className="text-tertiary-500" />
-      <Text style={styles.emptyText} className="text-tertiary-500">暂无操作记录</Text>
+      <Text style={styles.emptyText} className="text-tertiary-500">暂无操作记录/点击设备列表勾选设备操作</Text>
     </View>
   );
 

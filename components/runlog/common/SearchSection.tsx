@@ -197,7 +197,7 @@ const SearchSection = memo(({
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    className="px-4 py-2 border-b border-gray-100"
+                    className="px-4 py-1 border-b border-gray-100"
                     onPress={() => handleSelectResult(item)}
                   >
                     <Text className="text-typography-900">{item.searchName}</Text>

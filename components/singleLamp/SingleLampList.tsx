@@ -36,7 +36,7 @@ interface Controller {
   powerOnB: boolean | null;
 }
 
-interface SingleLamp {
+export interface SingleLamp {
   id: number;
   poleName: string;
   poleCode: string;
@@ -48,6 +48,7 @@ interface SingleLamp {
   direction: number;
   controllers: Controller[];
   lamp_attachments?: Attachment[];
+  line_id: number;
   container_id: string;
   computed?: {
     thumbnailSource: any;
@@ -66,6 +67,8 @@ interface SingleLampListProps {
   refreshControl?: React.ReactElement<any>;
   ListEmptyComponent?: React.ReactElement;
   onUpdateSuccess?: (updatedData: any) => void;
+  onEdit?: (lamp: SingleLamp) => void;
+  onDelete?: (lamp: SingleLamp) => void;
 }
 
 const getPoleType = (type: string) => {
@@ -84,7 +87,8 @@ const getControllerType = (type: string) => ({
   DOUBLE_HEAD_PLC: 'PLC双头',
   SINGLE_HEAD_4G: '4G单头',
   SINGLE_HEAD_ZIGBEE: 'ZIGBEE单灯',
-  SINGLE_HEAD_CAT1: 'Cat1单头'
+  SINGLE_HEAD_CAT1: 'Cat1单头',
+  DOUBLE_HEAD_CAT1:'Cat1双头'
 }[type] || type);
 const getPowerState = (ctrl: Controller, loop: string) => {
   if (loop === 'A') return ctrl.powerOnA ? '开' : '关';
@@ -101,6 +105,8 @@ const SingleLampList = ({
   refreshControl,
   ListEmptyComponent,
   onUpdateSuccess,
+  onEdit,
+  onDelete,
 }: SingleLampListProps) => {
   const [expanded, setExpanded] = useState<{ [id: number]: boolean }>({});
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -155,9 +161,29 @@ const SingleLampList = ({
             <Text style={styles.sub}>编号: {item.poleCode}</Text>
             <Text style={styles.sub}>类型: {getPoleType(item.poleType)} 方向: {getDirection(item.direction)}</Text>
           </View>
-          <TouchableOpacity onPress={() => handleToggle(item.id)} style={styles.expandBtn} activeOpacity={0.7}>
-            <Text style={styles.expandText}>{isExpanded ? '收起' : '展开'}</Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            {onEdit && (
+              <TouchableOpacity 
+                onPress={() => onEdit(item)} 
+                style={[styles.editBtn, { marginRight: 4 }]} 
+                activeOpacity={0.7}
+              >
+                <Text style={styles.editText}>编辑</Text>
+              </TouchableOpacity>
+            )}
+            {onDelete && (
+              <TouchableOpacity 
+                onPress={() => onDelete(item)} 
+                style={[styles.deleteBtn, { marginRight: 4 }]} 
+                activeOpacity={0.7}
+              >
+                <Text style={styles.deleteText}>删除</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => handleToggle(item.id)} style={styles.expandBtn} activeOpacity={0.7}>
+              <Text style={styles.expandText}>{isExpanded ? '收起' : '展开'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         {isExpanded && (
           <View style={styles.detail}>
@@ -188,7 +214,7 @@ const SingleLampList = ({
         )}
       </View>
     );
-  }, [expanded, handleToggle, handleImagePress, currentServer]);
+  }, [expanded, handleToggle, handleImagePress, currentServer, onEdit, onDelete]);
   
   const ListFooterComponent = useMemo(() => {
     return (
@@ -230,6 +256,11 @@ const styles = StyleSheet.create({
   info: { flex: 1, marginLeft: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },
   sub: { fontSize: 12, color: '#888', marginTop: 2 },
+  actionButtons: { flexDirection: 'row', alignItems: 'center' },
+  editBtn: { padding: 6 },
+  editText: { color: '#409eff', fontSize: 12 },
+  deleteBtn: { padding: 6 },
+  deleteText: { color: '#f56c6c', fontSize: 12 },
   expandBtn: { padding: 8 },
   expandText: { color: '#409eff' },
   detail: { backgroundColor: '#f7f7f7', padding: 12 },

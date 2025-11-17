@@ -32,7 +32,7 @@ const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClearMessages }
   }, []);
 
   const renderHeader = useCallback(() => (
-    <View className="flex-row items-center justify-between px-2 border border-gray-200 py-2">
+    <View className="flex-row items-center justify-between px-2 border border-gray-200 py-1">
       <Text className="text-lg font-semibold">消息列表 ({messages.length})</Text>
       <TouchableOpacity
         onPress={onClearMessages}

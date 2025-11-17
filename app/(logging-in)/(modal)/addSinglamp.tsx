@@ -1,5 +1,5 @@
 import { add_ebox, get_version_list } from '@/api/street/streetCommon';
-import EboxForm, { EboxFormData } from '@/components/addDevice/EboxForm';
+import SingleLampForm, { SingleLampFormData } from '@/components/addDevice/SingleLampForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { useAreaStore } from '@/store/areaStore';
@@ -26,23 +26,13 @@ export default function AddDeviceModal() {
   const { allAreaList } = useAreaStore();
   const [allAreaListprops,setAllAreaListprops] = useState<any>([])
   // 表单数据状态
-  const [eboxFormData, setEboxFormData] = useState<EboxFormData>({
-    device_info:{
-      device_code:"",
-      device_type:"Central",
-      e_meter:"",
-    },
-    ebox_type: 'CABINET',
-    name: '',
-    sn: '',
+  const [eboxFormData, setEboxFormData] = useState<SingleLampFormData>({
+    pole_code:"",
+    pole_type:"CABINET",
+    location: '',
     area_id: '',
-    version: '',
-    install_time: undefined,
     lng: '',
     lat: '',
-    model: '',
-    e_meter: '',
-    remark: '',
   });
 
   const getCurrentLocation = async () => {
@@ -85,7 +75,7 @@ export default function AddDeviceModal() {
     try {
       showLoading()
       add_ebox({...eboxFormData}).then(res => {
-        if (res.code == 200) {
+        if (res.code === 200) {
           const addEboxData:any = {...eboxFormData,id:res?.data?.id}
           addEboxNode(addEboxData) 
           showSuccess({ message: '添加成功' });
@@ -146,7 +136,7 @@ export default function AddDeviceModal() {
         >
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>新增集中器</Text>
+        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>新增灯杆</Text>
         <TouchableOpacity
           onPress={() => router.push('/(logging-in)/(modal)/scannerModal')}
           className="p-2"
@@ -156,7 +146,7 @@ export default function AddDeviceModal() {
       </View>
 
       {/* 设备类型选择 */}
-      <EboxForm formData={eboxFormData} versionList={versionList} onFormDataChange={setEboxFormData} allAreaList={allAreaListprops} />
+      <SingleLampForm formData={eboxFormData} onFormDataChange={setEboxFormData} allAreaList={allAreaListprops} />
 
       {/* 底部按钮区域 */}
       <View className="p-4 bg-secondary-200 border-t border-t-outline-100 text-center border-outline-100">
