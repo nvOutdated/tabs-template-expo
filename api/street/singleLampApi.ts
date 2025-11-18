@@ -72,7 +72,7 @@ export const remove_line = (params: { id: number }) => {
 
 // 添加单灯
 export const add_lightPole = (params: any) => {
-    return request("/smart/light/lightPole/add", {
+    return request("/smart/light/lamp/add", {
         method: "post",
         body: params
     });
@@ -80,7 +80,7 @@ export const add_lightPole = (params: any) => {
 
 // 修改单灯
 export const update_lightPole = (params: any) => {
-    return request("/smart/light/lightPole/update", {
+    return request("/smart/light/lamp/update", {
         method: "post",
         body: params
     });
@@ -88,7 +88,7 @@ export const update_lightPole = (params: any) => {
 
 // 删除单灯
 export const remove_lightPole = (params: { id: number }) => {
-    return request("/smart/light/lightPole/remove", {
+    return request("/smart/light/lamp/remove", {
         method: "post",
         body: params
     });
@@ -107,6 +107,35 @@ export function ebox_cfg_query_getEboxContactor(params:{cfg_id:number}) {
     return request("/smart/light/ebox_cfg/query/getEboxContactor",{
         method: 'post',
         body:params
+    })
+};
+
+/* 新增控制器 */
+export function lightPole_saveController(data = {}) {
+    return request("/smart/light/lightPole/saveController",{
+        method: 'post',
+        body: data
+    })
+};
+/* 删除控制器 */
+export function lightPole_removeController(data = {}) {
+    return request("/smart/light/lightPole/removeController",{
+        method: 'post',
+        body: data
+    })
+};
+/* 删除灯头 */
+export function lightPole_removeLampHolder(data = {}) {
+    return request("/smart/light/lightPole/removeLampHolder",{
+        method: 'post',
+        body: data
+    })
+};
+/* 批量添加灯杆和控制器 */ 
+export function lightPole_batchAdd(data = {}) {
+    return request("/smart/light/lightPole/add",{
+        method: 'post',
+        body: data
     })
 };
 

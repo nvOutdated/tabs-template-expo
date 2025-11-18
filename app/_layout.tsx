@@ -1,11 +1,11 @@
 import LoadingModal from '@/components/LoadingModal';
 import { ThemeProvider } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import MessageGlobalModal from '@/components/ui/MessageGlobalModal';
-import { useMessageModal } from '@/components/ui/useMessageModal';
 import "@/global.css";
 import { useAuthStore } from "@/store/autherStore";
 import { useGlobalStore } from "@/store/globalStateStore";
 import useLoadingStore from '@/store/loadingStore';
+import useMessageModalStore from '@/store/messageModalStore';
 import { Stack } from "expo-router";
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -14,7 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // LogBox.ignoreLogs(['setLayoutAnimationEnabledExperimental']);
 
 export default function RootLayout() {
-  const { visible, modalOptions, hideModal } = useMessageModal();
+  const { visible, modalOptions, hideMessage } = useMessageModalStore();
   const { isLoading } = useLoadingStore();
 
   useEffect(() => {
@@ -26,12 +26,6 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <LoadingModal visible={isLoading} />
-      <MessageGlobalModal
-        visible={visible}
-        {...modalOptions}
-        onClose={hideModal}
-      />
       <SafeAreaProvider>
         <ThemeProvider>
           <Stack
@@ -45,6 +39,12 @@ export default function RootLayout() {
           </Stack>
         </ThemeProvider>
       </SafeAreaProvider>
+      <LoadingModal visible={isLoading} />
+      <MessageGlobalModal
+        visible={visible}
+        {...modalOptions}
+        onClose={hideMessage}
+      />
     </GestureHandlerRootView>
   );
 }

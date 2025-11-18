@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
   withTiming
 } from 'react-native-reanimated';
+import useMessageModalStore from '@/store/messageModalStore';
 
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
@@ -108,7 +109,7 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
       damping: 15,
       stiffness: 100,
     });
-  }, []);
+  }, [opacity, translateY]);
 
   const hide = useCallback(() => {
     opacity.value = withTiming(0, { duration: 100 });
@@ -120,43 +121,67 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
         runOnJS(onClose)();
       }
     });
-  }, [onClose]);
+  }, [onClose, opacity, translateY]);
 
   useEffect(() => {
     if (visible) {
-      show();
+      // 立即设置初始值，然后触发动画
+      opacity.value = 0;
+      translateY.value = -100;
+      // 使用 requestAnimationFrame 确保在下一帧执行动画
+      requestAnimationFrame(() => {
+        show();
+      });
       if (duration > 0) {
         timerRef.current = setTimeout(() => {
           hide();
         }, duration);
       }
+    } else {
+      // 当不可见时，重置动画值
+      opacity.value = 0;
+      translateY.value = -100;
     }
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [visible, duration, show, hide]);
-
+  }, [visible, duration, show, hide, opacity, translateY]);
+  
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       statusBarTranslucent
       onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+      hardwareAccelerated
     >
-      <View className="flex-1 bg-transparent">
+      <View 
+        pointerEvents="box-none"
+        style={{
+          flex: 1,
+          backgroundColor: 'transparent',
+        }}
+      >
         <View 
           className={`absolute left-0 right-0 ${
             position === 'top' ? 'top-10' : 
             position === 'center' ? 'top-1/2' : 
             'bottom-10'
           }`}
+          style={{ zIndex: 99999, elevation: 99999 }}
+          pointerEvents="box-none"
         >
           <Animated.View 
-            style={[animatedStyle]}
+            style={[
+              animatedStyle,
+              { zIndex: 99999, elevation: 99999 }
+            ]}
             className={`mx-4 ${getBackgroundColor(type)} ${getBorderColor(type)} border-2 rounded-lg shadow-lg`}
+            pointerEvents="auto"
           >
             <View className="flex-row items-center gap-2 px-4 py-3">
               {getIcon(type)}
@@ -178,17 +203,11 @@ const MessageGlobalModal: React.FC<MessageGlobalModalProps> = ({
   );
 };
 
-// 创建一个全局的 Modal 管理器
-let modalRef: ((options: MessageGlobalModalOptions) => void) | null = null;
-
+// 导出 showMessageModal 函数，使用 store
 export const showMessageModal = (options: MessageGlobalModalOptions) => {
-  if (modalRef) {
-    modalRef(options);
-  }
-};
-
-export const setModalRef = (ref: (options: MessageGlobalModalOptions) => void) => {
-  modalRef = ref;
+  // 转换类型，移除 debounceTime（store 不需要）
+  const { debounceTime, ...storeOptions } = options;
+  useMessageModalStore.getState().showMessage(storeOptions);
 };
 
 export default MessageGlobalModal;

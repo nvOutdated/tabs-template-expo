@@ -1,10 +1,13 @@
 import {
   add_lightPole,
-  lightPole_query_get,
-  update_lightPole,
+  lightPole_batchAdd,
+  lightPole_saveController,
+  update_lightPole
 } from "@/api/street/singleLampApi";
 import CustomSelectPicker from "@/components/public/CustomSelectPicker";
-import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
+import { useMessageModal } from "@/components/ui/useMessageModal";
+import { ElectricItem } from "@/store/eboxStore";
+import useLoadingStore from '@/store/loadingStore';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -27,7 +30,10 @@ interface Lamp {
   phase: string;
   phaseMatched: boolean;
 }
-
+export interface Line {
+  id: number;
+  name: string;
+}
 interface Controller {
   id?: number;
   controllerId: string;
@@ -65,10 +71,11 @@ interface SingleLampEditModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  lineId: number;
+  lineInfo: Line;
   lampId?: number;
   contactors?: EboxContactor[];
   lampInfo: SingleLamp;
+  eboxInfo?:ElectricItem;
 }
 
 const CONTROLLER_TYPES = [
@@ -109,12 +116,13 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
   visible,
   onClose,
   onSuccess,
-  lineId,
+  lineInfo,
   lampId,
   contactors = [],
   lampInfo,
+  eboxInfo
 }) => {
-  const { showSuccess, showWarning } = useCustomToast();
+  const { showModalSuccess, showModalError } = useMessageModal();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<SingleLamp>({
     poleName: "",
@@ -126,8 +134,9 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     addr: null,
     direction: 1,
     controllers: [],
-    line_id: lineId,
+    line_id: lineInfo.id,
   });
+  const { showLoading, hideLoading } = useLoadingStore();
   // const {showSuccess,showWarning} = useMessageModal();
   // 加载单灯详情
   useEffect(() => {
@@ -135,7 +144,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
       // loadLampDetail();
       setFormData({
         ...lampInfo, // This will override the defaults with any values from lampInfo
-        line_id: lineId,
+        line_id: lineInfo.id,
       });
     } else if (visible && !lampId) {
       // 新增模式，重置表单
@@ -149,30 +158,30 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
         addr: null,
         direction: 1,
         controllers: [],
-        line_id: lineId,
+        line_id: lineInfo.id,
       });
     }
-  }, [visible, lineId, lampInfo]);
+  }, [visible, lineInfo, lampInfo]);
 
-  const loadLampDetail = useCallback(async () => {
-    if (!lampId) return;
-    try {
-      setLoading(true);
-      const res = await lightPole_query_get({ id: lampId });
-      if (res.code === 200 && res.data) {
-        setFormData({
-          ...res.data,
-          line_id: lineId,
-        });
-      } else {
-        showWarning({ message: res.message || "加载失败" });
-      }
-    } catch (error: any) {
-      showWarning({ message: error.message || "加载失败" });
-    } finally {
-      setLoading(false);
-    }
-  }, [lampId, lineId, showWarning]);
+  // const loadLampDetail = useCallback(async () => {
+  //   if (!lampId) return;
+  //   try {
+  //     setLoading(true);
+  //     const res = await lightPole_query_get({ id: lampId });
+  //     if (res.code === 200 && res.data) {
+  //       setFormData({
+  //         ...res.data,
+  //         line_id: lineId,
+  //       });
+  //     } else {
+  //       showWarning(res.message as string);
+  //     }
+  //   } catch (error: any) {
+  //     showWarning(error.message as string);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [lampId, lineId, showWarning]);
 
   // 添加控制器
   const handleAddController = useCallback(() => {
@@ -312,63 +321,107 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     return groupIds.includes(groupId);
   }, []);
 
-  // 提交表单
-  const handleSubmit = useCallback(async () => {
-    if (!formData.poleName.trim()) {
-      showWarning({ message: "请输入灯杆名称" });
-      return;
-    }
-    if (!formData.poleCode.trim()) {
-      showWarning({ message: "请输入灯杆编号" });
-      return;
-    }
-    if (formData.controllers.length === 0) {
-      showWarning({ message: "请至少添加一个控制器" });
-      return;
-    }
-    // 验证控制器
-    for (let i = 0; i < formData.controllers.length; i++) {
-      const controller = formData.controllers[i];
-      if (!controller.controllerId.trim()) {
-        showWarning({ message: `控制器${i + 1}的ID不能为空` });
-        return;
-      }
-      if (controller.lamps.length === 0) {
-        showWarning({ message: `控制器${i + 1}至少需要一个灯头` });
-        return;
-      }
-      // 验证灯头
-      for (let j = 0; j < controller.lamps.length; j++) {
-        const lamp = controller.lamps[j];
-        if (!lamp.phase.trim()) {
-          showWarning({ message: `控制器${i + 1}的灯头${j + 1}相序不能为空` });
-          return;
+  //add or update light pole
+  const handleSubmitLightPole = useCallback(async () => {
+    try {
+      showLoading();
+      const params = {
+        id:formData.id,
+        addr:formData.addr,
+        address:formData.addr,
+        direction:formData.direction,
+        lng:formData.lng,
+        lat:formData.lat,
+        name:formData.poleName,
+        sn:formData.poleCode,
+        model_type:formData.poleType,
+        install_time:formData.installTime,
+        line_id:formData.line_id,
+        ebox_id:eboxInfo?.id,
+        lamp_devices:[],
+        lamp_holders:[]
+      };
+      if(formData.id){
+       const res = await update_lightPole(params);
+       if(res.code === 200){
+        showModalSuccess('修改成功');
+        onSuccess();
+       }else{
+        showModalError("修改失败");
+       }
+      }else{
+        const res = await add_lightPole(params);
+        if(res.code === 200){
+          showModalSuccess("添加成功");
+          onSuccess();
+        }else{
+          showModalError("添加失败");
         }
       }
+    } catch (error: any) {
+      showModalError(
+        error.message as string
+      );
+    } finally {
+      hideLoading();
     }
+  }, [formData, lampId, showModalSuccess, showModalError,eboxInfo, onSuccess]);
 
-    try {
-      setLoading(true);
-      const res = lampId
-        ? await update_lightPole({ ...formData, id: lampId })
-        : await add_lightPole(formData);
-      if (res.code === 200) {
-        showSuccess({ message: lampId ? "修改成功" : "添加成功" });
+  //add or update controller
+  const handleSubmitController = useCallback(async () => {
+     if(formData.id){
+       const res = await lightPole_saveController(formData);
+       if(res.code === 200){
+        showModalSuccess('修改成功');
         onSuccess();
-        onClose();
-      } else {
-        showWarning({
-          message: res.message || (lampId ? "修改失败" : "添加失败"),
-        });
+       }else{
+        showModalError('修改失败');
+       }
+     }else{
+       const res = await lightPole_saveController(formData);
+       if(res.code === 200){
+        showModalSuccess('添加成功');
+        onSuccess();
+       }else{
+        showModalError('添加失败');
+       }
+     }
+  }, [formData, lampId, showModalSuccess, showModalError,eboxInfo, onSuccess]);
+  
+  const handleSubmitBatchAdd = useCallback(async () => {
+    try {
+      showLoading();
+      const params = {
+        deviceCode:eboxInfo?.sn,
+        lines:[{
+          lineName:lineInfo.name,
+          poles:[{
+            controllers:formData.controllers,
+            lampsDirectlyOnPole:[],
+            poleInfo:{
+              direction:formData.direction,
+              poleCode:formData.poleCode,
+              poleName:formData.poleName,
+              poleType:formData.poleType,
+            }
+          }]
+        }]
+      } 
+      const res = await lightPole_batchAdd(params);
+      console.log(res,11111);
+      
+      if(res.code === 200){
+        showModalSuccess('添加成功');
+        onSuccess();
+      }else{
+        showModalError('添加失败');
       }
     } catch (error: any) {
-      showWarning({
-        message: error.message || (lampId ? "修改失败" : "添加失败"),
-      });
+      showModalError(error.message as string);
     } finally {
-      setLoading(false);
+      hideLoading();
     }
-  }, [formData, lampId, onSuccess, onClose, showSuccess, showWarning]);
+  }, [formData, showModalSuccess, showModalError, onSuccess]);
 
   if (!visible) return null;
 
@@ -530,7 +583,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                       <TextInput
                         className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
                         placeholder="请输入经度"
-                        value={formData.lng.toString()}
+                        value={formData.lng?.toString()}
                         onChangeText={(text) => {
                           const num = parseFloat(text) || 0;
                           setFormData((prev) => ({ ...prev, lng: num }));
@@ -543,7 +596,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                       <TextInput
                         className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
                         placeholder="请输入纬度"
-                        value={formData.lat.toString()}
+                        value={formData.lat?.toString()}
                         onChangeText={(text) => {
                           const num = parseFloat(text) || 0;
                           setFormData((prev) => ({ ...prev, lat: num }));
@@ -945,24 +998,56 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
 
           {/* 底部按钮 */}
           <View className="flex-row justify-end gap-2 p-4 border-t border-gray-200">
-            <TouchableOpacity
-              onPress={onClose}
-              className="px-4 py-2 rounded-md border border-gray-300"
-              disabled={loading}
-            >
-              <Text className="text-sm text-gray-700">取消</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSubmit}
-              className="px-4 py-2 rounded-md bg-blue-500"
+            {
+              lampId ? (
+              <>
+                <TouchableOpacity
+                  onPress={handleSubmitLightPole}
+                  className="px-4 py-2 rounded-md bg-success-700"
+                  disabled={loading}
+                > 
+                  <Text className="text-sm text-white">修改灯杆信息</Text>
+                </TouchableOpacity>
+                 <TouchableOpacity
+                 onPress={handleSubmitLightPole}
+                 className="px-4 py-2 rounded-md bg-success-700"
+                 disabled={loading}
+               > 
+                 <Text className="text-sm text-white">修改控制器信息</Text>
+               </TouchableOpacity>
+               </>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleSubmitBatchAdd}
+                  className="px-4 py-2 rounded-md bg-success-700"
+                  disabled={loading}
+                >
+                 <Text className="text-sm text-white">确定</Text>
+                </TouchableOpacity>
+              )
+            }
+           {/*  <TouchableOpacity
+              onPress={handleSubmitLightPole}
+              className="px-4 py-2 rounded-md bg-success-700"
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text className="text-sm text-white">确定</Text>
+                <Text className="text-sm text-white">提交灯杆信息</Text>
               )}
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleSubmitController}
+              className="px-4 py-2 rounded-md bg-primary-500"
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text className="text-sm text-white">提交控制器信息</Text>
+              )}
+            </TouchableOpacity> */}
           </View>
         </View>
       </View>

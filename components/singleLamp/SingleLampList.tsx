@@ -20,6 +20,7 @@ interface Lamp {
   cfgMatched: boolean;
   phase: string;
   phaseMatched: boolean;
+  productId?:number
 }
 
 interface Controller {
@@ -191,14 +192,15 @@ const SingleLampList = ({
               <View key={controller.id} style={styles.controllerBlock}>
                 <View style={styles.controllerRow}>
                   <Text style={styles.controllerId}>ID: {controller.controllerId}</Text>
-                  <Text style={styles.controllerType}>{getControllerType(controller.controllerType)}</Text>
-                  <Text>组: {controller.groupIds4Save.join(',')}</Text>
+                  <Text style={styles.controllerType}>类型:{getControllerType(controller.controllerType)}</Text>
+                  <Text>所属组: {controller.groupIds4Save.join(',')}</Text>
                 </View>
                 <View style={styles.lampHeader}>
                   <Text style={styles.lampCol}>照明控制</Text>
                   <Text style={styles.lampCol}>上电状态</Text>
                   <Text style={styles.lampCol}>照明类型</Text>
                   <Text style={styles.lampCol}>相序</Text>
+                  <Text style={styles.lampCol}>产品ID</Text>
                 </View>
                 {controller.lamps.map(lamp => (
                   <View key={lamp.id} style={styles.lampRow}>
@@ -206,6 +208,7 @@ const SingleLampList = ({
                     <Text style={styles.lampCol}>{getPowerState(controller, lamp.lightLoop)}</Text>
                     <Text style={styles.lampCol}>{getLightingType(lamp.lightingType)}</Text>
                     <Text style={styles.lampCol}>{lamp.phase}</Text>
+                    <Text style={styles.lampCol}>{lamp.productId}</Text>
                   </View>
                 ))}
               </View>
@@ -250,8 +253,8 @@ const SingleLampList = ({
 };
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', margin: 4, borderRadius: 8, overflow: 'hidden', elevation: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+  card: { backgroundColor: '#fff', margin: 4, borderRadius: 8, overflow: 'hidden', elevation: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 8 },
   image: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#eee' },
   info: { flex: 1, marginLeft: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },
@@ -263,9 +266,9 @@ const styles = StyleSheet.create({
   deleteText: { color: '#f56c6c', fontSize: 12 },
   expandBtn: { padding: 8 },
   expandText: { color: '#409eff' },
-  detail: { backgroundColor: '#f7f7f7', padding: 12 },
+  detail: { backgroundColor: '#f7f7f7', padding: 8 },
   controllerBlock: { marginBottom: 4 },
-  controllerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  controllerRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 4 },
   controllerId: { fontWeight: 'bold' },
   controllerType: { color: '#409eff' },
   lampHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },

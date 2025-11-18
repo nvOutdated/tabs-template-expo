@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-interface Line {
+export interface Line {
   id: number;
   name: string;
 }
@@ -671,10 +671,11 @@ export default function SingleLampScreen() {
             setEditingLampId(undefined);
           }}
           onSuccess={handleEditSuccess}
-          lineId={selectedLine.id}
+          lineInfo={selectedLine}
           lampId={editingLampId}
           lampInfo={lampInfo}
           contactors={contactorList}
+          eboxInfo={selectedDevice as ElectricItem}
         />
       )}
 

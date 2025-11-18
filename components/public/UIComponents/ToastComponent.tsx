@@ -1,8 +1,8 @@
 import {
-    Toast,
-    ToastDescription,
-    ToastTitle,
-    useToast,
+  Toast,
+  ToastDescription,
+  ToastTitle,
+  useToast,
 } from '@/components/ui/toast';
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
@@ -80,7 +80,8 @@ export const useCustomToast = () => {
           <Toast 
             action="success" 
             variant="solid"
-            className={`w-80 mt-10 py-1 ${getBackgroundColor('success')} ${getBorderColor('success')} border-2 rounded-lg shadow-lg z-50`}
+            className={`w-80 mt-10 py-1 ${getBackgroundColor('success')} ${getBorderColor('success')} border-2 rounded-lg shadow-lg z-[9999]`}
+            style={{ zIndex: 9999, elevation: 9999 }}
           >
             <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('success')}
@@ -104,7 +105,8 @@ export const useCustomToast = () => {
           <Toast 
             action="error" 
             variant="solid"
-            className={`w-80 mt-10 py-1 ${getBackgroundColor('error')} ${getBorderColor('error')} border-2 rounded-lg shadow-lg z-50`}
+            className={`w-80 mt-10 py-1 ${getBackgroundColor('error')} ${getBorderColor('error')} border-2 rounded-lg shadow-lg z-[9999]`}
+            style={{ zIndex: 9999, elevation: 9999 }}
           >
             <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('error')}
@@ -128,7 +130,8 @@ export const useCustomToast = () => {
           <Toast 
             action="warning" 
             variant="solid"
-            className={`w-80 mt-10 py-1 ${getBackgroundColor('warning')} ${getBorderColor('warning')} border-2 rounded-lg shadow-lg z-50`}
+            className={`w-80 mt-10 py-1 ${getBackgroundColor('warning')} ${getBorderColor('warning')} border-2 rounded-lg shadow-lg z-[9999]`}
+            style={{ zIndex: 9999, elevation: 9999 }}
           >
             <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('warning')}
@@ -152,7 +155,8 @@ export const useCustomToast = () => {
           <Toast 
             action="info" 
             variant="solid"
-            className={`w-80 mt-10 py-1 ${getBackgroundColor('info')} ${getBorderColor('info')} border-2 rounded-lg shadow-lg z-50`}
+            className={`w-80 mt-10 py-1 ${getBackgroundColor('info')} ${getBorderColor('info')} border-2 rounded-lg shadow-lg z-[9999]`}
+            style={{ zIndex: 9999, elevation: 9999 }}
           >
             <View className="flex-row items-center gap-2 px-3 py-1">
               {getIcon('info')}
