@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ScannerModal = () => {
+const ScannerModal = ({ onClose }: { onClose?: () => void }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [torch, setTorch] = useState(false);
@@ -58,7 +58,11 @@ const ScannerModal = () => {
     setScanned(true);
     // console.log('扫码内容:', result.data);
     setScanResult(result.data);
-    router.back();
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
   };
  
   return (
@@ -91,7 +95,13 @@ const ScannerModal = () => {
             <Ionicons name={torch ? "flash" : "flash-off"} size={48} color="white" />
             <Text style={styles.buttonText}>{torch ? "关闭闪光灯" : "打开闪光灯"}</Text>
           </Pressable>
-          <Pressable style={styles.controlButton} onPress={() => router.back()}>
+          <Pressable style={styles.controlButton} onPress={() => {
+            if (onClose) {
+              onClose();
+            } else {
+              router.back();
+            }
+          }}>
             <Ionicons name="close" size={48} color="white" />
             <Text style={styles.buttonText}>关闭</Text>
           </Pressable>

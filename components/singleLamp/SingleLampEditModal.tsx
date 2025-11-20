@@ -4,11 +4,15 @@ import {
   lightPole_saveController,
   update_lightPole,
 } from "@/api/street/singleLampApi";
+import ScannerModal from "@/app/(logging-in)/(modal)/scannerModal";
 import CustomSelectPicker from "@/components/public/CustomSelectPicker";
 import { useMessageModal } from "@/components/ui/useMessageModal";
 import { ElectricItem } from "@/store/eboxStore";
 import useLoadingStore from "@/store/loadingStore";
+import { useScannerStore } from "@/store/scannerStore";
+import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from 'expo-location';
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,6 +24,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
 interface Lamp {
   id?: number;
   lightLoop: string;
@@ -138,6 +143,72 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     line_id: lineInfo.id,
   });
   const { showLoading, hideLoading } = useLoadingStore();
+  const { scanResult, setScanResult } = useScannerStore();
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanTarget, setScanTarget] = useState<{
+    type: "poleCode" | "controllerId";
+    index?: number;
+  } | null>(null);
+
+ const getCurrentLocation = async () => {
+    try {
+      showLoading();
+      // getLocation()
+      // 使用高德地图定位服务获取位置
+    //   const location = await locationService.getCurrentLocation({
+    //     // enableHighAccuracy: true,
+    //     // timeout: 15000,
+    //   }
+    // );
+    //  console.log(location,1111);
+    //  const { status } = await Location.requestForegroundPermissionsAsync();
+    //  console.log(status);  // 可能的状态值是 'granted', 'denied', 'undetermined'
+   
+      const expoLocation = await Location.getLastKnownPositionAsync();
+      console.log(expoLocation,2222);
+    const location = await locationService.getCurrentLocation({
+      enableHighAccuracy: true,
+      timeout: 15000,
+      useIPFallback: true,
+      useCachedLocation: true
+    });
+
+      if (expoLocation && expoLocation.coords) {
+      // 更新集中器表单的位置信息
+      setFormData(prev => ({
+        ...prev,
+        lat: expoLocation.coords.latitude,
+        lng: expoLocation.coords.longitude,
+        addr: location.address?location.address:''
+      }));
+      console.log(expoLocation.coords.latitude,expoLocation.coords.longitude,1111);
+      
+      showModalSuccess(`位置获取成功${location.address ? `: ${location.address}` : ''}`);
+    } else {
+      throw new Error('获取位置信息失败');
+    }
+      // if (location && location.coords) {
+      //   // 更新集中器表单的位置信息
+      //   setEboxFormData(prev => ({
+      //     ...prev,
+      //     lat: location.coords.latitude.toString(),
+      //     lng: location.coords.longitude.toString()
+      //   }));
+      
+      //   showSuccess({
+      //     message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
+      //   });
+      // } else {
+      //   throw new Error('获取位置信息失败');
+      // }
+    } catch (error: any) {
+      // console.error('Error getting location:', error);
+      showModalError(error.message || "获取位置信息失败");
+    } finally {
+        hideLoading();
+    }
+  };
+
   // const {showSuccess,showWarning} = useMessageModal();
   // 加载单灯详情
   useEffect(() => {
@@ -223,6 +294,22 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     },
     []
   );
+
+  useEffect(() => {
+    if (scanResult && scanTarget) {
+      if (scanTarget.type === "poleCode") {
+        setFormData((prev) => ({ ...prev, poleCode: scanResult }));
+      } else if (
+        scanTarget.type === "controllerId" &&
+        typeof scanTarget.index === "number"
+      ) {
+        handleUpdateController(scanTarget.index, "controllerId", scanResult);
+      }
+      setScanResult("");
+      setScanTarget(null);
+      setShowScanner(false);
+    }
+  }, [scanResult, scanTarget, handleUpdateController, setScanResult]);
 
   // 添加灯头
   const handleAddLamp = useCallback((controllerIndex: number) => {
@@ -458,7 +545,10 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/50">
+      {showScanner ? (
+        <ScannerModal onClose={() => setShowScanner(false)} />
+      ) : (
+        <View className="flex-1 bg-black/50">
         <View className="flex-1 mt-20 bg-white rounded-t-3xl">
           {/* 标题栏 */}
           <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
@@ -501,14 +591,24 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                     <Text className="w-1/4 text-sm text-gray-700">
                       灯杆编号 *
                     </Text>
-                    <TextInput
-                      className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
-                      placeholder="请输入灯杆编号"
-                      value={formData.poleCode}
-                      onChangeText={(text) =>
-                        setFormData((prev) => ({ ...prev, poleCode: text }))
-                      }
-                    />
+                    <View className="w-3/4 flex-row items-center gap-2">
+                      <TextInput
+                        className="flex-1 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
+                        placeholder="请输入灯杆编号"
+                        value={formData.poleCode}
+                        onChangeText={(text) =>
+                          setFormData((prev) => ({ ...prev, poleCode: text }))
+                        }
+                      />
+                      <TouchableOpacity
+                        onPress={() => {
+                          setScanTarget({ type: "poleCode" });
+                          setShowScanner(true);
+                        }}
+                      >
+                        <Ionicons name="scan-outline" size={24} color="#666" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   <View className="mb-3 flex-row items-center ">
@@ -594,13 +694,21 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                       地理位置
                     </Text>
                     <TextInput
-                      className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      className="w-2/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm"
                       placeholder="请输入地址"
                       value={formData.addr || ""}
                       onChangeText={(text) =>
                         setFormData((prev) => ({ ...prev, addr: text }))
                       }
                     />
+                    <TouchableOpacity
+                      onPress={() => {
+                        getCurrentLocation()
+                      }}
+                      className="w-1/4 ml-1 h-10 px-3 py-2 border bg-blue-500 border-gray-300 rounded-md text-sm"
+                    >
+                     <Text className="text-white">获取位置</Text>
+                    </TouchableOpacity>
                   </View>
 
                   <View className="mb-3 flex-row gap-2">
@@ -675,18 +783,35 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                           <Text className="w-1/4 text-sm text-gray-700">
                             控制器ID *
                           </Text>
-                          <TextInput
-                            className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm bg-white"
-                            placeholder="请输入控制器ID"
-                            value={controller.controllerId}
-                            onChangeText={(text) =>
-                              handleUpdateController(
-                                ctrlIndex,
-                                "controllerId",
-                                text
-                              )
-                            }
-                          />
+                          <View className="w-3/4 flex-row items-center gap-2">
+                            <TextInput
+                              className="flex-1 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm bg-white"
+                              placeholder="请输入控制器ID"
+                              value={controller.controllerId}
+                              onChangeText={(text) =>
+                                handleUpdateController(
+                                  ctrlIndex,
+                                  "controllerId",
+                                  text
+                                )
+                              }
+                            />
+                            <TouchableOpacity
+                              onPress={() => {
+                                setScanTarget({
+                                  type: "controllerId",
+                                  index: ctrlIndex,
+                                });
+                                setShowScanner(true);
+                              }}
+                            >
+                              <Ionicons
+                                name="scan-outline"
+                                size={24}
+                                color="#666"
+                              />
+                            </TouchableOpacity>
+                          </View>
                         </View>
 
                         <View className="mb-2 flex-row items-center">
@@ -1093,8 +1218,9 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
               )}
             </TouchableOpacity> */}
           </View>
+          </View>
         </View>
-      </View>
+      )}
     </Modal>
   );
 };

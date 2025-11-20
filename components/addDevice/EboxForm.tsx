@@ -1,8 +1,10 @@
+import ScannerModal from "@/app/(logging-in)/(modal)/scannerModal";
+import { useScannerStore } from "@/store/scannerStore";
 import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CustomSelectPicker from '../public/CustomSelectPicker';
 
 const gatewayTypes = [
@@ -47,8 +49,32 @@ interface EboxFormProps {
 const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormProps) => {
   
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanTarget, setScanTarget] = useState<'device_code' | 'sn' | null>(null);
+  const { scanResult, setScanResult } = useScannerStore();
+
+  React.useEffect(() => {
+    if (scanResult && scanTarget) {
+      if (scanTarget === 'device_code') {
+        onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code: scanResult} });
+      } else if (scanTarget === 'sn') {
+        onFormDataChange({ ...formData, sn: scanResult });
+      }
+      setScanResult("");
+      setScanTarget(null);
+      setShowScanner(false);
+    }
+  }, [scanResult, scanTarget, onFormDataChange, formData, setScanResult]);
+
   return (
     <>
+      <Modal
+        visible={showScanner}
+        animationType="slide"
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <ScannerModal onClose={() => setShowScanner(false)} />
+      </Modal>
     {
       showDatePicker && (
         <DateTimePicker
@@ -67,15 +93,23 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">网关编号</Text>
-          <TextInput
-            className="flex-1 h-12 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="1-11个数字(必填)"
-            placeholderTextColor="#999"
-            value={formData.device_info?.device_code || ''}
-            onChangeText={(value) =>
-              onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code:value} })
-            }
-          />
+          <View className="flex-1 flex-row items-center gap-2">
+            <TextInput
+              className="flex-1 h-12 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="1-11个数字(必填)"
+              placeholderTextColor="#999"
+              value={formData.device_info?.device_code || ''}
+              onChangeText={(value) =>
+                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code:value} })
+              }
+            />
+            <TouchableOpacity onPress={() => {
+              setScanTarget('device_code');
+              setShowScanner(true);
+            }}>
+              <Ionicons name="scan-outline" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -112,13 +146,21 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
       <View className="mb-1">
         <View className="flex-row items-center mb-0">
           <Text className="text-base text-primary-500 w-20">设备编号</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="1-12个字(必填)"
-            placeholderTextColor="#999"
-            value={formData.sn}
-            onChangeText={(value) => onFormDataChange({ ...formData, sn: value })}
-          />
+          <View className="flex-1 flex-row items-center gap-2">
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="1-12个字(必填)"
+              placeholderTextColor="#999"
+              value={formData.sn}
+              onChangeText={(value) => onFormDataChange({ ...formData, sn: value })}
+            />
+            <TouchableOpacity onPress={() => {
+              setScanTarget('sn');
+              setShowScanner(true);
+            }}>
+              <Ionicons name="scan-outline" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

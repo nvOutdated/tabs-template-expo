@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+// import {locationService} from "@/utils/locationService"
 // 初始化高德地图定位服务
 const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
 
@@ -139,20 +139,21 @@ export default function AddDeviceModal() {
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
       {/* 顶部导航栏 */}
-      <View className="flex-row items-center justify-between px-3 py-1 border-b border-outline-100" style={{backgroundColor:currentTheme.headerBg}}>
+      <View className="flex-row items-center  px-3 py-1 border-b border-outline-100" style={{backgroundColor:currentTheme.headerBg}}>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="p-2"
+          className="p-2 "
         >
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold" style={{ color: currentTheme.textColor }}>新增集中器</Text>
-        <TouchableOpacity
+        <Text className="text-lg font-semibold ml-[30%]" style={{ color: currentTheme.textColor }}>新增集中器</Text>
+      
+      {/*   <TouchableOpacity
           onPress={() => router.push('/(logging-in)/(modal)/scannerModal')}
           className="p-2"
         >
           <Ionicons name="scan-outline" size={24} color={currentTheme.textColor} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* 设备类型选择 */}
