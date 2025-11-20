@@ -2,12 +2,12 @@ import {
   add_lightPole,
   lightPole_batchAdd,
   lightPole_saveController,
-  update_lightPole
+  update_lightPole,
 } from "@/api/street/singleLampApi";
 import CustomSelectPicker from "@/components/public/CustomSelectPicker";
 import { useMessageModal } from "@/components/ui/useMessageModal";
 import { ElectricItem } from "@/store/eboxStore";
-import useLoadingStore from '@/store/loadingStore';
+import useLoadingStore from "@/store/loadingStore";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -46,6 +46,7 @@ interface Controller {
   stateB: string | null;
   powerOnA: boolean | null;
   powerOnB: boolean | null;
+  productId?: string;
 }
 
 interface SingleLamp {
@@ -75,7 +76,7 @@ interface SingleLampEditModalProps {
   lampId?: number;
   contactors?: EboxContactor[];
   lampInfo: SingleLamp;
-  eboxInfo?:ElectricItem;
+  eboxInfo?: ElectricItem;
 }
 
 const CONTROLLER_TYPES = [
@@ -120,7 +121,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
   lampId,
   contactors = [],
   lampInfo,
-  eboxInfo
+  eboxInfo,
 }) => {
   const { showModalSuccess, showModalError } = useMessageModal();
   const [loading, setLoading] = useState(false);
@@ -326,102 +327,127 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     try {
       showLoading();
       const params = {
-        id:formData.id,
-        addr:formData.addr,
-        address:formData.addr,
-        direction:formData.direction,
-        lng:formData.lng,
-        lat:formData.lat,
-        name:formData.poleName,
-        sn:formData.poleCode,
-        model_type:formData.poleType,
-        install_time:formData.installTime,
-        line_id:formData.line_id,
-        ebox_id:eboxInfo?.id,
-        lamp_devices:[],
-        lamp_holders:[]
+        id: formData.id,
+        addr: formData.addr,
+        address: formData.addr,
+        direction: formData.direction,
+        lng: formData.lng,
+        lat: formData.lat,
+        name: formData.poleName,
+        sn: formData.poleCode,
+        model_type: formData.poleType,
+        install_time: formData.installTime,
+        line_id: formData.line_id,
+        ebox_id: eboxInfo?.id,
+        lamp_devices: [],
+        lamp_holders: [],
       };
-      if(formData.id){
-       const res = await update_lightPole(params);
-       if(res.code === 200){
-        showModalSuccess('修改成功');
-        onSuccess();
-       }else{
-        showModalError("修改失败");
-       }
-      }else{
+      if (formData.id) {
+        const res = await update_lightPole(params);
+        if (res.code === 200) {
+          showModalSuccess("修改成功");
+          onSuccess();
+        } else {
+          showModalError("修改失败");
+        }
+      } else {
         const res = await add_lightPole(params);
-        if(res.code === 200){
+        if (res.code === 200) {
           showModalSuccess("添加成功");
           onSuccess();
-        }else{
+        } else {
           showModalError("添加失败");
         }
-      }
-    } catch (error: any) {
-      showModalError(
-        error.message as string
-      );
-    } finally {
-      hideLoading();
-    }
-  }, [formData, lampId, showModalSuccess, showModalError,eboxInfo, onSuccess]);
-
-  //add or update controller
-  const handleSubmitController = useCallback(async () => {
-     if(formData.id){
-       const res = await lightPole_saveController(formData);
-       if(res.code === 200){
-        showModalSuccess('修改成功');
-        onSuccess();
-       }else{
-        showModalError('修改失败');
-       }
-     }else{
-       const res = await lightPole_saveController(formData);
-       if(res.code === 200){
-        showModalSuccess('添加成功');
-        onSuccess();
-       }else{
-        showModalError('添加失败');
-       }
-     }
-  }, [formData, lampId, showModalSuccess, showModalError,eboxInfo, onSuccess]);
-  
-  const handleSubmitBatchAdd = useCallback(async () => {
-    try {
-      showLoading();
-      const params = {
-        deviceCode:eboxInfo?.sn,
-        lines:[{
-          lineName:lineInfo.name,
-          poles:[{
-            controllers:formData.controllers,
-            lampsDirectlyOnPole:[],
-            poleInfo:{
-              direction:formData.direction,
-              poleCode:formData.poleCode,
-              poleName:formData.poleName,
-              poleType:formData.poleType,
-            }
-          }]
-        }]
-      } 
-      const res = await lightPole_batchAdd(params);
-      console.log(res,11111);
-      
-      if(res.code === 200){
-        showModalSuccess('添加成功');
-        onSuccess();
-      }else{
-        showModalError('添加失败');
       }
     } catch (error: any) {
       showModalError(error.message as string);
     } finally {
       hideLoading();
     }
-  }, [formData, showModalSuccess, showModalError, onSuccess]);
+  }, [
+    formData,
+    showModalSuccess,
+    showModalError,
+    eboxInfo,
+    onSuccess,
+    showLoading,
+    hideLoading,
+  ]);
+
+  //add or update controller
+  const handleSubmitController = useCallback(async () => {
+    const params = {
+      id: formData.id,
+      controllers: formData.controllers,
+      poleCode: formData.poleCode,
+      poleName: formData.poleName,
+      poleType: formData.poleType,
+      installTime: formData.installTime,
+      lineId: formData.line_id,
+      direction: formData.direction,
+      lng: formData.lng,
+      lat: formData.lat,
+      addr: formData.addr,
+      eboxId: eboxInfo?.id,
+    };
+    const res = await lightPole_saveController(params);
+    console.log(res, 11111);
+
+    if (res.code === 200) {
+      showModalSuccess("修改成功");
+      onSuccess();
+    } else {
+      showModalError("修改失败");
+    }
+  }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo]);
+
+  const handleSubmitBatchAdd = useCallback(async () => {
+    try {
+      showLoading();
+      const params = {
+        deviceCode: eboxInfo?.sn,
+        lines: [
+          {
+            lineName: lineInfo.name,
+            poles: [
+              {
+                controllers: formData.controllers,
+                lampsDirectlyOnPole: [],
+                poleInfo: {
+                  direction: formData.direction,
+                  poleCode: formData.poleCode,
+                  poleName: formData.poleName,
+                  poleType: formData.poleType,
+                },
+              },
+            ],
+          },
+        ],
+      };
+      const res = await lightPole_batchAdd(params);
+      console.log(res, 11111);
+
+      if (res.code === 200) {
+        showModalSuccess("添加成功");
+        onSuccess();
+      } else {
+        showModalError("添加失败");
+      }
+    } catch (error: any) {
+      showModalError(error.message as string);
+    } finally {
+      hideLoading();
+    }
+  }, [
+    formData,
+    showModalSuccess,
+    showModalError,
+    onSuccess,
+    eboxInfo,
+    showLoading,
+    hideLoading,
+    lineInfo,
+  ]);
 
   if (!visible) return null;
 
@@ -788,6 +814,209 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                             </View>
                           </View>
                         </View>
+                        {controller.lamps.length === 0 ? (
+                          <View className="p-2 bg-white rounded-md items-center">
+                            <Text className="text-xs text-gray-500">
+                              暂无灯头，请添加
+                            </Text>
+                          </View>
+                        ) : (
+                          controller.lamps.map((lamp, lampIndex) => (
+                            <View
+                              key={lampIndex}
+                              className="mb-2 p-2 border border-gray-200 rounded-md bg-white"
+                            >
+                              <View className="flex-row items-center justify-between mb-2">
+                                <Text className="w-1/4 text-xs font-semibold text-gray-900">
+                                  灯头 {lampIndex + 1}
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={() =>
+                                    handleRemoveLamp(ctrlIndex, lampIndex)
+                                  }
+                                  className="px-2 py-1 bg-red-500 rounded-md"
+                                >
+                                  <Text className="text-xs text-white">
+                                    删除
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+
+                              <View className="mb-2 flex-row items-center">
+                                <Text className="w-1/4 text-xs text-gray-700 mb-1">
+                                  照明控制
+                                </Text>
+                                <ScrollView
+                                  horizontal
+                                  showsHorizontalScrollIndicator={false}
+                                >
+                                  <View className="flex-row gap-2">
+                                    {LIGHT_LOOPS.map((loop) => (
+                                      <TouchableOpacity
+                                        key={loop}
+                                        onPress={() =>
+                                          handleUpdateLamp(
+                                            ctrlIndex,
+                                            lampIndex,
+                                            "lightLoop",
+                                            loop
+                                          )
+                                        }
+                                        className={`px-3 py-1 rounded-md border ${
+                                          lamp.lightLoop === loop
+                                            ? "bg-blue-500 border-blue-500"
+                                            : "bg-white border-gray-300"
+                                        }`}
+                                      >
+                                        <Text
+                                          className={`text-xs ${
+                                            lamp.lightLoop === loop
+                                              ? "text-white"
+                                              : "text-gray-700"
+                                          }`}
+                                        >
+                                          {loop}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </View>
+                                </ScrollView>
+                              </View>
+
+                              <View className="mb-2 flex-row items-center">
+                                <Text className="w-1/4 text-xs text-gray-700 mb-1">
+                                  照明类型
+                                </Text>
+                                <ScrollView
+                                  horizontal
+                                  showsHorizontalScrollIndicator={false}
+                                >
+                                  <View className="flex-row gap-2">
+                                    {LIGHTING_TYPES.map((type) => (
+                                      <TouchableOpacity
+                                        key={type.value}
+                                        onPress={() =>
+                                          handleUpdateLamp(
+                                            ctrlIndex,
+                                            lampIndex,
+                                            "lightingType",
+                                            type.value
+                                          )
+                                        }
+                                        className={`px-3 py-1 rounded-md border ${
+                                          lamp.lightingType === type.value
+                                            ? "bg-blue-500 border-blue-500"
+                                            : "bg-white border-gray-300"
+                                        }`}
+                                      >
+                                        <Text
+                                          className={`text-xs ${
+                                            lamp.lightingType === type.value
+                                              ? "text-white"
+                                              : "text-gray-700"
+                                          }`}
+                                        >
+                                          {type.label}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </View>
+                                </ScrollView>
+                              </View>
+
+                              {/* 交流接触器选择 */}
+                              <View className="mb-2 flex-row items-center">
+                                <Text className="w-1/4 text-xs text-gray-700 mb-1">
+                                  交流接触器
+                                </Text>
+                                <View className="w-3/4">
+                                  <CustomSelectPicker
+                                    options={contactors.map((contactor) => ({
+                                      label: contactor.cfgName,
+                                      value: String(contactor.cfgId),
+                                    }))}
+                                    value={String(lamp.cfgId)}
+                                    onChange={(value: string) => {
+                                      handleUpdateLamp(
+                                        ctrlIndex,
+                                        lampIndex,
+                                        "cfgId",
+                                        value
+                                      );
+                                      const selected = contactors.find(
+                                        (item) => String(item.cfgId) === value
+                                      );
+                                      handleUpdateLamp(
+                                        ctrlIndex,
+                                        lampIndex,
+                                        "cfgName",
+                                        selected?.cfgName || null
+                                      );
+                                    }}
+                                    initialLabel="请选择交流接触器"
+                                  />
+                                </View>
+                              </View>
+
+                              <View className="mb-2 flex-row items-center">
+                                <Text className="w-1/4 text-xs text-gray-700">
+                                  相序 *
+                                </Text>
+                                <View className="flex-row gap-2">
+                                  {["A", "B", "C"].map((phase) => (
+                                    <Pressable
+                                      key={phase}
+                                      onPress={() =>
+                                        handleUpdateLamp(
+                                          ctrlIndex,
+                                          lampIndex,
+                                          "phase",
+                                          phase
+                                        )
+                                      }
+                                      className={`w-10 h-8 rounded-md items-center justify-center ${
+                                        lamp.phase === phase
+                                          ? "bg-blue-500"
+                                          : "bg-gray-100 border border-gray-300"
+                                      }`}
+                                    >
+                                      <Text
+                                        className={`text-sm ${
+                                          lamp.phase === phase
+                                            ? "text-white"
+                                            : "text-gray-700"
+                                        }`}
+                                      >
+                                        {phase}
+                                      </Text>
+                                    </Pressable>
+                                  ))}
+                                </View>
+                              </View>
+                              {controller.controllerType ===
+                                "SINGLE_HEAD_CAT1" ||
+                              controller.controllerType ===
+                                "DOBLE_HEAD_CAT1" ? (
+                                <>
+                                  <View className="mb-1 flex-row items-center">
+                                    <View className="flex-row items-center justify-between mb-2">
+                                      <Text className="w-1/4 text-sm text-gray-700">
+                                        产品ID *
+                                      </Text>
+                                      <TextInput
+                                        className="w-3/4 h-10 px-3 py-1 border border-gray-300 rounded-md text-sm bg-white"
+                                        placeholder="请输入产品ID"
+                                        value={controller.productId}
+                                      />
+                                    </View>
+                                  </View>
+                                </>
+                              ) : (
+                                <></>
+                              )}
+                            </View>
+                          ))
+                        )}
 
                         {/* 灯头列表 */}
                         <View className="mt-1">
@@ -804,189 +1033,6 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
                               </Text>
                             </TouchableOpacity>
                           </View>
-
-                          {controller.lamps.length === 0 ? (
-                            <View className="p-2 bg-white rounded-md items-center">
-                              <Text className="text-xs text-gray-500">
-                                暂无灯头，请添加
-                              </Text>
-                            </View>
-                          ) : (
-                            controller.lamps.map((lamp, lampIndex) => (
-                              <View
-                                key={lampIndex}
-                                className="mb-2 p-2 border border-gray-200 rounded-md bg-white"
-                              >
-                                <View className="flex-row items-center justify-between mb-2">
-                                  <Text className="w-1/4 text-xs font-semibold text-gray-900">
-                                    灯头 {lampIndex + 1}
-                                  </Text>
-                                  <TouchableOpacity
-                                    onPress={() =>
-                                      handleRemoveLamp(ctrlIndex, lampIndex)
-                                    }
-                                    className="px-2 py-1 bg-red-500 rounded-md"
-                                  >
-                                    <Text className="text-xs text-white">
-                                      删除
-                                    </Text>
-                                  </TouchableOpacity>
-                                </View>
-
-                                <View className="mb-2 flex-row items-center">
-                                  <Text className="w-1/4 text-xs text-gray-700 mb-1">
-                                    照明控制
-                                  </Text>
-                                  <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                  >
-                                    <View className="flex-row gap-2">
-                                      {LIGHT_LOOPS.map((loop) => (
-                                        <TouchableOpacity
-                                          key={loop}
-                                          onPress={() =>
-                                            handleUpdateLamp(
-                                              ctrlIndex,
-                                              lampIndex,
-                                              "lightLoop",
-                                              loop
-                                            )
-                                          }
-                                          className={`px-3 py-1 rounded-md border ${
-                                            lamp.lightLoop === loop
-                                              ? "bg-blue-500 border-blue-500"
-                                              : "bg-white border-gray-300"
-                                          }`}
-                                        >
-                                          <Text
-                                            className={`text-xs ${
-                                              lamp.lightLoop === loop
-                                                ? "text-white"
-                                                : "text-gray-700"
-                                            }`}
-                                          >
-                                            {loop}
-                                          </Text>
-                                        </TouchableOpacity>
-                                      ))}
-                                    </View>
-                                  </ScrollView>
-                                </View>
-
-                                <View className="mb-2 flex-row items-center">
-                                  <Text className="w-1/4 text-xs text-gray-700 mb-1">
-                                    照明类型
-                                  </Text>
-                                  <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                  >
-                                    <View className="flex-row gap-2">
-                                      {LIGHTING_TYPES.map((type) => (
-                                        <TouchableOpacity
-                                          key={type.value}
-                                          onPress={() =>
-                                            handleUpdateLamp(
-                                              ctrlIndex,
-                                              lampIndex,
-                                              "lightingType",
-                                              type.value
-                                            )
-                                          }
-                                          className={`px-3 py-1 rounded-md border ${
-                                            lamp.lightingType === type.value
-                                              ? "bg-blue-500 border-blue-500"
-                                              : "bg-white border-gray-300"
-                                          }`}
-                                        >
-                                          <Text
-                                            className={`text-xs ${
-                                              lamp.lightingType === type.value
-                                                ? "text-white"
-                                                : "text-gray-700"
-                                            }`}
-                                          >
-                                            {type.label}
-                                          </Text>
-                                        </TouchableOpacity>
-                                      ))}
-                                    </View>
-                                  </ScrollView>
-                                </View>
-
-                                {/* 交流接触器选择 */}
-                                <View className="mb-2 flex-row items-center">
-                                  <Text className="w-1/4 text-xs text-gray-700 mb-1">
-                                    交流接触器
-                                  </Text>
-                                  <View className="w-3/4">
-                                    <CustomSelectPicker
-                                      options={contactors.map((contactor) => ({
-                                        label: contactor.cfgName,
-                                        value: String(contactor.cfgId),
-                                      }))}
-                                      value={String(lamp.cfgId)}
-                                      onChange={(value: string) => {
-                                        handleUpdateLamp(
-                                          ctrlIndex,
-                                          lampIndex,
-                                          "cfgId",
-                                          value
-                                        );
-                                        const selected = contactors.find(
-                                          (item) => String(item.cfgId) === value
-                                        );
-                                        handleUpdateLamp(
-                                          ctrlIndex,
-                                          lampIndex,
-                                          "cfgName",
-                                          selected?.cfgName || null
-                                        );
-                                      }}
-                                      initialLabel="请选择交流接触器"
-                                    />
-                                  </View>
-                                </View>
-
-                                <View className="mb-2 flex-row items-center">
-                                  <Text className="w-1/4 text-xs text-gray-700">
-                                    相序 *
-                                  </Text>
-                                  <View className="flex-row gap-2">
-                                    {["A", "B", "C"].map((phase) => (
-                                      <Pressable
-                                        key={phase}
-                                        onPress={() =>
-                                          handleUpdateLamp(
-                                            ctrlIndex,
-                                            lampIndex,
-                                            "phase",
-                                            phase
-                                          )
-                                        }
-                                        className={`w-10 h-8 rounded-md items-center justify-center ${
-                                          lamp.phase === phase
-                                            ? "bg-blue-500"
-                                            : "bg-gray-100 border border-gray-300"
-                                        }`}
-                                      >
-                                        <Text
-                                          className={`text-sm ${
-                                            lamp.phase === phase
-                                              ? "text-white"
-                                              : "text-gray-700"
-                                          }`}
-                                        >
-                                          {phase}
-                                        </Text>
-                                      </Pressable>
-                                    ))}
-                                  </View>
-                                </View>
-                              </View>
-                            ))
-                          )}
                         </View>
                       </View>
                     ))
@@ -998,35 +1044,33 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
 
           {/* 底部按钮 */}
           <View className="flex-row justify-end gap-2 p-4 border-t border-gray-200">
-            {
-              lampId ? (
+            {lampId ? (
               <>
                 <TouchableOpacity
                   onPress={handleSubmitLightPole}
                   className="px-4 py-2 rounded-md bg-success-700"
                   disabled={loading}
-                > 
+                >
                   <Text className="text-sm text-white">修改灯杆信息</Text>
                 </TouchableOpacity>
-                 <TouchableOpacity
-                 onPress={handleSubmitLightPole}
-                 className="px-4 py-2 rounded-md bg-success-700"
-                 disabled={loading}
-               > 
-                 <Text className="text-sm text-white">修改控制器信息</Text>
-               </TouchableOpacity>
-               </>
-              ) : (
                 <TouchableOpacity
-                  onPress={handleSubmitBatchAdd}
+                  onPress={handleSubmitController}
                   className="px-4 py-2 rounded-md bg-success-700"
                   disabled={loading}
                 >
-                 <Text className="text-sm text-white">确定</Text>
+                  <Text className="text-sm text-white">修改控制器信息</Text>
                 </TouchableOpacity>
-              )
-            }
-           {/*  <TouchableOpacity
+              </>
+            ) : (
+              <TouchableOpacity
+                onPress={handleSubmitBatchAdd}
+                className="px-4 py-2 rounded-md bg-success-700"
+                disabled={loading}
+              >
+                <Text className="text-sm text-white">确定</Text>
+              </TouchableOpacity>
+            )}
+            {/*  <TouchableOpacity
               onPress={handleSubmitLightPole}
               className="px-4 py-2 rounded-md bg-success-700"
               disabled={loading}
