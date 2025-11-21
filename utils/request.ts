@@ -86,7 +86,7 @@ const handleResponse = async (response: Response, onError?: (type: string, messa
     }
     // throw new Error(`HTTP error! status: ${response.status}`);
   }
-
+  
   return response.json();
 };
 

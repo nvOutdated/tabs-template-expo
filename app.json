@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "xddApp",
+    "name": "路灯系统",
     "slug": "xddapp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -73,6 +73,12 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(XDD) to use your location."
         }
       ]
     ],

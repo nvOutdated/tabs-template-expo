@@ -373,16 +373,7 @@ export default function AreaDrawer({
     scrollPositionRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
-  // 添加 getItemLayout 函数
-  const getItemLayout = useCallback((data: any, index: number) => {
-    const item = data[index];
-    const height = item.type === 'area' ? 40 : 36; // 区域项和设备项的高度
-    return {
-      length: height,
-      offset: height * index,
-      index,
-    };
-  }, []);
+
 
   return (
     <View style={[styles.overlay, { display: visible ? 'flex' : 'none' }]}>
@@ -441,7 +432,6 @@ export default function AreaDrawer({
           initialNumToRender={20}
           maxToRenderPerBatch={20}
           windowSize={10}
-          getItemLayout={getItemLayout}
         />
       </Animated.View>
     </View>

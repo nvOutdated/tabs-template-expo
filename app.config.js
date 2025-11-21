@@ -11,7 +11,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    name: "tabs-component-app",
+    name: "路灯系统",
     icon: iconPath,
     android: {
       ...config.android,

@@ -2,7 +2,6 @@ import { LinearGradient } from "@/components/ui/linear-gradient";
 import Icon from "@expo/vector-icons/FontAwesome";
 import { useEffect, useRef, useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -13,12 +12,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import {
-  Easing,
+import Animated, {
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
-  withTiming
+  withSpring
 } from 'react-native-reanimated';
 // import { useAuthStore } from "@/store/auther";
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
@@ -26,10 +24,8 @@ import { getCurrentBaseUrl } from "@/store/globalStateStore";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
-const kabuda = require("@/assets/images/images/kabuda.png")
-const sharkHot = require("@/assets/images/images/sharkHot.png")
-// const md5 = require('md5');
-// const default_url = 'http://182.99.177.29:48099'
+const kabuda = require("@/assets/images/images/lampActive.png")
+const sharkHot = require("@/assets/images/images/searchActive.png")
 export default function LoginIndex() {
   // const {init}  = useWebSocketStore()
   const {showError} = useCustomToast()
@@ -38,7 +34,7 @@ export default function LoginIndex() {
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [iskabuda,setIskabuda] = useState<boolean>(true)
+
   const DEFAULT_BASE_URL = getCurrentBaseUrl()  
   const loginForm ={
     username: '',
@@ -47,24 +43,55 @@ export default function LoginIndex() {
     client_id: '6eafe0d2-f2ab-4cdb-b829-6d4555c60b41',
     client_secret: '123456',
   }
-  // 替换原来的动画实现
-  const rotation = useSharedValue(0);
+  
+  // 系统切换状态：true为路灯管理系统，false为采集系统
+  const [isStreetSystem, setIsStreetSystem] = useState(true);
+  // 动画共享值：0 -> 路灯系统, 1 -> 采集系统
+  const transition = useSharedValue(0);
 
-  useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, {
-        duration: 6000,
-        easing: Easing.linear,
-      }),
-      -1, // 无限循环
-      false // 不反向
-    );
-  }, []);
+  const toggleSystem = () => {
+    const nextState = !isStreetSystem;
+    setIsStreetSystem(nextState);
+    transition.value = withSpring(nextState ? 0 : 1, { damping: 15, stiffness: 100 });
+  };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
+  const streetAvatarStyle = useAnimatedStyle(() => {
+    const scale = interpolate(transition.value, [0, 1], [1, 0.75]);
+    const translateX = interpolate(transition.value, [0, 1], [0, 70]);
+    const translateY = interpolate(transition.value, [0, 1], [0, -30]);
+    const rotate = interpolate(transition.value, [0, 1], [0, 20]);
+    const opacity = interpolate(transition.value, [0, 1], [1, 0.6]);
+    const zIndex = transition.value < 0.5 ? 10 : 0;
+    return {
+      transform: [
+        { scale },
+        { translateX },
+        { translateY },
+        { rotate: `${rotate}deg` }
+      ],
+      opacity,
+      zIndex,
+    };
+  });
 
+  const collectionAvatarStyle = useAnimatedStyle(() => {
+    const scale = interpolate(transition.value, [0, 1], [0.75, 1]);
+    const translateX = interpolate(transition.value, [0, 1], [70, 0]);
+    const translateY = interpolate(transition.value, [0, 1], [-30, 0]);
+    const rotate = interpolate(transition.value, [0, 1], [20, 0]);
+    const opacity = interpolate(transition.value, [0, 1], [0.6, 1]);
+    const zIndex = transition.value > 0.5 ? 10 : 0;
+    return {
+      transform: [
+        { scale },
+        { translateX },
+        { translateY },
+        { rotate: `${rotate}deg` }
+      ],
+      opacity,
+      zIndex,
+    };
+  });
   // 从存储中获取保存的用户信息
   useEffect(() => {
     const loadStoredUserInfo = async () => {
@@ -165,11 +192,7 @@ export default function LoginIndex() {
   const handleLongPressLogo = () => {
     router.push('/change-ip');
   };
-  const handleChangeImage = ()=>{
-   const changeiIskabuda = !iskabuda
-   setIskabuda(changeiIskabuda)
-   
-  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -179,7 +202,7 @@ export default function LoginIndex() {
       
       <LinearGradient
         style={[styles.gradient, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}
-        colors={iskabuda?["#0F55A1", "#4ade80"]:['#EC407A','#7B1FA2']}
+        colors={['#16222A', '#3A6073']}
         start={[0, 1]}
         end={[1, 0]}
       >
@@ -189,87 +212,98 @@ export default function LoginIndex() {
          backgroundColor="transparent"
         translucent={true}
       />
+        <Text style={styles.systemTitle}>{isStreetSystem ? '路灯管理系统' : '信息采集系统'}</Text>
+
         <TouchableOpacity
+          onPress={toggleSystem}
           onLongPress={handleLongPressLogo}
-          onPress={handleChangeImage}
           delayLongPress={2000}
-          activeOpacity={0.7}
+          activeOpacity={0.9}
+          style={styles.logoContainer}
         >
-          {/* <Animated.View 
-            style={[
-              styles.logoContainer,
-              animatedStyle
-            ]}
-          >
-            <Image
-              source={iskabuda?kabuda:sharkHot}
-              style={styles.logo}
+           <Animated.Image
+               
+              source={kabuda}
+              style={[styles.logo, styles.absoluteLogo, streetAvatarStyle]}
+              resizeMode="contain"
             />
-          </Animated.View> */}
-          <View style={styles.logoContainer}>
-           <Image
-              source={iskabuda?kabuda:sharkHot}
-              style={styles.logo}
+            <Animated.Image
+              source={sharkHot}
+              style={[styles.logo, styles.absoluteLogo, collectionAvatarStyle]}
+              resizeMode="contain"
             />
-          </View>
         </TouchableOpacity>
+        
         <View style={styles.card}>
-          <Text style={styles.title}>Welcome Bro</Text>
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWithIcon}>
-              <Icon name="user" size={20} color="#fff" style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor="#aaa"
-                value={username}
-                onChangeText={setUsername}
-                returnKeyType="next"
-                onSubmitEditing={() => passwordInputRef.current?.focus()}
-              />
-            </View>
-            <View style={styles.inputWithIcon}>
-              <Icon name="lock" size={20} color="#fff" style={styles.icon} />
-              <TextInput
-                ref={passwordInputRef}
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#aaa"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                returnKeyType="done"
-                onSubmitEditing={() => {
-                  // 可选：在这里处理登录逻辑
-                  // login();
-                }}
-              />
+          {isStreetSystem ? (
+            <>
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWithIcon}>
+                  <Icon name="user" size={20} color="#fff" style={styles.icon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="用户名"
+                    placeholderTextColor="#aaa"
+                    value={username}
+                    onChangeText={setUsername}
+                    returnKeyType="next"
+                    onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  />
+                </View>
+                <View style={styles.inputWithIcon}>
+                  <Icon name="lock" size={20} color="#fff" style={styles.icon} />
+                  <TextInput
+                    ref={passwordInputRef}
+                    style={styles.input}
+                    placeholder="密码"
+                    placeholderTextColor="#aaa"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={() => {
+                      // 可选：在这里处理登录逻辑
+                      // login();
+                    }}
+                  />
+                  <TouchableOpacity 
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Icon 
+                      name={showPassword ? "eye" : "eye-slash"} 
+                      size={20} 
+                      color="#fff" 
+                    />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.rememberContainer}>
+                  <Switch
+                    value={rememberPassword}
+                    onValueChange={setRememberPassword}
+                    trackColor={{ false: "#767577", true: "#81b0ff" }}
+                    thumbColor={rememberPassword ? "#007AFF" : "#f4f3f4"}
+                  />
+                  <Text style={styles.rememberText}>记住密码</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={login}>
+                <Text style={styles.buttonText}>登录</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.collectionContainer}>
+              <Text style={styles.collectionText}>欢迎使用采集系统</Text>
               <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
+                style={styles.button} 
+                onPress={() => router.push("/(collection)" as any)}
               >
-                <Icon 
-                  name={showPassword ? "eye" : "eye-slash"} 
-                  size={20} 
-                  color="#fff" 
-                />
+                <Text style={styles.buttonText}>进入系统</Text>
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.rememberContainer}>
-              <Switch
-                value={rememberPassword}
-                onValueChange={setRememberPassword}
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={rememberPassword ? "#007AFF" : "#f4f3f4"}
-              />
-              <Text style={styles.rememberText}>remeber number</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={login}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
+          )}
         </View>
         <View style={styles.footer}>
           <Text style={styles.footerText}>Created By XDD 2025-{new Date().getFullYear()}.</Text>
@@ -289,16 +323,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoContainer: {
-    width: 160,
+    width: 200,
     height: 160,
     marginBottom: 40,
     alignItems: 'center',
     justifyContent: 'center',
+   
   },
   logo: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 200,
+    height: 200,
+    borderRadius: 8,
   },
   card: {
     borderRadius: 20,
@@ -314,6 +349,30 @@ const styles = StyleSheet.create({
     elevation: 5,
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  systemTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginBottom: 100,
+    color: "#fff",
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+    marginTop: 10,
+  },
+  absoluteLogo: {
+    position: 'absolute',
+  },
+  collectionContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  collectionText: {
+    color: 'white',
+    fontSize: 20,
+    marginBottom: 30,
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,
@@ -343,6 +402,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "600",
+    letterSpacing:10
   },
   inputWithIcon: {
     flexDirection: "row",
