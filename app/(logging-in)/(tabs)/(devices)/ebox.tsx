@@ -12,10 +12,10 @@ import RemoveTipModal from "@/components/public/publicModal/removeTipmodal";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
 import { useAreaStore } from "@/store/areaStore";
 import {
-  DEVICE_STATUS,
-  EboxOperation,
-  ElectricItem,
-  useEboxStore
+    DEVICE_STATUS,
+    EboxOperation,
+    ElectricItem,
+    useEboxStore
 } from "@/store/eboxStore";
 import { useGlobalStore } from "@/store/globalStateStore";
 import useLoadingStore from "@/store/loadingStore";

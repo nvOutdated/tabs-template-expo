@@ -298,7 +298,7 @@ export default function LoginIndex() {
               <Text style={styles.collectionText}>欢迎使用采集系统</Text>
               <TouchableOpacity 
                 style={styles.button} 
-                onPress={() => router.push("/(collection)" as any)}
+                onPress={() => router.replace("/collection")}
               >
                 <Text style={styles.buttonText}>进入系统</Text>
               </TouchableOpacity>

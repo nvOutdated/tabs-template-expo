@@ -35,7 +35,8 @@ export default function RootLayout() {
           >
             <Stack.Screen name="is-login" options={{ headerShown: false }} />
             <Stack.Screen name="(logging-in)" options={{ headerShown: false }} />
-            <Stack.Screen name='change-ip' options={{ headerShown: true,title:'切换访问地址' }}/>
+            <Stack.Screen name='change-ip' options={{ headerShown: true, title: '切换访问地址' }} />
+            <Stack.Screen name='collection' options={{ headerShown: false }} />
           </Stack>
         </ThemeProvider>
       </SafeAreaProvider>
