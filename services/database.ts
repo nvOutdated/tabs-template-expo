@@ -34,6 +34,15 @@ export const initDatabase = () => {
         lat TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS areas (
+        area_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        adcode TEXT NOT NULL,
+        area_type TEXT NOT NULL,
+        pid INTEGER,
+        remark TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     console.log('Database initialized successfully');
   } catch (error) {
@@ -269,4 +278,99 @@ export const updateSingleLamp = (id: number, data: SingleLampData) => {
 export const deleteSingleLamp = (id: number) => {
   const result = db.runSync('DELETE FROM single_lamps WHERE id = ?', [id]);
   return result;
+};
+
+// Area Management Operations
+
+export interface AreaData {
+  name: string;
+  adcode: string;
+  area_type: 'area' | 'road';
+  pid?: number | null;
+  remark?: string;
+}
+
+// Initialize areas table
+export const initAreasTable = () => {
+  try {
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS areas (
+        area_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        adcode TEXT NOT NULL,
+        area_type TEXT NOT NULL,
+        pid INTEGER,
+        remark TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('Areas table initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize areas table:', error);
+  }
+};
+
+// Add area
+export const addArea = (data: AreaData) => {
+  const { name, adcode, area_type, pid, remark } = data;
+  
+  const result = db.runSync(
+    `INSERT INTO areas (name, adcode, area_type, pid, remark) VALUES (?, ?, ?, ?, ?)`,
+    [name, adcode, area_type, pid || null, remark || '']
+  );
+  return result;
+};
+
+// Get all areas
+export const getAreaList = () => {
+  const rows = db.getAllSync('SELECT * FROM areas ORDER BY created_at ASC');
+  return rows;
+};
+
+// Get area by ID
+export const getAreaById = (area_id: number) => {
+  const row: any = db.getFirstSync('SELECT * FROM areas WHERE area_id = ?', [area_id]);
+  return row;
+};
+
+// Update area
+export const updateArea = (area_id: number, data: AreaData) => {
+  const { name, adcode, area_type, pid, remark } = data;
+  
+  const result = db.runSync(
+    `UPDATE areas SET name = ?, adcode = ?, area_type = ?, pid = ?, remark = ? WHERE area_id = ?`,
+    [name, adcode, area_type, pid || null, remark || '', area_id]
+  );
+  return result;
+};
+
+// Delete area (and all its children recursively)
+export const deleteArea = (area_id: number) => {
+  // First, get all child areas recursively
+  const getChildIds = (parentId: number): number[] => {
+    const children: any[] = db.getAllSync('SELECT area_id FROM areas WHERE pid = ?', [parentId]);
+    let ids = [parentId];
+    children.forEach(child => {
+      ids = ids.concat(getChildIds(child.area_id));
+    });
+    return ids;
+  };
+  
+  const idsToDelete = getChildIds(area_id);
+  
+  // Delete all areas in the hierarchy
+  idsToDelete.forEach(id => {
+    db.runSync('DELETE FROM areas WHERE area_id = ?', [id]);
+  });
+  
+  return { deletedCount: idsToDelete.length };
+};
+
+// Search areas by name
+export const searchAreas = (searchText: string) => {
+  const rows = db.getAllSync(
+    'SELECT * FROM areas WHERE name LIKE ? ORDER BY created_at ASC',
+    [`%${searchText}%`]
+  );
+  return rows;
 };

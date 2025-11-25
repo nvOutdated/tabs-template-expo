@@ -112,14 +112,14 @@ export default function CollectionTabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="area"
+                name="area/index"
                 options={{
                     title: '区域',
                     tabBarIcon: renderAreaIcon,
                 }}
             />
             <Tabs.Screen
-                name="settings"
+                name="settings/index"
                 options={{
                     title: "设置",
                     tabBarIcon: renderSettingsIcon,
