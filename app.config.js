@@ -23,7 +23,12 @@ module.exports = ({ config }) => {
       usesCleartextTraffic: true, // ✅ 明文请求
       networkSecurityConfig: {
         cleartextTrafficPermitted: true,
-      }
+      },
+      permissions: [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        ...(config.android?.permissions ?? [])
+      ],
     },
     ios: {
       ...config.ios,
@@ -45,7 +50,7 @@ module.exports = ({ config }) => {
     },
     plugins: [
       ...(config.plugins || []),
-      
+
       // ✅ 插件声明必须在 root 层级
       [
         "expo-build-properties",

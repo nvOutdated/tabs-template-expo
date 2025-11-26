@@ -48,7 +48,8 @@
       "usesCleartextTraffic": true,
       "jsEngine": "hermes",
       "enableHermes": true,
-      "enableDangerousExperimentalLeanBuilds": true
+      "enableDangerousExperimentalLeanBuilds": false,
+      "enableSeparateBuildPerCPUArchitecture": true
     },
     "web": {
       "bundler": "metro",
