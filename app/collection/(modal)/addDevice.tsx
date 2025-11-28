@@ -1,16 +1,15 @@
 import EboxForm, { EboxFormData } from '@/components/addDevice/EboxForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
-import { addEbox, getEboxById, updateEbox } from '@/services/database';
-import { useAreaStore } from '@/store/areaStore';
+import { addEbox, getAreaList, getEboxById, updateEbox } from '@/services/database';
 import useLoadingStore from '@/store/loadingStore';
 import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
 
 export default function AddDeviceModal() {
@@ -20,9 +19,8 @@ export default function AddDeviceModal() {
     const [versionList, setVersionList] = useState<any>([]);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const { showLoading, hideLoading } = useLoadingStore();
-    const { allAreaList } = useAreaStore();
     const [allAreaListprops, setAllAreaListprops] = useState<any>([]);
-    const { id } = useLocalSearchParams();
+    const { id, area_id } = useLocalSearchParams();
     const isEdit = !!id;
 
     const [eboxFormData, setEboxFormData] = useState<EboxFormData>({
@@ -44,6 +42,29 @@ export default function AddDeviceModal() {
         remark: '',
     });
 
+    const [localAreas, setLocalAreas] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch local areas for the dropdown
+        try {
+            const areas = getAreaList();
+            setLocalAreas(areas);
+        } catch (error) {
+            console.error('Failed to load areas:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        const setAllAreaListpropsData = localAreas.map((item: any) => {
+            return {
+                key: item.area_id,
+                value: item.area_id,
+                label: item.name,
+            }
+        })
+        setAllAreaListprops(setAllAreaListpropsData)
+    }, [localAreas]);
+
     useEffect(() => {
         if (isEdit) {
             const data = getEboxById(Number(id));
@@ -54,31 +75,47 @@ export default function AddDeviceModal() {
                     install_time: data.install_time ? new Date(data.install_time) : undefined,
                 });
             }
+        } else if (area_id) {
+            setEboxFormData(prev => ({
+                ...prev,
+                area_id: area_id.toString()
+            }));
         }
-    }, [id, isEdit]);
+    }, [id, isEdit, area_id]);
 
     const getCurrentLocation = async () => {
         try {
             setIsLoadingLocation(true);
             const location = await locationService.getCurrentLocation({
                 enableHighAccuracy: true,
-                timeout: 15000,
+                timeout: 3000,
                 useIPFallback: true,
                 useCachedLocation: true
             });
-
+           
             if (location && location.coords) {
                 setEboxFormData(prev => ({
                     ...prev,
                     lat: location.coords.latitude.toString(),
                     lng: location.coords.longitude.toString()
                 }));
-
                 showSuccess({
-                    message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
+                    message: `位置获取成功`,
                 });
             } else {
-                throw new Error('获取位置信息失败');
+                const location = await Location.getLastKnownPositionAsync();
+                if (location) {
+                    setEboxFormData(prev => ({
+                        ...prev,
+                        lat: location.coords.latitude.toString(),
+                        lng: location.coords.longitude.toString()
+                    }));
+                    showSuccess({
+                        message: `位置获取成功`,
+                    });
+                } else {
+                    throw new Error('获取位置信息失败');
+                }
             }
         } catch (error: any) {
             showWarning({
@@ -90,6 +127,12 @@ export default function AddDeviceModal() {
     };
 
     const handleSubmit = () => {
+        // Validate area_id
+        if (!eboxFormData.area_id) {
+            Alert.alert('提示', '请选择区域');
+            return;
+        }
+
         try {
             showLoading();
             if (isEdit) {
@@ -117,17 +160,6 @@ export default function AddDeviceModal() {
             setEboxFormData(prev => ({ ...prev, version: 'v1.0' }));
         }
     }, [isEdit]);
-
-    useEffect(() => {
-        const setAllAreaListpropsData = allAreaList.map((item: any) => {
-            return {
-                key: item.area_id,
-                value: item.area_id,
-                label: item.name,
-            }
-        })
-        setAllAreaListprops(setAllAreaListpropsData)
-    }, [allAreaList]);
 
     return (
         <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>

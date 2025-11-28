@@ -54,7 +54,7 @@ interface Controller {
   productId?: string;
 }
 
-interface SingleLamp {
+export interface SingleLamp {
   id?: number;
   poleName: string;
   poleCode: string;
@@ -73,6 +73,19 @@ interface EboxContactor {
   cfgName: string;
 }
 
+export interface SingleLampSubmitContext {
+  formData: SingleLamp;
+  lineInfo: Line;
+  eboxInfo?: ElectricItem;
+  lampId?: number;
+}
+
+export interface SingleLampEditModalOverrides {
+  onSubmitLightPole?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+  onSubmitController?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+  onSubmitBatchAdd?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+}
+
 interface SingleLampEditModalProps {
   visible: boolean;
   onClose: () => void;
@@ -82,6 +95,7 @@ interface SingleLampEditModalProps {
   contactors?: EboxContactor[];
   lampInfo: SingleLamp;
   eboxInfo?: ElectricItem;
+  overrides?: SingleLampEditModalOverrides;
 }
 
 const CONTROLLER_TYPES = [
@@ -127,6 +141,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
   contactors = [],
   lampInfo,
   eboxInfo,
+  overrides,
 }) => {
   const { showModalSuccess, showModalError } = useMessageModal();
   const [loading, setLoading] = useState(false);
@@ -411,6 +426,28 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
 
   //add or update light pole
   const handleSubmitLightPole = useCallback(async () => {
+    if (overrides?.onSubmitLightPole) {
+      try {
+        showLoading();
+        const result = await overrides.onSubmitLightPole({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "修改成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "修改失败");
+        }
+      } catch (error: any) {
+        showModalError(error.message || "修改失败");
+      } finally {
+        hideLoading();
+      }
+      return;
+    }
     try {
       showLoading();
       const params = {
@@ -459,10 +496,34 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     onSuccess,
     showLoading,
     hideLoading,
+    overrides,
+    lineInfo,
   ]);
 
   //add or update controller
   const handleSubmitController = useCallback(async () => {
+    if (overrides?.onSubmitController) {
+      try {
+        showLoading();
+        const result = await overrides.onSubmitController({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "修改成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "修改失败");
+        }
+      } catch (error: any) {
+        showModalError(error.message || "修改失败");
+      } finally {
+        hideLoading();
+      }
+      return;
+    }
     const params = {
       id: formData.id,
       controllers: formData.controllers,
@@ -486,9 +547,31 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     } else {
       showModalError("修改失败");
     }
-  }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo]);
+  }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo, overrides, showLoading, hideLoading, lineInfo]);
 
   const handleSubmitBatchAdd = useCallback(async () => {
+    if (overrides?.onSubmitBatchAdd) {
+      try {
+        showLoading();
+        const result = await overrides.onSubmitBatchAdd({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "添加成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "添加失败");
+        }
+      } catch (error: any) {
+        showModalError(error.message || "添加失败");
+      } finally {
+        hideLoading();
+      }
+      return;
+    }
     try {
       showLoading();
       const params = {
@@ -534,6 +617,7 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
     showLoading,
     hideLoading,
     lineInfo,
+    overrides,
   ]);
 
   if (!visible) return null;

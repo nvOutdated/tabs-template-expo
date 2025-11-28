@@ -1,37 +1,62 @@
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
+import { LampAttachmentData, LampControllerData } from '@/services/database';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    RefreshControlProps,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  RefreshControlProps,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
-const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
+const singleLampImage = require("@/assets/images/street/singleLamp/singleLampOfflin.png");
+// 灯杆类型映射
+const getPoleTypeLabel = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    '1': '单挑臂',
+    '2': '双挑臂',
+    '3': '玉兰灯',
+    '4': '庭院灯',
+    '5': '其他',
+  };
+  return typeMap[type] || '未知';
+};
 
 export type CollectionItem = {
   id: number;
   name: string;
   sn: string;
-  device_code: string;
-  device_type: string;
-  ebox_type: string;
+  device_code?: string;
+  device_type?: string;
+  ebox_type?: string;
   area_id: number;
-  version: string;
-  install_time: string;
-  lng: string;
-  lat: string;
-  model: string;
-  e_meter: string;
-  remark: string;
-  device_info: any;
+  version?: string;
+  install_time?: string;
+  lng?: string;
+  lat?: string;
+  model?: string;
+  e_meter?: string;
+  remark?: string;
+  device_info?: any;
   created_at: string;
   area_name?: string;
+  // 单灯特有字段
+  pole_code?: string;
+  pole_type?: string;
+  location?: string;
+  line_id?: number;
+  ebox_id?: number;
+  pole_name?: string;
+  addr?: string | null;
+  direction?: number;
+  controllers?: LampControllerData[];
+  lamp_attachments?: LampAttachmentData[];
+  container_id?: string | null;
+  originalData?: any;
 };
 
 interface CollectionListProps {
@@ -42,6 +67,7 @@ interface CollectionListProps {
   onEditItem: (item: CollectionItem) => void;
   onDeleteItem: (item: CollectionItem) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
+  ImageSource?: any;
 }
 
 const CollectionList: React.FC<CollectionListProps> = ({
@@ -52,6 +78,7 @@ const CollectionList: React.FC<CollectionListProps> = ({
   onEditItem,
   onDeleteItem,
   refreshControl,
+  ImageSource,
 }) => {
   const currentTheme = useCurrentTheme();
 
@@ -60,22 +87,34 @@ const CollectionList: React.FC<CollectionListProps> = ({
       <View style={styles.cardContent}>
         {/* 左侧图片 */}
         <Image
-          source={centralControllerImage}
+          source={ImageSource || singleLampImage}
           style={styles.thumbnail}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         {/* 中间内容 */}
         <View style={styles.infoContainer}>
           <Text style={[styles.name, { color: currentTheme.activeTint }]} numberOfLines={1}>
-            {item.name}
+            {item.pole_code || item.name}
           </Text>
-          <Text style={[styles.sn, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
-            SN: {item.sn}
-          </Text>
+          {item.location && (
+            <Text style={[styles.sn, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
+              位置: {item.location}
+            </Text>
+          )}
+          {item.pole_type && (
+            <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
+              类型: {getPoleTypeLabel(item.pole_type)}
+            </Text>
+          )}
           <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
             区域: {item.area_name || '未知'}
           </Text>
+          {(item.lat && item.lng) && (
+            <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
+              坐标: {item.lat}, {item.lng}
+            </Text>
+          )}
           <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
             采集时间: {new Date(item.created_at).toLocaleDateString()}
           </Text>
@@ -116,7 +155,7 @@ const CollectionList: React.FC<CollectionListProps> = ({
         暂无采集数据
       </Text>
       <Text style={[styles.emptySubText, { color: currentTheme.inactiveTint }]}>
-        点击右下角"+"按钮添加设备
+        点击右上角&ldquo;+&rdquo;按钮添加设备
       </Text>
     </View>
   );

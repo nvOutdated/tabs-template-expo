@@ -43,7 +43,39 @@ export const initDatabase = () => {
         remark TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        ebox_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ebox_id) REFERENCES concentrators(id) ON DELETE CASCADE
+      );
     `);
+
+    // Migration: ensure single_lamps has the columns required by the new editor
+    try {
+      const tableInfo: any[] = db.getAllSync('PRAGMA table_info(single_lamps)');
+      const ensureColumn = (name: string, schema: string) => {
+        const exists = tableInfo.some((col: any) => col.name === name);
+        if (!exists) {
+          console.log(`Adding column ${name} to single_lamps`);
+          db.execSync(`ALTER TABLE single_lamps ADD COLUMN ${name} ${schema}`);
+        }
+      };
+
+      ensureColumn('line_id', 'INTEGER');
+      ensureColumn('ebox_id', 'INTEGER');
+      ensureColumn('pole_name', 'TEXT');
+      ensureColumn('addr', 'TEXT');
+      ensureColumn('direction', 'INTEGER');
+      ensureColumn('install_time', 'TEXT');
+      ensureColumn('controllers', 'TEXT');
+      ensureColumn('lamp_attachments', 'TEXT');
+      ensureColumn('container_id', 'TEXT');
+    } catch (migrationError) {
+      console.error('Migration check/execution failed:', migrationError);
+    }
+
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database:', error);
@@ -184,43 +216,133 @@ export const deleteEbox = (id: number) => {
 
 // Single Lamp Operations
 
+export interface LampAttachmentData {
+  id?: number;
+  url?: string;
+  name?: string;
+  file_type?: string;
+}
+
+export interface LampHeadData {
+  lightLoop: string;
+  lightingType: number;
+  cfgId: number;
+  cfgName: string | null;
+  cfgMatched: boolean;
+  phase: string;
+  phaseMatched: boolean;
+}
+
+export interface LampControllerData {
+  id?: number;
+  controllerId: string;
+  controllerType: string;
+  groupIds4Save: number[];
+  groupIds4Detect: number[];
+  lamps: LampHeadData[];
+  domain: string | null;
+  stateA: string | null;
+  stateB: string | null;
+  powerOnA: boolean | null;
+  powerOnB: boolean | null;
+  productId?: string;
+}
+
 export interface SingleLampData {
   pole_code: string;
+  pole_name?: string;
   pole_type: string;
-  location: string;
-  area_id: string;
+  location?: string;
+  addr?: string | null;
+  area_id: number | string;
+  line_id?: number | string | null;
+  ebox_id?: number | string | null;
   lng: string;
   lat: string;
+  direction?: number | null;
+  install_time?: string | null;
+  controllers?: LampControllerData[];
+  lamp_attachments?: LampAttachmentData[];
+  container_id?: string | null;
 }
+
+export interface StoredSingleLamp extends SingleLampData {
+  id: number;
+  created_at: string;
+  controllers?: LampControllerData[];
+  lamp_attachments?: LampAttachmentData[];
+}
+
+const parseJSONColumn = <T>(value: string | null, fallback: T): T => {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
 
 export const addSingleLamp = (data: SingleLampData) => {
   const {
     pole_code,
+    pole_name = '',
     pole_type,
-    location,
+    location = '',
+    addr = '',
     area_id,
+    line_id,
+    ebox_id,
     lng,
-    lat
+    lat,
+    direction = null,
+    install_time = null,
+    controllers = [],
+    lamp_attachments = [],
+    container_id = null,
   } = data;
+
+  const normalizedAreaId =
+    typeof area_id === 'number' ? area_id : parseInt(area_id || '0', 10) || 0;
+  const normalizedLineId =
+    line_id === undefined || line_id === null || line_id === ''
+      ? null
+      : typeof line_id === 'number'
+        ? line_id
+        : parseInt(line_id, 10) || null;
+  const normalizedEboxId =
+    ebox_id === undefined || ebox_id === null || ebox_id === ''
+      ? null
+      : typeof ebox_id === 'number'
+        ? ebox_id
+        : parseInt(ebox_id, 10) || null;
 
   const result = db.runSync(
     `INSERT INTO single_lamps (
-      pole_code, pole_type, location, area_id, lng, lat
-    ) VALUES (?, ?, ?, ?, ?, ?)`,
+      pole_code, pole_name, pole_type, location, addr, area_id, line_id, ebox_id, lng, lat, direction, install_time, controllers, lamp_attachments, container_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       pole_code,
+      pole_name,
       pole_type,
       location,
-      parseInt(area_id) || 0,
+      addr,
+      normalizedAreaId,
+      normalizedLineId,
+      normalizedEboxId,
       lng,
-      lat
+      lat,
+      direction,
+      install_time,
+      JSON.stringify(controllers || []),
+      JSON.stringify(lamp_attachments || []),
+      container_id,
     ]
   );
   return result;
 };
 
-export const getSingleLampList = (params: { page_size?: number; current?: number; area_id?: number | null; pole_code?: string | null }) => {
-  const { page_size = 20, current = 1, area_id, pole_code } = params;
+export const getSingleLampList = (params: { page_size?: number; current?: number; area_id?: number | null; pole_code?: string | null; line_id?: number | null; ebox_id?: number | null }): StoredSingleLamp[] => {
+  const { page_size = 20, current = 1, area_id, pole_code, line_id, ebox_id } = params;
   const offset = (current - 1) * page_size;
   
   let query = 'SELECT * FROM single_lamps WHERE 1=1';
@@ -236,47 +358,108 @@ export const getSingleLampList = (params: { page_size?: number; current?: number
     args.push(`%${pole_code}%`);
   }
 
+  if (line_id) {
+    query += ' AND line_id = ?';
+    args.push(line_id);
+  }
+
+  if (ebox_id) {
+    query += ' AND ebox_id = ?';
+    args.push(ebox_id);
+  }
+
   query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
   args.push(page_size, offset);
 
   const rows = db.getAllSync(query, args);
-  return rows;
+  return rows.map((row: any) => ({
+    ...row,
+    controllers: parseJSONColumn<LampControllerData[]>(row.controllers, []),
+    lamp_attachments: parseJSONColumn<LampAttachmentData[]>(row.lamp_attachments, []),
+  }));
 };
 
-export const getSingleLampById = (id: number) => {
+export const getSingleLampById = (id: number): StoredSingleLamp | null => {
   const row: any = db.getFirstSync('SELECT * FROM single_lamps WHERE id = ?', [id]);
-  return row;
+  if (!row) return null;
+  return {
+    ...row,
+    controllers: parseJSONColumn<LampControllerData[]>(row.controllers, []),
+    lamp_attachments: parseJSONColumn<LampAttachmentData[]>(row.lamp_attachments, []),
+  };
 };
 
 export const updateSingleLamp = (id: number, data: SingleLampData) => {
   const {
     pole_code,
+    pole_name = '',
     pole_type,
-    location,
+    location = '',
+    addr = '',
     area_id,
+    line_id,
+    ebox_id,
     lng,
-    lat
+    lat,
+    direction = null,
+    install_time = null,
+    controllers = [],
+    lamp_attachments = [],
+    container_id = null,
   } = data;
+
+  const normalizedAreaId =
+    typeof area_id === 'number' ? area_id : parseInt(area_id || '0', 10) || 0;
+  const normalizedLineId =
+    line_id === undefined || line_id === null || line_id === ''
+      ? null
+      : typeof line_id === 'number'
+        ? line_id
+        : parseInt(line_id, 10) || null;
+  const normalizedEboxId =
+    ebox_id === undefined || ebox_id === null || ebox_id === ''
+      ? null
+      : typeof ebox_id === 'number'
+        ? ebox_id
+        : parseInt(ebox_id, 10) || null;
 
   const result = db.runSync(
     `UPDATE single_lamps SET 
-      pole_code = ?, pole_type = ?, location = ?, area_id = ?, lng = ?, lat = ?
+      pole_code = ?, 
+      pole_name = ?,
+      pole_type = ?, 
+      location = ?, 
+      addr = ?,
+      area_id = ?, 
+      line_id = ?, 
+      ebox_id = ?, 
+      lng = ?, 
+      lat = ?,
+      direction = ?,
+      install_time = ?,
+      controllers = ?,
+      lamp_attachments = ?,
+      container_id = ?
      WHERE id = ?`,
     [
       pole_code,
+      pole_name,
       pole_type,
       location,
-      parseInt(area_id) || 0,
+      addr,
+      normalizedAreaId,
+      normalizedLineId,
+      normalizedEboxId,
       lng,
       lat,
-      id
+      direction,
+      install_time,
+      JSON.stringify(controllers || []),
+      JSON.stringify(lamp_attachments || []),
+      container_id,
+      id,
     ]
   );
-  return result;
-};
-
-export const deleteSingleLamp = (id: number) => {
-  const result = db.runSync('DELETE FROM single_lamps WHERE id = ?', [id]);
   return result;
 };
 
@@ -373,4 +556,51 @@ export const searchAreas = (searchText: string) => {
     [`%${searchText}%`]
   );
   return rows;
+};
+
+// Line Management
+export interface Line {
+  id: number;
+  name: string;
+  ebox_id: number;
+  created_at: string;
+}
+
+export const getLinesByEboxId = (ebox_id: number): Line[] => {
+  try {
+    const rows = db.getAllSync(
+      'SELECT * FROM lines WHERE ebox_id = ? ORDER BY created_at ASC',
+      [ebox_id]
+    );
+    return rows as Line[];
+  } catch (error) {
+    console.error('Error getting lines:', error);
+    return [];
+  }
+};
+
+export const addLine = (name: string, ebox_id: number) => {
+  const result = db.runSync(
+    'INSERT INTO lines (name, ebox_id) VALUES (?, ?)',
+    [name, ebox_id]
+  );
+  return result;
+};
+
+export const updateLine = (id: number, name: string) => {
+  const result = db.runSync(
+    'UPDATE lines SET name = ? WHERE id = ?',
+    [name, id]
+  );
+  return result;
+};
+
+export const deleteLine = (id: number) => {
+  const result = db.runSync('DELETE FROM lines WHERE id = ?', [id]);
+  return result;
+};
+
+export const deleteSingleLamp = (id: number) => {
+  const result = db.runSync('DELETE FROM single_lamps WHERE id = ?', [id]);
+  return result;
 };

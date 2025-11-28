@@ -47,11 +47,10 @@ export class ExpoLocationService {
 
       // 2. 获取位置
       const location = await Location.getCurrentPositionAsync({
-        // accuracy: options.enableHighAccuracy 
-        //   ? Location.Accuracy.High 
-        //   : Location.Accuracy.Balanced,
+        accuracy: options.enableHighAccuracy 
+          ? Location.Accuracy.High 
+          : Location.Accuracy.Balanced,
       });
-      console.log(location,11111);
       // let location = await Location.getCurrentPositionAsync({});
       
       // 3. 逆地理编码（可选，获取地址）

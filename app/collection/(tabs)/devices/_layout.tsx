@@ -1,4 +1,5 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
+import { useCollectionUIStore } from "@/store/collectionUIStore";
 import { Ionicons } from "@expo/vector-icons";
 import { createMaterialTopTabNavigator, MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import { router } from "expo-router";
@@ -152,7 +153,7 @@ export default function DevicesLayout() {
     const insets = useSafeAreaInsets();
 
     const [currentTab, setCurrentTab] = useState<string>('ebox');
-
+    
     const screenOptions = useMemo(() => ({
         tabBarShowLabel: true,
         tabBarStyle: {
@@ -179,13 +180,18 @@ export default function DevicesLayout() {
         zIndex: 1,
     }), [insets.top, currentTheme.headerBg]);
 
+    const { selectedAreaId } = useCollectionUIStore();
+
     const handleAddPress = useCallback(() => {
         if (currentTab === 'singleLamp') {
             router.push("/collection/(modal)/addSingleLamp");
         } else {
-            router.push("/collection/(modal)/addDevice");
+            router.push({
+                pathname: "/collection/(modal)/addDevice",
+                params: selectedAreaId ? { area_id: selectedAreaId } : undefined
+            });
         }
-    }, [currentTab]);
+    }, [currentTab, selectedAreaId]);
 
     const handleTabChange = useCallback((tabName: string) => {
         setCurrentTab(tabName);
@@ -217,7 +223,7 @@ export default function DevicesLayout() {
                     }}
                 />
             </Tab.Navigator>
-            <View style={addButtonStyle}>
+            {currentTab==='ebox'? <View style={addButtonStyle}>
                 <TouchableOpacity
                     className="flex-row items-center w-full h-full justify-center pt-1"
                     onPress={handleAddPress}
@@ -225,7 +231,8 @@ export default function DevicesLayout() {
                 >
                     <Ionicons name="add" size={22} color={currentTheme.activeTint} />
                 </TouchableOpacity>
-            </View>
+            </View>:<></>}
+           
         </View>
     );
 }

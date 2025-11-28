@@ -24,26 +24,26 @@ import { getCurrentBaseUrl } from "@/store/globalStateStore";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
-const kabuda = require("@/assets/images/images/lampActive.png")
+const kabuda = require("@/assets/images/street/smartLight/smartLamp.png")
 const sharkHot = require("@/assets/images/images/searchActive.png")
 export default function LoginIndex() {
   // const {init}  = useWebSocketStore()
-  const {showError} = useCustomToast()
+  const { showError } = useCustomToast()
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const DEFAULT_BASE_URL = getCurrentBaseUrl()  
-  const loginForm ={
+  const DEFAULT_BASE_URL = getCurrentBaseUrl()
+  const loginForm = {
     username: '',
     password: '',
     grant_type: 'password',
     client_id: '6eafe0d2-f2ab-4cdb-b829-6d4555c60b41',
     client_secret: '123456',
   }
-  
+
   // 系统切换状态：true为路灯管理系统，false为采集系统
   const [isStreetSystem, setIsStreetSystem] = useState(true);
   // 动画共享值：0 -> 路灯系统, 1 -> 采集系统
@@ -56,40 +56,18 @@ export default function LoginIndex() {
   };
 
   const streetAvatarStyle = useAnimatedStyle(() => {
-    const scale = interpolate(transition.value, [0, 1], [1, 0.75]);
-    const translateX = interpolate(transition.value, [0, 1], [0, 70]);
-    const translateY = interpolate(transition.value, [0, 1], [0, -30]);
-    const rotate = interpolate(transition.value, [0, 1], [0, 20]);
-    const opacity = interpolate(transition.value, [0, 1], [1, 0.6]);
-    const zIndex = transition.value < 0.5 ? 10 : 0;
+    const opacity = interpolate(transition.value, [0, 1], [1, 0]);
     return {
-      transform: [
-        { scale },
-        { translateX },
-        { translateY },
-        { rotate: `${rotate}deg` }
-      ],
       opacity,
-      zIndex,
+      display: opacity === 0 ? 'none' : 'flex',
     };
   });
 
   const collectionAvatarStyle = useAnimatedStyle(() => {
-    const scale = interpolate(transition.value, [0, 1], [0.75, 1]);
-    const translateX = interpolate(transition.value, [0, 1], [70, 0]);
-    const translateY = interpolate(transition.value, [0, 1], [-30, 0]);
-    const rotate = interpolate(transition.value, [0, 1], [20, 0]);
-    const opacity = interpolate(transition.value, [0, 1], [0.6, 1]);
-    const zIndex = transition.value > 0.5 ? 10 : 0;
+    const opacity = interpolate(transition.value, [0, 1], [0, 1]);
     return {
-      transform: [
-        { scale },
-        { translateX },
-        { translateY },
-        { rotate: `${rotate}deg` }
-      ],
       opacity,
-      zIndex,
+      display: opacity === 0 ? 'none' : 'flex',
     };
   });
   // 从存储中获取保存的用户信息
@@ -111,7 +89,7 @@ export default function LoginIndex() {
       return;
     }
     setLoginFailed(false);
-    
+
     try {
       loginForm.username = username;
       loginForm.password = md5(password);
@@ -120,7 +98,7 @@ export default function LoginIndex() {
         .join('&');
 
       console.log('Login attempt with URL:', `${DEFAULT_BASE_URL}/smart/auth/token`);
-      
+
       const response = await fetch(`${DEFAULT_BASE_URL}/smart/auth/token`, {
         method: 'POST',
         headers: {
@@ -145,18 +123,18 @@ export default function LoginIndex() {
         });
         return;
       }
-      
+
       if (response.ok) {
         if (rememberPassword) {
-          await saveUserInfo({name: username, password: password});
+          await saveUserInfo({ name: username, password: password });
         } else {
-          await saveUserInfo({name: username, password: ''});
+          await saveUserInfo({ name: username, password: '' });
         }
-        
+
         if (responseData && responseData.access_token) {
           await saveToken(responseData.access_token);
           console.log("Login successful, token saved");
-          
+
           setTimeout(() => {
             router.replace("/(logging-in)/(tabs)/(devices)/ebox");
           }, 500);
@@ -199,7 +177,7 @@ export default function LoginIndex() {
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      
+
       <LinearGradient
         style={[styles.gradient, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}
         colors={['#16222A', '#3A6073']}
@@ -207,11 +185,11 @@ export default function LoginIndex() {
         end={[1, 0]}
       >
         <StatusBar
-        // backgroundColor={loginFailed ? "#ff4d4d" : "#4ade80"}
-        // barStyle="light-content"
-         backgroundColor="transparent"
-        translucent={true}
-      />
+          // backgroundColor={loginFailed ? "#ff4d4d" : "#4ade80"}
+          // barStyle="light-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
         <Text style={styles.systemTitle}>{isStreetSystem ? '路灯管理系统' : '信息采集系统'}</Text>
 
         <TouchableOpacity
@@ -221,19 +199,19 @@ export default function LoginIndex() {
           activeOpacity={0.9}
           style={styles.logoContainer}
         >
-           <Animated.Image
-               
-              source={kabuda}
-              style={[styles.logo, styles.absoluteLogo, streetAvatarStyle]}
-              resizeMode="contain"
-            />
-            <Animated.Image
-              source={sharkHot}
-              style={[styles.logo, styles.absoluteLogo, collectionAvatarStyle]}
-              resizeMode="contain"
-            />
+          <Animated.Image
+
+            source={kabuda}
+            style={[styles.logo, styles.absoluteLogo, streetAvatarStyle]}
+            resizeMode="contain"
+          />
+          <Animated.Image
+            source={sharkHot}
+            style={[styles.logo, styles.absoluteLogo, collectionAvatarStyle]}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
-        
+
         <View style={styles.card}>
           {isStreetSystem ? (
             <>
@@ -266,18 +244,18 @@ export default function LoginIndex() {
                       // login();
                     }}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.eyeIcon}
                   >
-                    <Icon 
-                      name={showPassword ? "eye" : "eye-slash"} 
-                      size={20} 
-                      color="#fff" 
+                    <Icon
+                      name={showPassword ? "eye" : "eye-slash"}
+                      size={20}
+                      color="#fff"
                     />
                   </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.rememberContainer}>
                   <Switch
                     value={rememberPassword}
@@ -296,8 +274,8 @@ export default function LoginIndex() {
           ) : (
             <View style={styles.collectionContainer}>
               <Text style={styles.collectionText}>欢迎使用采集系统</Text>
-              <TouchableOpacity 
-                style={styles.button} 
+              <TouchableOpacity
+                style={styles.button}
                 onPress={() => router.replace("/collection")}
               >
                 <Text style={styles.buttonText}>进入系统</Text>
@@ -328,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     alignItems: 'center',
     justifyContent: 'center',
-   
+
   },
   logo: {
     width: 200,
@@ -402,7 +380,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "600",
-    letterSpacing:10
+    letterSpacing: 10
   },
   inputWithIcon: {
     flexDirection: "row",

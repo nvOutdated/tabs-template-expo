@@ -536,7 +536,7 @@ export default function SingleLampScreen() {
     if (!selectedDevice) {
       return (
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-gray-500">请先选择一个集中器</Text>
+          <Text className="text-gray-500">请先选择集中器和线路！</Text>
         </View>
       );
     }

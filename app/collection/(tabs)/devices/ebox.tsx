@@ -1,22 +1,24 @@
+import CollectionAreaDrawer, { Area, Device } from '@/components/collection/CollectionAreaDrawer';
 import CollectionHeader from '@/components/collection/CollectionHeader';
 import CollectionList, { CollectionItem } from '@/components/collection/CollectionList';
-import { Area } from '@/components/ebox/AreaDrawer';
 import RemoveTipModal from '@/components/public/publicModal/removeTipmodal';
 import { showMessageModal } from '@/components/ui/MessageGlobalModal';
-import { deleteEbox, getEboxList, initDatabase } from '@/services/database';
+import { deleteEbox, getAreaList, getEboxList, initDatabase } from '@/services/database';
 import { useAreaStore } from '@/store/areaStore';
+import { useCollectionUIStore } from '@/store/collectionUIStore';
 import useLoadingStore from '@/store/loadingStore';
+import { listToTree } from '@/utils/treeUtils';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
 export default function EboxScreen() {
     const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showDrawer, setShowDrawer] = useState(false);
     const [items, setItems] = useState<CollectionItem[]>([]);
+    const [areas, setAreas] = useState<Area[]>([]);
     const [hasMore, setHasMore] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize] = useState(20);
@@ -29,9 +31,25 @@ export default function EboxScreen() {
     const loadingRef = useRef(false);
     const endReachedRef = useRef(false);
     const { allAreaList } = useAreaStore();
+    const { setSelectedAreaId } = useCollectionUIStore();
     const { showLoading, hideLoading } = useLoadingStore();
     const [removeModalVisible, setRemoveModalVisible] = useState(false);
     const [removeTarget, setRemoveTarget] = useState<CollectionItem | null>(null);
+    const eboxImage = require('@/assets/images/street/electricBox/centralController.png');
+    // Sync selected area ID to store for _layout.tsx to use
+    useEffect(() => {
+        setSelectedAreaId(selectedArea.area_id);
+    }, [selectedArea.area_id, setSelectedAreaId]);
+
+    const loadAreas = useCallback(() => {
+        try {
+            const areaList = getAreaList();
+            const tree = listToTree(areaList, 'pid', 'area_id');
+            setAreas(tree);
+        } catch (error) {
+            console.error('加载区域列表失败:', error);
+        }
+    }, []);
 
     const loadCollectionList = useCallback(
         async (page: number, isRefresh: boolean = false) => {
@@ -82,6 +100,7 @@ export default function EboxScreen() {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
+        loadAreas();
         setSelectedArea({
             area_id: 0,
             name: '',
@@ -92,14 +111,15 @@ export default function EboxScreen() {
         setHasMore(true);
         endReachedRef.current = false;
         loadCollectionList(1, true);
-    }, [loadCollectionList]);
+    }, [loadCollectionList, loadAreas]);
 
     useFocusEffect(
         useCallback(() => {
             initDatabase();
+            loadAreas();
             setCurrentPage(1);
             loadCollectionList(1, true);
-        }, [loadCollectionList])
+        }, [loadCollectionList, loadAreas])
     );
 
     // Monitor search and area changes
@@ -118,12 +138,32 @@ export default function EboxScreen() {
     const handleSearch = useCallback((text: string) => {
         setSearchText(text);
         if (text) {
-            setSelectedArea({} as Area);
+            setSelectedArea({
+                area_id: 0,
+                name: '',
+                children: [],
+            });
         }
     }, []);
 
     const handleOpenDrawer = useCallback(() => {
         setShowDrawer(true);
+    }, []);
+
+    const handleSelectArea = useCallback((area: Area) => {
+        setSelectedArea(area);
+        setSearchText('');
+        setShowDrawer(false);
+    }, []);
+
+    const handleSelectDevice = useCallback((device: Device) => {
+        setSearchText(device.name);
+        setSelectedArea({
+            area_id: 0,
+            name: '',
+            children: [],
+        });
+        setShowDrawer(false);
     }, []);
 
     const handleEditItem = useCallback((item: CollectionItem) => {
@@ -173,11 +213,22 @@ export default function EboxScreen() {
                     onEndReached={onEndReached}
                     onEditItem={handleEditItem}
                     onDeleteItem={handleDeleteItem}
+                    ImageSource={eboxImage}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                     }
                 />
             </View>
+
+            <CollectionAreaDrawer
+                visible={showDrawer}
+                onClose={() => setShowDrawer(false)}
+                areas={areas}
+                selectedArea={selectedArea}
+                onSelectArea={handleSelectArea}
+                onSelectDevice={handleSelectDevice}
+                devices={items as unknown as Device[]}
+            />
 
             <RemoveTipModal
                 visible={removeModalVisible}

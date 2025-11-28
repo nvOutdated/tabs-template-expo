@@ -1,4 +1,4 @@
-import { Area } from '@/components/ebox/AreaDrawer';
+import { Area } from '@/components/collection/CollectionAreaDrawer';
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -42,6 +42,12 @@ const CollectionHeader: React.FC<CollectionHeaderProps> = ({
     <View style={[styles.container, { backgroundColor: currentTheme.headerBg }]}>
       {/* 搜索栏 */}
       <View style={styles.searchRow}>
+        <TouchableOpacity
+          style={[styles.filterButton, { backgroundColor: currentTheme.drawerBg }]}
+          onPress={onOpenDrawer}
+        >
+          <Ionicons name="filter" size={20} color={currentTheme.activeTint} />
+        </TouchableOpacity>
         <View style={[styles.searchContainer, { backgroundColor: currentTheme.drawerBg }]}>
           <Ionicons name="search" size={20} color={currentTheme.inactiveTint} />
           <TextInput
@@ -58,13 +64,7 @@ const CollectionHeader: React.FC<CollectionHeaderProps> = ({
           )}
         </View>
 
-        {/* 区域选择按钮 */}
-        <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: currentTheme.drawerBg }]}
-          onPress={onOpenDrawer}
-        >
-          <Ionicons name="filter" size={20} color={currentTheme.activeTint} />
-        </TouchableOpacity>
+
       </View>
 
       {/* 选中的区域显示 */}
@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    lineHeight: 30,
     fontSize: 15,
     paddingVertical: 0,
   },
