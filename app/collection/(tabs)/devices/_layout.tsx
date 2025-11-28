@@ -183,15 +183,11 @@ export default function DevicesLayout() {
     const { selectedAreaId } = useCollectionUIStore();
 
     const handleAddPress = useCallback(() => {
-        if (currentTab === 'singleLamp') {
-            router.push("/collection/(modal)/addSingleLamp");
-        } else {
-            router.push({
-                pathname: "/collection/(modal)/addDevice",
-                params: selectedAreaId ? { area_id: selectedAreaId } : undefined
-            });
-        }
-    }, [currentTab, selectedAreaId]);
+        router.push({
+            pathname: "/collection/(modal)/addDevice",
+            params: selectedAreaId ? { area_id: selectedAreaId } : undefined
+        });
+    }, [selectedAreaId]);
 
     const handleTabChange = useCallback((tabName: string) => {
         setCurrentTab(tabName);

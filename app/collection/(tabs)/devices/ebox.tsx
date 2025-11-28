@@ -3,13 +3,12 @@ import CollectionHeader from '@/components/collection/CollectionHeader';
 import CollectionList, { CollectionItem } from '@/components/collection/CollectionList';
 import RemoveTipModal from '@/components/public/publicModal/removeTipmodal';
 import { showMessageModal } from '@/components/ui/MessageGlobalModal';
-import { deleteEbox, getAreaList, getEboxList, initDatabase } from '@/services/database';
-import { useAreaStore } from '@/store/areaStore';
+import { initDatabase } from '@/services/database';
+import { useCollectionEntitiesStore } from '@/store/collectionEntitiesStore';
 import { useCollectionUIStore } from '@/store/collectionUIStore';
 import useLoadingStore from '@/store/loadingStore';
-import { listToTree } from '@/utils/treeUtils';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 export default function EboxScreen() {
@@ -18,9 +17,8 @@ export default function EboxScreen() {
     const [loading, setLoading] = useState(false);
     const [showDrawer, setShowDrawer] = useState(false);
     const [items, setItems] = useState<CollectionItem[]>([]);
-    const [areas, setAreas] = useState<Area[]>([]);
     const [hasMore, setHasMore] = useState(true);
-    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(20);
     const [searchText, setSearchText] = useState('');
     const [selectedArea, setSelectedArea] = useState<Area>({
@@ -28,79 +26,58 @@ export default function EboxScreen() {
         name: '',
         children: [],
     });
-    const loadingRef = useRef(false);
     const endReachedRef = useRef(false);
-    const { allAreaList } = useAreaStore();
     const { setSelectedAreaId } = useCollectionUIStore();
     const { showLoading, hideLoading } = useLoadingStore();
     const [removeModalVisible, setRemoveModalVisible] = useState(false);
     const [removeTarget, setRemoveTarget] = useState<CollectionItem | null>(null);
     const eboxImage = require('@/assets/images/street/electricBox/centralController.png');
+    const areaTree = useCollectionEntitiesStore(state => state.areaTree as Area[]);
+    const refreshAreas = useCollectionEntitiesStore(state => state.refreshAreas);
+    const flatAreas = useCollectionEntitiesStore(state => state.flatAreas as Area[]);
+    const eboxes = useCollectionEntitiesStore(state => state.eboxes);
+    const refreshEboxes = useCollectionEntitiesStore(state => state.refreshEboxes);
+    const deleteEboxCascade = useCollectionEntitiesStore(state => state.deleteEboxCascade);
     // Sync selected area ID to store for _layout.tsx to use
     useEffect(() => {
         setSelectedAreaId(selectedArea.area_id);
     }, [selectedArea.area_id, setSelectedAreaId]);
 
-    const loadAreas = useCallback(() => {
-        try {
-            const areaList = getAreaList();
-            const tree = listToTree(areaList, 'pid', 'area_id');
-            setAreas(tree);
-        } catch (error) {
-            console.error('加载区域列表失败:', error);
+    const areaNameMap = useMemo(() => {
+        const map = new Map<number, string>();
+        flatAreas.forEach(area => {
+            map.set(area.area_id, area.name);
+        });
+        return map;
+    }, [flatAreas]);
+
+    const filteredEboxes = useMemo(() => {
+        let dataset = [...eboxes];
+        if (selectedArea.area_id) {
+            dataset = dataset.filter(item => item.area_id === selectedArea.area_id);
         }
-    }, []);
+        if (searchText) {
+            const keyword = searchText.toLowerCase();
+            dataset = dataset.filter(item =>
+                item.name?.toLowerCase().includes(keyword) ||
+                item.sn?.toLowerCase().includes(keyword)
+            );
+        }
+        return dataset.map(item => ({
+            ...item,
+            area_name: areaNameMap.get(item.area_id) || '未知区域',
+        })) as CollectionItem[];
+    }, [eboxes, selectedArea.area_id, searchText, areaNameMap]);
 
-    const loadCollectionList = useCallback(
-        async (page: number, isRefresh: boolean = false) => {
-            if (loadingRef.current) return;
-            try {
-                loadingRef.current = true;
-                setLoading(true);
-                const params = {
-                    page_size: pageSize,
-                    current: page,
-                    area_id: selectedArea.area_id || null,
-                    name: searchText || null,
-                };
-                const data = getEboxList(params);
-
-                // Add area names to items
-                const itemsWithAreaNames = data.map((item: any) => ({
-                    ...item,
-                    area_name: allAreaList.find(a => a.area_id === item.area_id)?.name || '未知区域'
-                }));
-
-                setItems((prev) => {
-                    if (isRefresh) return itemsWithAreaNames;
-                    const existingIds = new Set(prev.map((item) => item.id));
-                    const uniqueNewItems = itemsWithAreaNames.filter(
-                        (item: any) => !existingIds.has(item.id)
-                    );
-                    return [...prev, ...uniqueNewItems];
-                });
-
-                const hasMoreData = itemsWithAreaNames.length >= pageSize;
-                setHasMore(hasMoreData);
-                endReachedRef.current = !hasMoreData;
-                setCurrentPage(page);
-            } catch (error) {
-                console.error('加载采集列表失败:', error);
-                if (isRefresh) {
-                    setItems([]);
-                }
-            } finally {
-                setLoading(false);
-                setRefreshing(false);
-                loadingRef.current = false;
-            }
-        },
-        [selectedArea.area_id, searchText, pageSize, allAreaList]
-    );
+    useEffect(() => {
+        setItems(filteredEboxes.slice(0, pageSize * currentPage));
+        setHasMore(filteredEboxes.length > pageSize * currentPage);
+    }, [filteredEboxes, currentPage, pageSize]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        loadAreas();
+        refreshAreas();
+        refreshEboxes();
         setSelectedArea({
             area_id: 0,
             name: '',
@@ -110,30 +87,27 @@ export default function EboxScreen() {
         setCurrentPage(1);
         setHasMore(true);
         endReachedRef.current = false;
-        loadCollectionList(1, true);
-    }, [loadCollectionList, loadAreas]);
+        setRefreshing(false);
+    }, [refreshAreas, refreshEboxes]);
 
     useFocusEffect(
         useCallback(() => {
             initDatabase();
-            loadAreas();
+            refreshAreas();
+            refreshEboxes();
             setCurrentPage(1);
-            loadCollectionList(1, true);
-        }, [loadCollectionList, loadAreas])
+        }, [refreshAreas, refreshEboxes])
     );
 
-    // Monitor search and area changes
-    React.useEffect(() => {
-        if (currentPage === 0) return;
+    useEffect(() => {
         setCurrentPage(1);
-        loadCollectionList(1, true);
-    }, [searchText, selectedArea.area_id]);
+    }, [searchText, selectedArea.area_id, eboxes.length]);
 
     const onEndReached = useCallback(() => {
         if (!refreshing && hasMore && !loading && !endReachedRef.current) {
-            loadCollectionList(currentPage + 1);
+            setCurrentPage(prev => prev + 1);
         }
-    }, [hasMore, refreshing, loading, currentPage, loadCollectionList]);
+    }, [hasMore, refreshing, loading]);
 
     const handleSearch = useCallback((text: string) => {
         setSearchText(text);
@@ -179,8 +153,7 @@ export default function EboxScreen() {
         if (!removeTarget) return;
         try {
             showLoading();
-            deleteEbox(removeTarget.id);
-            onRefresh();
+            deleteEboxCascade(removeTarget.id);
             showMessageModal({ type: 'success', message: '删除成功' });
         } catch (e) {
             showMessageModal({ type: 'error', message: '删除失败' });
@@ -223,7 +196,7 @@ export default function EboxScreen() {
             <CollectionAreaDrawer
                 visible={showDrawer}
                 onClose={() => setShowDrawer(false)}
-                areas={areas}
+                areas={areaTree}
                 selectedArea={selectedArea}
                 onSelectArea={handleSelectArea}
                 onSelectDevice={handleSelectDevice}

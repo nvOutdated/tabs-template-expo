@@ -1,6 +1,5 @@
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
-import { getAreaList, getEboxList } from "@/services/database";
-import { listToTree } from "@/utils/treeUtils";
+import { useCollectionEntitiesStore } from "@/store/collectionEntitiesStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -144,8 +143,10 @@ export default function CollectionEboxDrawer({
 }: CollectionEboxDrawerProps) {
     const currentTheme = useCurrentTheme();
     const insets = useSafeAreaInsets();
-    const [areas, setAreas] = useState<Area[]>([]);
-    const [eboxes, setEboxes] = useState<Ebox[]>([]);
+    const areaTree = useCollectionEntitiesStore(state => state.areaTree as Area[]);
+    const eboxRecords = useCollectionEntitiesStore(state => state.eboxes as Ebox[]);
+    const refreshAreas = useCollectionEntitiesStore(state => state.refreshAreas);
+    const refreshEboxes = useCollectionEntitiesStore(state => state.refreshEboxes);
     const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
     const [searchText, setSearchText] = useState("");
     const flatListRef = useRef<FlatList>(null);
@@ -153,45 +154,29 @@ export default function CollectionEboxDrawer({
     const translateX = useSharedValue(-DRAWER_WIDTH);
     const opacity = useSharedValue(0);
 
-    // Load areas and eboxes
     useEffect(() => {
-        try {
-            const areaList = getAreaList();
-            const tree = listToTree(areaList, 'pid', 'area_id');
-            setAreas(tree);
+        refreshAreas();
+        refreshEboxes();
+    }, [refreshAreas, refreshEboxes]);
 
-            const eboxList = getEboxList({ page_size: 1000, current: 1 });
-            setEboxes(eboxList.map((item: any) => ({
-                id: item.id,
-                sn: item.sn,
-                name: item.name,
-                area_id: item.area_id
-            })));
-        } catch (error) {
-            console.error('Failed to load data:', error);
-        }
-    }, []);
-
-    // Expand all areas initially
     useEffect(() => {
-        const expandAllAreas = (areas: Area[]) => {
-            const allAreaIds = new Set<number>();
-            const traverse = (areas: Area[]) => {
-                areas.forEach(area => {
-                    allAreaIds.add(area.area_id);
+        const expandAllAreas = (nodes: Area[]) => {
+            const ids = new Set<number>();
+            const traverse = (list: Area[]) => {
+                list.forEach(area => {
+                    ids.add(area.area_id);
                     if (area.children) {
                         traverse(area.children);
                     }
                 });
             };
-            traverse(areas);
-            return allAreaIds;
+            traverse(nodes);
+            return ids;
         };
-
-        if (areas.length > 0 && expandedAreas.size === 0) {
-            setExpandedAreas(expandAllAreas(areas));
+        if (areaTree.length > 0 && expandedAreas.size === 0) {
+            setExpandedAreas(expandAllAreas(areaTree));
         }
-    }, [areas]);
+    }, [areaTree, expandedAreas.size]);
 
     useEffect(() => {
         if (visible) {
@@ -240,7 +225,7 @@ export default function CollectionEboxDrawer({
         const flattenData = (area: Area, level: number = 0): ListItem[] => {
             const items: ListItem[] = [];
             const isExpanded = expandedAreas.has(area.area_id);
-            const areaEboxes = eboxes.filter(ebox => ebox.area_id === area.area_id);
+            const areaEboxes = eboxRecords.filter(ebox => ebox.area_id === area.area_id);
             const hasChildren = (area.children && area.children.length > 0) || areaEboxes.length > 0;
 
             items.push({
@@ -277,8 +262,8 @@ export default function CollectionEboxDrawer({
             return items;
         };
 
-        return areas.flatMap(area => flattenData(area));
-    }, [areas, expandedAreas, eboxes, searchText]);
+        return areaTree.flatMap(area => flattenData(area));
+    }, [areaTree, expandedAreas, eboxRecords, searchText]);
 
     const renderItem = useCallback(({ item }: { item: any }) => {
         if (item.type === 'area') {

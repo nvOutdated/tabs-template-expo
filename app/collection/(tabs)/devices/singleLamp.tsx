@@ -3,8 +3,9 @@ import CollectionDeviceSelector from '@/components/collection/CollectionDeviceSe
 import CollectionEboxDrawer, { Ebox } from '@/components/collection/CollectionEboxDrawer';
 import CollectionHeader from '@/components/collection/CollectionHeader';
 import CollectionLineSelector from '@/components/collection/CollectionLineSelector';
-import CollectionList, { CollectionItem } from '@/components/collection/CollectionList';
+import type { CollectionItem } from '@/components/collection/CollectionList';
 import SingleLampEditModal, { SingleLamp, SingleLampEditModalOverrides, SingleLampSubmitContext } from '@/components/collection/CollectionSingleLampEditModel';
+import CollectionSingleLampList from '@/components/collection/CollectionSingleLampList';
 import RemoveTipModal from '@/components/public/publicModal/removeTipmodal';
 import { showMessageModal } from '@/components/ui/MessageGlobalModal';
 import { addSingleLamp, deleteSingleLamp, getLinesByEboxId, getSingleLampById, getSingleLampList, initDatabase, Line, SingleLampData, StoredSingleLamp, updateSingleLamp } from '@/services/database';
@@ -405,7 +406,7 @@ export default function SingleLampScreen() {
                 {!selectedEbox || lines.length === 0 || items.length === 0 ? (
                     renderEmptyState()
                 ) : (
-                    <CollectionList
+                    <CollectionSingleLampList
                         items={items}
                         loading={loading}
                         hasMore={hasMore}

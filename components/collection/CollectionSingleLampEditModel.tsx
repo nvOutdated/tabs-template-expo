@@ -549,7 +549,7 @@ import {
       }
     }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo, overrides, showLoading, hideLoading, lineInfo]);
   
-    const handleSubmitBatchAdd = useCallback(async () => {
+  const handleSubmitBatchAdd = useCallback(async () => {
       if (overrides?.onSubmitBatchAdd) {
         try {
           showLoading();
@@ -619,6 +619,14 @@ import {
       lineInfo,
       overrides,
     ]);
+
+  const handleConfirmSubmit = useCallback(async () => {
+    if (lampId) {
+      await handleSubmitLightPole();
+    } else {
+      await handleSubmitBatchAdd();
+    }
+  }, [lampId, handleSubmitLightPole, handleSubmitBatchAdd]);
   
     if (!visible) return null;
   
@@ -1253,32 +1261,13 @@ import {
   
             {/* 底部按钮 */}
             <View className="flex-row justify-end gap-2 p-4 border-t border-gray-200">
-              {lampId ? (
-                <>
-                  <TouchableOpacity
-                    onPress={handleSubmitLightPole}
-                    className="px-4 py-2 rounded-md bg-success-700"
-                    disabled={loading}
-                  >
-                    <Text className="text-sm text-white">修改灯杆信息</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSubmitController}
-                    className="px-4 py-2 rounded-md bg-success-700"
-                    disabled={loading}
-                  >
-                    <Text className="text-sm text-white">修改控制器信息</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  onPress={handleSubmitBatchAdd}
-                  className="px-4 py-2 rounded-md bg-success-700"
-                  disabled={loading}
-                >
-                  <Text className="text-sm text-white">确定</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                onPress={handleConfirmSubmit}
+                className="px-4 py-2 rounded-md bg-success-700"
+                disabled={loading}
+              >
+                <Text className="text-sm text-white">确认</Text>
+              </TouchableOpacity>
             </View>
             </View>
           </View>

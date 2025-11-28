@@ -154,6 +154,15 @@ export const getEboxList = (params: { page_size?: number; current?: number; area
   }));
 };
 
+export const getAllEboxes = () => {
+  const rows = db.getAllSync('SELECT * FROM concentrators ORDER BY created_at DESC');
+  return rows.map((row: any) => ({
+    ...row,
+    device_info: JSON.parse(row.device_info || '{}'),
+    ebox_attachments: []
+  }));
+};
+
 export const getEboxById = (id: number) => {
   const row: any = db.getFirstSync('SELECT * FROM concentrators WHERE id = ?', [id]);
   if (row) {
@@ -379,6 +388,15 @@ export const getSingleLampList = (params: { page_size?: number; current?: number
   }));
 };
 
+export const getAllSingleLamps = (): StoredSingleLamp[] => {
+  const rows = db.getAllSync('SELECT * FROM single_lamps ORDER BY created_at DESC');
+  return rows.map((row: any) => ({
+    ...row,
+    controllers: parseJSONColumn<LampControllerData[]>(row.controllers, []),
+    lamp_attachments: parseJSONColumn<LampAttachmentData[]>(row.lamp_attachments, []),
+  }));
+};
+
 export const getSingleLampById = (id: number): StoredSingleLamp | null => {
   const row: any = db.getFirstSync('SELECT * FROM single_lamps WHERE id = ?', [id]);
   if (!row) return null;
@@ -575,6 +593,16 @@ export const getLinesByEboxId = (ebox_id: number): Line[] => {
     return rows as Line[];
   } catch (error) {
     console.error('Error getting lines:', error);
+    return [];
+  }
+};
+
+export const getAllLines = (): Line[] => {
+  try {
+    const rows = db.getAllSync('SELECT * FROM lines ORDER BY created_at ASC');
+    return rows as Line[];
+  } catch (error) {
+    console.error('Error getting all lines:', error);
     return [];
   }
 };

@@ -1,7 +1,7 @@
 import EboxForm, { EboxFormData } from '@/components/addDevice/EboxForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
-import { addEbox, getAreaList, getEboxById, updateEbox } from '@/services/database';
+import { getEboxById } from '@/services/database';
 import useLoadingStore from '@/store/loadingStore';
 import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCollectionEntitiesStore } from '@/store/collectionEntitiesStore';
 const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
 
 export default function AddDeviceModal() {
@@ -42,28 +43,23 @@ export default function AddDeviceModal() {
         remark: '',
     });
 
-    const [localAreas, setLocalAreas] = useState<any[]>([]);
+    const flatAreas = useCollectionEntitiesStore(state => state.flatAreas);
+    const refreshAreas = useCollectionEntitiesStore(state => state.refreshAreas);
+    const createEbox = useCollectionEntitiesStore(state => state.createEbox);
+    const editEbox = useCollectionEntitiesStore(state => state.editEbox);
 
     useEffect(() => {
-        // Fetch local areas for the dropdown
-        try {
-            const areas = getAreaList();
-            setLocalAreas(areas);
-        } catch (error) {
-            console.error('Failed to load areas:', error);
-        }
-    }, []);
+        refreshAreas();
+    }, [refreshAreas]);
 
     useEffect(() => {
-        const setAllAreaListpropsData = localAreas.map((item: any) => {
-            return {
-                key: item.area_id,
-                value: item.area_id,
-                label: item.name,
-            }
-        })
-        setAllAreaListprops(setAllAreaListpropsData)
-    }, [localAreas]);
+        const options = flatAreas.map((item: any) => ({
+            key: item.area_id,
+            value: item.area_id,
+            label: item.name,
+        }));
+        setAllAreaListprops(options);
+    }, [flatAreas]);
 
     useEffect(() => {
         if (isEdit) {
@@ -136,10 +132,10 @@ export default function AddDeviceModal() {
         try {
             showLoading();
             if (isEdit) {
-                updateEbox(Number(id), eboxFormData);
+                editEbox(Number(id), eboxFormData);
                 showSuccess({ message: '更新成功' });
             } else {
-                addEbox(eboxFormData);
+                createEbox(eboxFormData);
                 showSuccess({ message: '添加成功' });
             }
             router.back();

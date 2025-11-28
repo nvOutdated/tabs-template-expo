@@ -1,14 +1,8 @@
 import AreaForm, { AreaFormData } from '@/components/area/AreaForm';
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
-import {
-    addArea,
-    AreaData,
-    deleteArea,
-    getAreaList,
-    updateArea,
-} from '@/services/database';
+import { useCollectionEntitiesStore } from '@/store/collectionEntitiesStore';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     RefreshControl,
@@ -21,15 +15,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface AreaNode extends AreaData {
+interface AreaNode {
     area_id: number;
+    name: string;
+    adcode: string;
+    area_type: 'area' | 'road';
+    pid?: number | null;
+    remark?: string;
     children?: AreaNode[];
 }
 
 export default function AreaScreen() {
     const currentTheme = useCurrentTheme();
     const insets = useSafeAreaInsets();
-    const [areas, setAreas] = useState<AreaNode[]>([]);
     const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
     const [searchText, setSearchText] = useState('');
     const [refreshing, setRefreshing] = useState(false);
@@ -37,53 +35,30 @@ export default function AreaScreen() {
     const [formMode, setFormMode] = useState<'add' | 'edit' | 'addChild'>('add');
     const [selectedArea, setSelectedArea] = useState<AreaNode | null>(null);
     const [parentArea, setParentArea] = useState<{ area_id: number; name: string; adcode: string } | null>(null);
+    const areaTree = useCollectionEntitiesStore(state => state.areaTree as AreaNode[]);
+    const flatAreas = useCollectionEntitiesStore(state => state.flatAreas as AreaNode[]);
+    const refreshAreas = useCollectionEntitiesStore(state => state.refreshAreas);
+    const createArea = useCollectionEntitiesStore(state => state.createArea);
+    const editArea = useCollectionEntitiesStore(state => state.editArea);
+    const deleteAreaCascade = useCollectionEntitiesStore(state => state.deleteAreaCascade);
+    const initializedRef = useRef(false);
 
     useEffect(() => {
-        loadAreas();
-    }, []);
+        refreshAreas();
+    }, [refreshAreas]);
 
-    const loadAreas = useCallback(() => {
-        const areaList = getAreaList() as AreaNode[];
-        const tree = buildTree(areaList);
-        setAreas(tree);
-        // Auto-expand all areas on first load
-        const allIds = new Set(areaList.map(a => a.area_id));
-        setExpandedAreas(allIds);
-    }, []);
-
-    const buildTree = (list: AreaNode[]): AreaNode[] => {
-        const map = new Map<number, AreaNode>();
-        const roots: AreaNode[] = [];
-
-        // Create a map of all nodes
-        list.forEach(item => {
-            map.set(item.area_id, { ...item, children: [] });
-        });
-
-        // Build the tree
-        list.forEach(item => {
-            const node = map.get(item.area_id)!;
-            if (item.pid === null || item.pid === undefined) {
-                roots.push(node);
-            } else {
-                const parent = map.get(item.pid);
-                if (parent) {
-                    if (!parent.children) {
-                        parent.children = [];
-                    }
-                    parent.children.push(node);
-                }
-            }
-        });
-
-        return roots;
-    };
+    useEffect(() => {
+        if (!initializedRef.current && flatAreas.length) {
+            setExpandedAreas(new Set(flatAreas.map(a => a.area_id)));
+            initializedRef.current = true;
+        }
+    }, [flatAreas]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        loadAreas();
+        refreshAreas();
         setRefreshing(false);
-    }, [loadAreas]);
+    }, [refreshAreas]);
 
     const toggleExpand = (areaId: number) => {
         setExpandedAreas(prev => {
@@ -129,8 +104,7 @@ export default function AreaScreen() {
                     style: 'destructive',
                     onPress: () => {
                         try {
-                            deleteArea(area.area_id);
-                            loadAreas();
+                            deleteAreaCascade(area.area_id);
                             Alert.alert('成功', '删除成功');
                         } catch (error) {
                             Alert.alert('错误', '删除失败');
@@ -144,13 +118,12 @@ export default function AreaScreen() {
     const handleFormSubmit = (data: AreaFormData) => {
         try {
             if (formMode === 'edit' && selectedArea) {
-                updateArea(selectedArea.area_id, data);
+                editArea(selectedArea.area_id, data);
                 Alert.alert('成功', '修改成功');
             } else {
-                addArea(data);
+                createArea(data);
                 Alert.alert('成功', '新增成功');
             }
-            loadAreas();
             setFormVisible(false);
         } catch (error) {
             Alert.alert('错误', '操作失败');
@@ -254,7 +227,7 @@ export default function AreaScreen() {
         );
     };
 
-    const filteredAreas = filterAreas(areas, searchText);
+    const filteredAreas = useMemo(() => filterAreas(areaTree, searchText), [areaTree, searchText]);
 
     return (
         <View style={[styles.container, { backgroundColor: currentTheme.drawerBg }]}>
