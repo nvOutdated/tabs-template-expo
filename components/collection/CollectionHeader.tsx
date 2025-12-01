@@ -16,6 +16,7 @@ interface CollectionHeaderProps {
   selectedArea?: Area;
   searchText?: string;
   placeholder?: string;
+  showOpenDrawer?: boolean;
 }
 
 const CollectionHeader: React.FC<CollectionHeaderProps> = ({
@@ -24,6 +25,7 @@ const CollectionHeader: React.FC<CollectionHeaderProps> = ({
   selectedArea,
   searchText = '',
   placeholder = '搜索设备名称或编号',
+  showOpenDrawer = true,
 }) => {
   const currentTheme = useCurrentTheme();
   const [localSearchText, setLocalSearchText] = useState(searchText);
@@ -42,12 +44,14 @@ const CollectionHeader: React.FC<CollectionHeaderProps> = ({
     <View style={[styles.container, { backgroundColor: currentTheme.headerBg }]}>
       {/* 搜索栏 */}
       <View style={styles.searchRow}>
-        <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: currentTheme.drawerBg }]}
-          onPress={onOpenDrawer}
-        >
-          <Ionicons name="filter" size={20} color={currentTheme.activeTint} />
-        </TouchableOpacity>
+        {showOpenDrawer && (
+          <TouchableOpacity
+            style={[styles.filterButton, { backgroundColor: currentTheme.drawerBg }]}
+            onPress={onOpenDrawer}
+          >
+            <Ionicons name="filter" size={20} color={currentTheme.activeTint} />
+          </TouchableOpacity>
+        )}
         <View style={[styles.searchContainer, { backgroundColor: currentTheme.drawerBg }]}>
           <Ionicons name="search" size={20} color={currentTheme.inactiveTint} />
           <TextInput

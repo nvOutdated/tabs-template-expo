@@ -1,8 +1,8 @@
 import {
-    add_lightPole,
-    lightPole_batchAdd,
-    lightPole_saveController,
-    update_lightPole,
+  add_lightPole,
+  lightPole_batchAdd,
+  lightPole_saveController,
+  update_lightPole,
 } from "@/api/street/singleLampApi";
 import ScannerModal from "@/app/(logging-in)/(modal)/scannerModal";
 import CustomSelectPicker from "@/components/public/CustomSelectPicker";
@@ -15,161 +15,161 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from 'expo-location';
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-  const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
-  interface Lamp {
-    id?: number;
-    lightLoop: string;
-    lightingType: number;
-    cfgId: number;
-    cfgName: string | null;
-    cfgMatched: boolean;
-    phase: string;
-    phaseMatched: boolean;
-  }
-  export interface Line {
-    id: number;
-    name: string;
-  }
-  interface Controller {
-    id?: number;
-    controllerId: string;
-    controllerType: string;
-    groupIds4Save: number[];
-    groupIds4Detect: number[];
-    lamps: Lamp[];
-    domain: string | null;
-    stateA: string | null;
-    stateB: string | null;
-    powerOnA: boolean | null;
-    powerOnB: boolean | null;
-    productId?: string;
-  }
-  
-  export interface SingleLamp {
-    id?: number;
-    poleName: string;
-    poleCode: string;
-    poleType: string;
-    installTime: string | null;
-    lng: number;
-    lat: number;
-    addr: string | null;
-    direction: number;
-    controllers: Controller[];
-    line_id: number;
-  }
-  
-  interface EboxContactor {
-    cfgId: number;
-    cfgName: string;
-  }
-  
-  export interface SingleLampSubmitContext {
-    formData: SingleLamp;
-    lineInfo: Line;
-    eboxInfo?: ElectricItem;
-    lampId?: number;
-  }
-  
-  export interface SingleLampEditModalOverrides {
-    onSubmitLightPole?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
-    onSubmitController?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
-    onSubmitBatchAdd?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
-  }
-  
-  interface SingleLampEditModalProps {
-    visible: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
-    lineInfo: Line;
-    lampId?: number;
-    contactors?: EboxContactor[];
-    lampInfo: SingleLamp;
-    eboxInfo?: ElectricItem;
-    overrides?: SingleLampEditModalOverrides;
-  }
-  
-  const CONTROLLER_TYPES = [
-    { value: "SINGLE_HEAD_PLC", label: "PLC单头" },
-    { value: "DOUBLE_HEAD_PLC", label: "PLC双头" },
-    // { value: 'SINGLE_HEAD_4G', label: '4G单头' },
-    // { value: 'SINGLE_HEAD_ZIGBEE', label: 'ZIGBEE单灯' },
-    { value: "SINGLE_HEAD_CAT1", label: "Cat1单头" },
-    { value: "DOUBLE_HEAD_CAT1", label: "Cat1双头" },
-  ];
-  
-  const POLE_TYPES = [
-    { value: "1", label: "单挑臂" },
-    { value: "2", label: "双挑臂" },
-    { value: "3", label: "玉兰灯" },
-    { value: "4", label: "庭院灯" },
-    { value: "5", label: "其他" },
-  ];
-  
-  const DIRECTIONS = [
-    { value: 1, label: "东" },
-    { value: 2, label: "南" },
-    { value: 3, label: "西" },
-    { value: 4, label: "北" },
-  ];
-  
-  const LIGHT_LOOPS = ["A", "B"];
-  const LIGHTING_TYPES = [
-    { value: 0, label: "未知" },
-    { value: 1, label: "机动车" },
-    { value: 2, label: "非机动车" },
-    { value: 3, label: "顶部灯" },
-    { value: 4, label: "节日灯" },
-    { value: 5, label: "其他" },
-  ];
-  
-  const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
-    visible,
-    onClose,
-    onSuccess,
-    lineInfo,
-    lampId,
-    contactors = [],
-    lampInfo,
-    eboxInfo,
-    overrides,
-  }) => {
-    const { showModalSuccess, showModalError } = useMessageModal();
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState<SingleLamp>({
-      poleName: "",
-      poleCode: "",
-      poleType: "1",
-      installTime: null,
-      lng: 0,
-      lat: 0,
-      addr: null,
-      direction: 1,
-      controllers: [],
-      line_id: lineInfo.id,
-    });
-    const { showLoading, hideLoading } = useLoadingStore();
-    const { scanResult, setScanResult } = useScannerStore();
-    const [showScanner, setShowScanner] = useState(false);
-    const [scanTarget, setScanTarget] = useState<{
-      type: "poleCode" | "controllerId";
-      index?: number;
-    } | null>(null);
-  
-   const getCurrentLocation = async () => {
-      try {
-        showLoading();
-        // getLocation()
-        // 使用高德地图定位服务获取位置
+const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
+interface Lamp {
+  id?: number;
+  lightLoop: string;
+  lightingType: number;
+  cfgId: number;
+  cfgName: string | null;
+  cfgMatched: boolean;
+  phase: string;
+  phaseMatched: boolean;
+}
+export interface Line {
+  id: number;
+  name: string;
+}
+interface Controller {
+  id?: number;
+  controllerId: string;
+  controllerType: string;
+  groupIds4Save: number[];
+  groupIds4Detect: number[];
+  lamps: Lamp[];
+  domain: string | null;
+  stateA: string | null;
+  stateB: string | null;
+  powerOnA: boolean | null;
+  powerOnB: boolean | null;
+  productId?: string;
+}
+
+export interface SingleLamp {
+  id?: number;
+  poleName: string;
+  poleCode: string;
+  poleType: string;
+  installTime: string | null;
+  lng: number;
+  lat: number;
+  addr: string | null;
+  direction: number;
+  controllers: Controller[];
+  line_id: number;
+}
+
+interface EboxContactor {
+  cfgId: number;
+  cfgName: string;
+}
+
+export interface SingleLampSubmitContext {
+  formData: SingleLamp;
+  lineInfo: Line;
+  eboxInfo?: ElectricItem;
+  lampId?: number;
+}
+
+export interface SingleLampEditModalOverrides {
+  onSubmitLightPole?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+  onSubmitController?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+  onSubmitBatchAdd?: (context: SingleLampSubmitContext) => Promise<{ success: boolean; message?: string }>;
+}
+
+interface SingleLampEditModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  lineInfo: Line;
+  lampId?: number;
+  contactors?: EboxContactor[];
+  lampInfo: SingleLamp;
+  eboxInfo?: ElectricItem;
+  overrides?: SingleLampEditModalOverrides;
+}
+
+const CONTROLLER_TYPES = [
+  { value: "SINGLE_HEAD_PLC", label: "PLC单头" },
+  { value: "DOUBLE_HEAD_PLC", label: "PLC双头" },
+  // { value: 'SINGLE_HEAD_4G', label: '4G单头' },
+  // { value: 'SINGLE_HEAD_ZIGBEE', label: 'ZIGBEE单灯' },
+  { value: "SINGLE_HEAD_CAT1", label: "Cat1单头" },
+  { value: "DOUBLE_HEAD_CAT1", label: "Cat1双头" },
+];
+
+const POLE_TYPES = [
+  { value: "1", label: "单挑臂" },
+  { value: "2", label: "双挑臂" },
+  { value: "3", label: "玉兰灯" },
+  { value: "4", label: "庭院灯" },
+  { value: "5", label: "其他" },
+];
+
+const DIRECTIONS = [
+  { value: 1, label: "东" },
+  { value: 2, label: "南" },
+  { value: 3, label: "西" },
+  { value: 4, label: "北" },
+];
+
+const LIGHT_LOOPS = ["A", "B"];
+const LIGHTING_TYPES = [
+  { value: 0, label: "未知" },
+  { value: 1, label: "机动车" },
+  { value: 2, label: "非机动车" },
+  { value: 3, label: "顶部灯" },
+  { value: 4, label: "节日灯" },
+  { value: 5, label: "其他" },
+];
+
+const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
+  visible,
+  onClose,
+  onSuccess,
+  lineInfo,
+  lampId,
+  contactors = [],
+  lampInfo,
+  eboxInfo,
+  overrides,
+}) => {
+  const { showModalSuccess, showModalError } = useMessageModal();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<SingleLamp>({
+    poleName: "",
+    poleCode: "",
+    poleType: "1",
+    installTime: null,
+    lng: 0,
+    lat: 0,
+    addr: null,
+    direction: 1,
+    controllers: [],
+    line_id: lineInfo.id,
+  });
+  const { showLoading, hideLoading } = useLoadingStore();
+  const { scanResult, setScanResult } = useScannerStore();
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanTarget, setScanTarget] = useState<{
+    type: "poleCode" | "controllerId";
+    index?: number;
+  } | null>(null);
+
+  const getCurrentLocation = async () => {
+    try {
+      showLoading();
+      // getLocation()
+      // 使用高德地图定位服务获取位置
       //   const location = await locationService.getCurrentLocation({
       //     // enableHighAccuracy: true,
       //     // timeout: 15000,
@@ -178,447 +178,447 @@ import {
       //  console.log(location,1111);
       //  const { status } = await Location.requestForegroundPermissionsAsync();
       //  console.log(status);  // 可能的状态值是 'granted', 'denied', 'undetermined'
-     
-        const expoLocation = await Location.getLastKnownPositionAsync();
-        console.log(expoLocation,2222);
+
+      const expoLocation = await Location.getLastKnownPositionAsync();
+      console.log(expoLocation, 2222);
       const location = await locationService.getCurrentLocation({
         enableHighAccuracy: true,
         timeout: 15000,
         useIPFallback: true,
         useCachedLocation: true
       });
-  
-        if (expoLocation && expoLocation.coords) {
+
+      if (expoLocation && expoLocation.coords) {
         // 更新集中器表单的位置信息
         setFormData(prev => ({
           ...prev,
           lat: expoLocation.coords.latitude,
           lng: expoLocation.coords.longitude,
-          addr: location.address?location.address:''
+          addr: location.address ? location.address : ''
         }));
-        console.log(expoLocation.coords.latitude,expoLocation.coords.longitude,1111);
-        
+        console.log(expoLocation.coords.latitude, expoLocation.coords.longitude, 1111);
+
         showModalSuccess(`位置获取成功${location.address ? `: ${location.address}` : ''}`);
       } else {
         throw new Error('获取位置信息失败');
       }
-        // if (location && location.coords) {
-        //   // 更新集中器表单的位置信息
-        //   setEboxFormData(prev => ({
-        //     ...prev,
-        //     lat: location.coords.latitude.toString(),
-        //     lng: location.coords.longitude.toString()
-        //   }));
-        
-        //   showSuccess({
-        //     message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
-        //   });
-        // } else {
-        //   throw new Error('获取位置信息失败');
-        // }
-      } catch (error: any) {
-        // console.error('Error getting location:', error);
-        showModalError(error.message || "获取位置信息失败");
-      } finally {
-          hideLoading();
-      }
+      // if (location && location.coords) {
+      //   // 更新集中器表单的位置信息
+      //   setEboxFormData(prev => ({
+      //     ...prev,
+      //     lat: location.coords.latitude.toString(),
+      //     lng: location.coords.longitude.toString()
+      //   }));
+
+      //   showSuccess({
+      //     message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
+      //   });
+      // } else {
+      //   throw new Error('获取位置信息失败');
+      // }
+    } catch (error: any) {
+      // console.error('Error getting location:', error);
+      showModalError(error.message || "获取位置信息失败");
+    } finally {
+      hideLoading();
+    }
+  };
+
+  // const {showSuccess,showWarning} = useMessageModal();
+  // 加载单灯详情
+  useEffect(() => {
+    if (visible && lampId) {
+      // loadLampDetail();
+      setFormData({
+        ...lampInfo, // This will override the defaults with any values from lampInfo
+        line_id: lineInfo.id,
+      });
+    } else if (visible && !lampId) {
+      // 新增模式，重置表单
+      setFormData({
+        poleName: "",
+        poleCode: "",
+        poleType: "1",
+        installTime: null,
+        lng: 0,
+        lat: 0,
+        addr: null,
+        direction: 1,
+        controllers: [],
+        line_id: lineInfo.id,
+      });
+    }
+  }, [visible, lineInfo, lampInfo]);
+
+  // const loadLampDetail = useCallback(async () => {
+  //   if (!lampId) return;
+  //   try {
+  //     setLoading(true);
+  //     const res = await lightPole_query_get({ id: lampId });
+  //     if (res.code === 200 && res.data) {
+  //       setFormData({
+  //         ...res.data,
+  //         line_id: lineId,
+  //       });
+  //     } else {
+  //       showWarning(res.message as string);
+  //     }
+  //   } catch (error: any) {
+  //     showWarning(error.message as string);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [lampId, lineId, showWarning]);
+
+  // 添加控制器
+  const handleAddController = useCallback(() => {
+    const newController: Controller = {
+      controllerId: "",
+      controllerType: "SINGLE_HEAD_PLC",
+      groupIds4Save: [],
+      groupIds4Detect: [],
+      lamps: [],
+      domain: null,
+      stateA: null,
+      stateB: null,
+      powerOnA: null,
+      powerOnB: null,
     };
-  
-    // const {showSuccess,showWarning} = useMessageModal();
-    // 加载单灯详情
-    useEffect(() => {
-      if (visible && lampId) {
-        // loadLampDetail();
-        setFormData({
-          ...lampInfo, // This will override the defaults with any values from lampInfo
-          line_id: lineInfo.id,
-        });
-      } else if (visible && !lampId) {
-        // 新增模式，重置表单
-        setFormData({
-          poleName: "",
-          poleCode: "",
-          poleType: "1",
-          installTime: null,
-          lng: 0,
-          lat: 0,
-          addr: null,
-          direction: 1,
-          controllers: [],
-          line_id: lineInfo.id,
-        });
+    setFormData((prev) => ({
+      ...prev,
+      controllers: [...prev.controllers, newController],
+    }));
+  }, []);
+
+  // 删除控制器
+  const handleRemoveController = useCallback((index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      controllers: prev.controllers.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  // 更新控制器
+  const handleUpdateController = useCallback(
+    (index: number, field: keyof Controller, value: any) => {
+      setFormData((prev) => {
+        const newControllers = [...prev.controllers];
+        newControllers[index] = { ...newControllers[index], [field]: value };
+        return { ...prev, controllers: newControllers };
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (scanResult && scanTarget) {
+      if (scanTarget.type === "poleCode") {
+        setFormData((prev) => ({ ...prev, poleCode: scanResult }));
+      } else if (
+        scanTarget.type === "controllerId" &&
+        typeof scanTarget.index === "number"
+      ) {
+        handleUpdateController(scanTarget.index, "controllerId", scanResult);
       }
-    }, [visible, lineInfo, lampInfo]);
-  
-    // const loadLampDetail = useCallback(async () => {
-    //   if (!lampId) return;
-    //   try {
-    //     setLoading(true);
-    //     const res = await lightPole_query_get({ id: lampId });
-    //     if (res.code === 200 && res.data) {
-    //       setFormData({
-    //         ...res.data,
-    //         line_id: lineId,
-    //       });
-    //     } else {
-    //       showWarning(res.message as string);
-    //     }
-    //   } catch (error: any) {
-    //     showWarning(error.message as string);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // }, [lampId, lineId, showWarning]);
-  
-    // 添加控制器
-    const handleAddController = useCallback(() => {
-      const newController: Controller = {
-        controllerId: "",
-        controllerType: "SINGLE_HEAD_PLC",
-        groupIds4Save: [],
-        groupIds4Detect: [],
-        lamps: [],
-        domain: null,
-        stateA: null,
-        stateB: null,
-        powerOnA: null,
-        powerOnB: null,
+      setScanResult("");
+      setScanTarget(null);
+      setShowScanner(false);
+    }
+  }, [scanResult, scanTarget, handleUpdateController, setScanResult]);
+
+  // 添加灯头
+  const handleAddLamp = useCallback((controllerIndex: number) => {
+    const newLamp: Lamp = {
+      lightLoop: "A",
+      lightingType: 1,
+      cfgId: 0,
+      cfgName: null,
+      cfgMatched: false,
+      phase: "A",
+      phaseMatched: false,
+    };
+    setFormData((prev) => {
+      const newControllers = [...prev.controllers];
+      newControllers[controllerIndex] = {
+        ...newControllers[controllerIndex],
+        lamps: [...newControllers[controllerIndex].lamps, newLamp],
       };
-      setFormData((prev) => ({
-        ...prev,
-        controllers: [...prev.controllers, newController],
-      }));
-    }, []);
-  
-    // 删除控制器
-    const handleRemoveController = useCallback((index: number) => {
-      setFormData((prev) => ({
-        ...prev,
-        controllers: prev.controllers.filter((_, i) => i !== index),
-      }));
-    }, []);
-  
-    // 更新控制器
-    const handleUpdateController = useCallback(
-      (index: number, field: keyof Controller, value: any) => {
-        setFormData((prev) => {
-          const newControllers = [...prev.controllers];
-          newControllers[index] = { ...newControllers[index], [field]: value };
-          return { ...prev, controllers: newControllers };
-        });
-      },
-      []
-    );
-  
-    useEffect(() => {
-      if (scanResult && scanTarget) {
-        if (scanTarget.type === "poleCode") {
-          setFormData((prev) => ({ ...prev, poleCode: scanResult }));
-        } else if (
-          scanTarget.type === "controllerId" &&
-          typeof scanTarget.index === "number"
-        ) {
-          handleUpdateController(scanTarget.index, "controllerId", scanResult);
-        }
-        setScanResult("");
-        setScanTarget(null);
-        setShowScanner(false);
-      }
-    }, [scanResult, scanTarget, handleUpdateController, setScanResult]);
-  
-    // 添加灯头
-    const handleAddLamp = useCallback((controllerIndex: number) => {
-      const newLamp: Lamp = {
-        lightLoop: "A",
-        lightingType: 1,
-        cfgId: 0,
-        cfgName: null,
-        cfgMatched: false,
-        phase: "A",
-        phaseMatched: false,
-      };
+      return { ...prev, controllers: newControllers };
+    });
+  }, []);
+
+  // 删除灯头
+  const handleRemoveLamp = useCallback(
+    (controllerIndex: number, lampIndex: number) => {
       setFormData((prev) => {
         const newControllers = [...prev.controllers];
         newControllers[controllerIndex] = {
           ...newControllers[controllerIndex],
-          lamps: [...newControllers[controllerIndex].lamps, newLamp],
+          lamps: newControllers[controllerIndex].lamps.filter(
+            (_, i) => i !== lampIndex
+          ),
         };
         return { ...prev, controllers: newControllers };
       });
-    }, []);
-  
-    // 删除灯头
-    const handleRemoveLamp = useCallback(
-      (controllerIndex: number, lampIndex: number) => {
-        setFormData((prev) => {
-          const newControllers = [...prev.controllers];
-          newControllers[controllerIndex] = {
-            ...newControllers[controllerIndex],
-            lamps: newControllers[controllerIndex].lamps.filter(
-              (_, i) => i !== lampIndex
-            ),
-          };
-          return { ...prev, controllers: newControllers };
-        });
-      },
-      []
-    );
-  
-    // 更新灯头
-    const handleUpdateLamp = useCallback(
-      (
-        controllerIndex: number,
-        lampIndex: number,
-        field: keyof Lamp,
-        value: any
-      ) => {
-        setFormData((prev) => {
-          const newControllers = [...prev.controllers];
-          const newLamps = [...newControllers[controllerIndex].lamps];
-          newLamps[lampIndex] = { ...newLamps[lampIndex], [field]: value };
-          newControllers[controllerIndex] = {
-            ...newControllers[controllerIndex],
-            lamps: newLamps,
-          };
-          return { ...prev, controllers: newControllers };
-        });
-      },
-      []
-    );
-  
-    // 更新组ID
-    const handleUpdateGroupIds = useCallback(
-      (controllerIndex: number, type: "save" | "detect", groupId: number) => {
-        setFormData((prev) => {
-          const newControllers = [...prev.controllers];
-          const groupIds =
-            type === "save"
-              ? [...newControllers[controllerIndex].groupIds4Save]
-              : [...newControllers[controllerIndex].groupIds4Detect];
-  
-          const index = groupIds.indexOf(groupId);
-          if (index === -1) {
-            groupIds.push(groupId);
-          } else {
-            groupIds.splice(index, 1);
-          }
-  
-          if (type === "save") {
-            newControllers[controllerIndex] = {
-              ...newControllers[controllerIndex],
-              groupIds4Save: groupIds,
-            };
-          } else {
-            newControllers[controllerIndex] = {
-              ...newControllers[controllerIndex],
-              groupIds4Detect: groupIds,
-            };
-          }
-          return { ...prev, controllers: newControllers };
-        });
-      },
-      []
-    );
-  
-    const isGroupSelected = useCallback((groupIds: number[], groupId: number) => {
-      return groupIds.includes(groupId);
-    }, []);
-  
-    //add or update light pole
-    const handleSubmitLightPole = useCallback(async () => {
-      if (overrides?.onSubmitLightPole) {
-        try {
-          showLoading();
-          const result = await overrides.onSubmitLightPole({
-            formData,
-            lineInfo,
-            eboxInfo,
-            lampId: formData.id,
-          });
-          if (result?.success) {
-            showModalSuccess(result.message || "修改成功");
-            onSuccess();
-          } else if (result) {
-            showModalError(result.message || "修改失败");
-          }
-        } catch (error: any) {
-          showModalError(error.message || "修改失败");
-        } finally {
-          hideLoading();
+    },
+    []
+  );
+
+  // 更新灯头
+  const handleUpdateLamp = useCallback(
+    (
+      controllerIndex: number,
+      lampIndex: number,
+      field: keyof Lamp,
+      value: any
+    ) => {
+      setFormData((prev) => {
+        const newControllers = [...prev.controllers];
+        const newLamps = [...newControllers[controllerIndex].lamps];
+        newLamps[lampIndex] = { ...newLamps[lampIndex], [field]: value };
+        newControllers[controllerIndex] = {
+          ...newControllers[controllerIndex],
+          lamps: newLamps,
+        };
+        return { ...prev, controllers: newControllers };
+      });
+    },
+    []
+  );
+
+  // 更新组ID
+  const handleUpdateGroupIds = useCallback(
+    (controllerIndex: number, type: "save" | "detect", groupId: number) => {
+      setFormData((prev) => {
+        const newControllers = [...prev.controllers];
+        const groupIds =
+          type === "save"
+            ? [...newControllers[controllerIndex].groupIds4Save]
+            : [...newControllers[controllerIndex].groupIds4Detect];
+
+        const index = groupIds.indexOf(groupId);
+        if (index === -1) {
+          groupIds.push(groupId);
+        } else {
+          groupIds.splice(index, 1);
         }
-        return;
-      }
+
+        if (type === "save") {
+          newControllers[controllerIndex] = {
+            ...newControllers[controllerIndex],
+            groupIds4Save: groupIds,
+          };
+        } else {
+          newControllers[controllerIndex] = {
+            ...newControllers[controllerIndex],
+            groupIds4Detect: groupIds,
+          };
+        }
+        return { ...prev, controllers: newControllers };
+      });
+    },
+    []
+  );
+
+  const isGroupSelected = useCallback((groupIds: number[], groupId: number) => {
+    return groupIds.includes(groupId);
+  }, []);
+
+  //add or update light pole
+  const handleSubmitLightPole = useCallback(async () => {
+    if (overrides?.onSubmitLightPole) {
       try {
         showLoading();
-        const params = {
-          id: formData.id,
-          addr: formData.addr,
-          address: formData.addr,
-          direction: formData.direction,
-          lng: formData.lng,
-          lat: formData.lat,
-          name: formData.poleName,
-          sn: formData.poleCode,
-          model_type: formData.poleType,
-          install_time: formData.installTime,
-          line_id: formData.line_id,
-          ebox_id: eboxInfo?.id,
-          lamp_devices: [],
-          lamp_holders: [],
-        };
-        if (formData.id) {
-          const res = await update_lightPole(params);
-          if (res.code === 200) {
-            showModalSuccess("修改成功");
-            onSuccess();
-          } else {
-            showModalError("修改失败");
-          }
-        } else {
-          const res = await add_lightPole(params);
-          if (res.code === 200) {
-            showModalSuccess("添加成功");
-            onSuccess();
-          } else {
-            showModalError("添加失败");
-          }
+        const result = await overrides.onSubmitLightPole({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "修改成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "修改失败");
         }
       } catch (error: any) {
-        showModalError(error.message as string);
+        showModalError(error.message || "修改失败");
       } finally {
         hideLoading();
       }
-    }, [
-      formData,
-      showModalSuccess,
-      showModalError,
-      eboxInfo,
-      onSuccess,
-      showLoading,
-      hideLoading,
-      overrides,
-      lineInfo,
-    ]);
-  
-    //add or update controller
-    const handleSubmitController = useCallback(async () => {
-      if (overrides?.onSubmitController) {
-        try {
-          showLoading();
-          const result = await overrides.onSubmitController({
-            formData,
-            lineInfo,
-            eboxInfo,
-            lampId: formData.id,
-          });
-          if (result?.success) {
-            showModalSuccess(result.message || "修改成功");
-            onSuccess();
-          } else if (result) {
-            showModalError(result.message || "修改失败");
-          }
-        } catch (error: any) {
-          showModalError(error.message || "修改失败");
-        } finally {
-          hideLoading();
-        }
-        return;
-      }
+      return;
+    }
+    try {
+      showLoading();
       const params = {
         id: formData.id,
-        controllers: formData.controllers,
-        poleCode: formData.poleCode,
-        poleName: formData.poleName,
-        poleType: formData.poleType,
-        installTime: formData.installTime,
-        lineId: formData.line_id,
+        addr: formData.addr,
+        address: formData.addr,
         direction: formData.direction,
         lng: formData.lng,
         lat: formData.lat,
-        addr: formData.addr,
-        eboxId: eboxInfo?.id,
+        name: formData.poleName,
+        sn: formData.poleCode,
+        model_type: formData.poleType,
+        install_time: formData.installTime,
+        line_id: formData.line_id,
+        ebox_id: eboxInfo?.id,
+        lamp_devices: [],
+        lamp_holders: [],
       };
-      const res = await lightPole_saveController(params);
-      console.log(res, 11111);
-  
-      if (res.code === 200) {
-        showModalSuccess("修改成功");
-        onSuccess();
-      } else {
-        showModalError("修改失败");
-      }
-    }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo, overrides, showLoading, hideLoading, lineInfo]);
-  
-  const handleSubmitBatchAdd = useCallback(async () => {
-      if (overrides?.onSubmitBatchAdd) {
-        try {
-          showLoading();
-          const result = await overrides.onSubmitBatchAdd({
-            formData,
-            lineInfo,
-            eboxInfo,
-            lampId: formData.id,
-          });
-          if (result?.success) {
-            showModalSuccess(result.message || "添加成功");
-            onSuccess();
-          } else if (result) {
-            showModalError(result.message || "添加失败");
-          }
-        } catch (error: any) {
-          showModalError(error.message || "添加失败");
-        } finally {
-          hideLoading();
+      if (formData.id) {
+        const res = await update_lightPole(params);
+        if (res.code === 200) {
+          showModalSuccess("修改成功");
+          onSuccess();
+        } else {
+          showModalError("修改失败");
         }
-        return;
-      }
-      try {
-        showLoading();
-        const params = {
-          deviceCode: eboxInfo?.sn,
-          lines: [
-            {
-              lineName: lineInfo.name,
-              poles: [
-                {
-                  controllers: formData.controllers,
-                  lampsDirectlyOnPole: [],
-                  poleInfo: {
-                    direction: formData.direction,
-                    poleCode: formData.poleCode,
-                    poleName: formData.poleName,
-                    poleType: formData.poleType,
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const res = await lightPole_batchAdd(params);
-        console.log(res, 11111);
-  
+      } else {
+        const res = await add_lightPole(params);
         if (res.code === 200) {
           showModalSuccess("添加成功");
           onSuccess();
         } else {
           showModalError("添加失败");
         }
+      }
+    } catch (error: any) {
+      showModalError(error.message as string);
+    } finally {
+      hideLoading();
+    }
+  }, [
+    formData,
+    showModalSuccess,
+    showModalError,
+    eboxInfo,
+    onSuccess,
+    showLoading,
+    hideLoading,
+    overrides,
+    lineInfo,
+  ]);
+
+  //add or update controller
+  const handleSubmitController = useCallback(async () => {
+    if (overrides?.onSubmitController) {
+      try {
+        showLoading();
+        const result = await overrides.onSubmitController({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "修改成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "修改失败");
+        }
       } catch (error: any) {
-        showModalError(error.message as string);
+        showModalError(error.message || "修改失败");
       } finally {
         hideLoading();
       }
-    }, [
-      formData,
-      showModalSuccess,
-      showModalError,
-      onSuccess,
-      eboxInfo,
-      showLoading,
-      hideLoading,
-      lineInfo,
-      overrides,
-    ]);
+      return;
+    }
+    const params = {
+      id: formData.id,
+      controllers: formData.controllers,
+      poleCode: formData.poleCode,
+      poleName: formData.poleName,
+      poleType: formData.poleType,
+      installTime: formData.installTime,
+      lineId: formData.line_id,
+      direction: formData.direction,
+      lng: formData.lng,
+      lat: formData.lat,
+      addr: formData.addr,
+      eboxId: eboxInfo?.id,
+    };
+    const res = await lightPole_saveController(params);
+    console.log(res, 11111);
+
+    if (res.code === 200) {
+      showModalSuccess("修改成功");
+      onSuccess();
+    } else {
+      showModalError("修改失败");
+    }
+  }, [formData, showModalSuccess, showModalError, onSuccess, eboxInfo, overrides, showLoading, hideLoading, lineInfo]);
+
+  const handleSubmitBatchAdd = useCallback(async () => {
+    if (overrides?.onSubmitBatchAdd) {
+      try {
+        showLoading();
+        const result = await overrides.onSubmitBatchAdd({
+          formData,
+          lineInfo,
+          eboxInfo,
+          lampId: formData.id,
+        });
+        if (result?.success) {
+          showModalSuccess(result.message || "添加成功");
+          onSuccess();
+        } else if (result) {
+          showModalError(result.message || "添加失败");
+        }
+      } catch (error: any) {
+        showModalError(error.message || "添加失败");
+      } finally {
+        hideLoading();
+      }
+      return;
+    }
+    try {
+      showLoading();
+      const params = {
+        deviceCode: eboxInfo?.sn,
+        lines: [
+          {
+            lineName: lineInfo.name,
+            poles: [
+              {
+                controllers: formData.controllers,
+                lampsDirectlyOnPole: [],
+                poleInfo: {
+                  direction: formData.direction,
+                  poleCode: formData.poleCode,
+                  poleName: formData.poleName,
+                  poleType: formData.poleType,
+                },
+              },
+            ],
+          },
+        ],
+      };
+      const res = await lightPole_batchAdd(params);
+      console.log(res, 11111);
+
+      if (res.code === 200) {
+        showModalSuccess("添加成功");
+        onSuccess();
+      } else {
+        showModalError("添加失败");
+      }
+    } catch (error: any) {
+      showModalError(error.message as string);
+    } finally {
+      hideLoading();
+    }
+  }, [
+    formData,
+    showModalSuccess,
+    showModalError,
+    onSuccess,
+    eboxInfo,
+    showLoading,
+    hideLoading,
+    lineInfo,
+    overrides,
+  ]);
 
   const handleConfirmSubmit = useCallback(async () => {
     if (lampId) {
@@ -627,20 +627,20 @@ import {
       await handleSubmitBatchAdd();
     }
   }, [lampId, handleSubmitLightPole, handleSubmitBatchAdd]);
-  
-    if (!visible) return null;
-  
-    return (
-      <Modal
-        visible={visible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={onClose}
-      >
-        {showScanner ? (
-          <ScannerModal onClose={() => setShowScanner(false)} />
-        ) : (
-          <View className="flex-1 bg-black/50">
+
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      {showScanner ? (
+        <ScannerModal onClose={() => setShowScanner(false)} />
+      ) : (
+        <View className="flex-1 bg-black/50">
           <View className="flex-1 mt-20 bg-white rounded-t-3xl">
             {/* 标题栏 */}
             <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
@@ -651,7 +651,7 @@ import {
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-  
+
             {loading && !lampId ? (
               <View className="flex-1 justify-center items-center">
                 <ActivityIndicator size="large" color="#409eff" />
@@ -664,7 +664,7 @@ import {
                     <Text className="w-full text-base font-semibold text-gray-900 mb-3 flex justify-center">
                       基本信息
                     </Text>
-  
+
                     <View className="mb-3 flex-row items-center ">
                       <Text className="w-1/4 text-sm text-gray-700">
                         灯杆名称 *
@@ -678,7 +678,7 @@ import {
                         }
                       />
                     </View>
-  
+
                     <View className="mb-3 flex-row items-center ">
                       <Text className="w-1/4 text-sm text-gray-700">
                         灯杆编号 *
@@ -702,7 +702,7 @@ import {
                         </TouchableOpacity>
                       </View>
                     </View>
-  
+
                     <View className="mb-3 flex-row items-center ">
                       <Text className="w-1/4 text-sm text-gray-700">
                         灯杆类型
@@ -721,18 +721,16 @@ import {
                                   poleType: type.value,
                                 }))
                               }
-                              className={`px-2 py-2 rounded-md border ${
-                                formData.poleType === type.value
-                                  ? "bg-blue-500 border-blue-500"
-                                  : "bg-white border-gray-300"
-                              }`}
+                              className={`px-2 py-2 rounded-md border ${formData.poleType === type.value
+                                ? "bg-blue-500 border-blue-500"
+                                : "bg-white border-gray-300"
+                                }`}
                             >
                               <Text
-                                className={`text-sm ${
-                                  formData.poleType === type.value
-                                    ? "text-white"
-                                    : "text-gray-700"
-                                }`}
+                                className={`text-sm ${formData.poleType === type.value
+                                  ? "text-white"
+                                  : "text-gray-700"
+                                  }`}
                               >
                                 {type.label}
                               </Text>
@@ -741,7 +739,7 @@ import {
                         </View>
                       </ScrollView>
                     </View>
-  
+
                     <View className="mb-3 flex-row items-center ">
                       <Text className="w-1/4 text-sm text-gray-700">
                         灯杆方向
@@ -760,18 +758,16 @@ import {
                                   direction: dir.value,
                                 }))
                               }
-                              className={`px-4 py-2 rounded-md border ${
-                                formData.direction === dir.value
-                                  ? "bg-blue-500 border-blue-500"
-                                  : "bg-white border-gray-300"
-                              }`}
+                              className={`px-4 py-2 rounded-md border ${formData.direction === dir.value
+                                ? "bg-blue-500 border-blue-500"
+                                : "bg-white border-gray-300"
+                                }`}
                             >
                               <Text
-                                className={`text-sm ${
-                                  formData.direction === dir.value
-                                    ? "text-white"
-                                    : "text-gray-700"
-                                }`}
+                                className={`text-sm ${formData.direction === dir.value
+                                  ? "text-white"
+                                  : "text-gray-700"
+                                  }`}
                               >
                                 {dir.label}
                               </Text>
@@ -780,7 +776,7 @@ import {
                         </View>
                       </ScrollView>
                     </View>
-  
+
                     <View className="mb-3 flex-row items-center ">
                       <Text className="w-1/4 text-sm text-gray-700">
                         地理位置
@@ -799,10 +795,10 @@ import {
                         }}
                         className="w-1/4 ml-1 h-10 px-3 py-2 border bg-blue-500 border-gray-300 rounded-md text-sm"
                       >
-                       <Text className="text-white">获取位置</Text>
+                        <Text className="text-white">获取位置</Text>
                       </TouchableOpacity>
                     </View>
-  
+
                     <View className="mb-3 flex-row gap-2">
                       <View className="flex-1 flex-row items-center">
                         <Text className="w-1/4 text-sm text-gray-700">经度</Text>
@@ -832,7 +828,7 @@ import {
                       </View>
                     </View>
                   </View>
-  
+
                   {/* 控制器列表 */}
                   <View className="mb-2">
                     <View className="flex-row items-center justify-between mb-3">
@@ -846,7 +842,7 @@ import {
                         <Text className="text-sm text-white">添加控制器</Text>
                       </TouchableOpacity>
                     </View>
-  
+
                     {formData.controllers.length === 0 ? (
                       <View className="p-4 bg-gray-50 rounded-md items-center">
                         <Text className="text-sm text-gray-500">
@@ -870,7 +866,7 @@ import {
                               <Text className="text-xs text-white">删除</Text>
                             </TouchableOpacity>
                           </View>
-  
+
                           <View className="mb-2 flex-row items-center">
                             <Text className="w-1/4 text-sm text-gray-700">
                               控制器ID *
@@ -905,7 +901,7 @@ import {
                               </TouchableOpacity>
                             </View>
                           </View>
-  
+
                           <View className="mb-2 flex-row items-center">
                             <Text className="w-1/4 text-sm text-gray-700">
                               控制器类型
@@ -925,18 +921,16 @@ import {
                                         type.value
                                       )
                                     }
-                                    className={`px-1 py-2 rounded-md border ${
-                                      controller.controllerType === type.value
-                                        ? "bg-blue-500 border-blue-500"
-                                        : "bg-white border-gray-300"
-                                    }`}
+                                    className={`px-1 py-2 rounded-md border ${controller.controllerType === type.value
+                                      ? "bg-blue-500 border-blue-500"
+                                      : "bg-white border-gray-300"
+                                      }`}
                                   >
                                     <Text
-                                      className={`text-xs ${
-                                        controller.controllerType === type.value
-                                          ? "text-white"
-                                          : "text-gray-700"
-                                      }`}
+                                      className={`text-xs ${controller.controllerType === type.value
+                                        ? "text-white"
+                                        : "text-gray-700"
+                                        }`}
                                     >
                                       {type.label}
                                     </Text>
@@ -945,7 +939,7 @@ import {
                               </View>
                             </ScrollView>
                           </View>
-  
+
                           <View className="mb-4">
                             <View className="flex-row mb-2">
                               <Text className="w-1/5 text-sm font-medium text-gray-700">
@@ -965,24 +959,22 @@ import {
                                             groupNum
                                           )
                                         }
-                                        className={`w-8 h-8 mx-1 rounded-md items-center justify-center ${
-                                          isGroupSelected(
+                                        className={`w-8 h-8 mx-1 rounded-md items-center justify-center ${isGroupSelected(
+                                          controller.groupIds4Save,
+                                          groupNum
+                                        )
+                                          ? "bg-blue-500"
+                                          : "bg-gray-100 border border-gray-300"
+                                          }`}
+                                      >
+                                        <Text
+                                          className={`text-xs ${isGroupSelected(
                                             controller.groupIds4Save,
                                             groupNum
                                           )
-                                            ? "bg-blue-500"
-                                            : "bg-gray-100 border border-gray-300"
-                                        }`}
-                                      >
-                                        <Text
-                                          className={`text-xs ${
-                                            isGroupSelected(
-                                              controller.groupIds4Save,
-                                              groupNum
-                                            )
-                                              ? "text-white"
-                                              : "text-gray-700"
-                                          }`}
+                                            ? "text-white"
+                                            : "text-gray-700"
+                                            }`}
                                         >
                                           {String(groupNum).padStart(2, "0")}
                                         </Text>
@@ -1003,24 +995,22 @@ import {
                                             groupNum
                                           )
                                         }
-                                        className={`w-8 h-8 mx-1 rounded-md items-center justify-center ${
-                                          isGroupSelected(
+                                        className={`w-8 h-8 mx-1 rounded-md items-center justify-center ${isGroupSelected(
+                                          controller.groupIds4Save,
+                                          groupNum
+                                        )
+                                          ? "bg-blue-500"
+                                          : "bg-gray-100 border border-gray-300"
+                                          }`}
+                                      >
+                                        <Text
+                                          className={`text-xs ${isGroupSelected(
                                             controller.groupIds4Save,
                                             groupNum
                                           )
-                                            ? "bg-blue-500"
-                                            : "bg-gray-100 border border-gray-300"
-                                        }`}
-                                      >
-                                        <Text
-                                          className={`text-xs ${
-                                            isGroupSelected(
-                                              controller.groupIds4Save,
-                                              groupNum
-                                            )
-                                              ? "text-white"
-                                              : "text-gray-700"
-                                          }`}
+                                            ? "text-white"
+                                            : "text-gray-700"
+                                            }`}
                                         >
                                           {String(groupNum).padStart(2, "0")}
                                         </Text>
@@ -1058,7 +1048,7 @@ import {
                                     </Text>
                                   </TouchableOpacity>
                                 </View>
-  
+
                                 <View className="mb-2 flex-row items-center">
                                   <Text className="w-1/4 text-xs text-gray-700 mb-1">
                                     照明控制
@@ -1079,18 +1069,16 @@ import {
                                               loop
                                             )
                                           }
-                                          className={`px-3 py-1 rounded-md border ${
-                                            lamp.lightLoop === loop
-                                              ? "bg-blue-500 border-blue-500"
-                                              : "bg-white border-gray-300"
-                                          }`}
+                                          className={`px-3 py-1 rounded-md border ${lamp.lightLoop === loop
+                                            ? "bg-blue-500 border-blue-500"
+                                            : "bg-white border-gray-300"
+                                            }`}
                                         >
                                           <Text
-                                            className={`text-xs ${
-                                              lamp.lightLoop === loop
-                                                ? "text-white"
-                                                : "text-gray-700"
-                                            }`}
+                                            className={`text-xs ${lamp.lightLoop === loop
+                                              ? "text-white"
+                                              : "text-gray-700"
+                                              }`}
                                           >
                                             {loop}
                                           </Text>
@@ -1099,7 +1087,7 @@ import {
                                     </View>
                                   </ScrollView>
                                 </View>
-  
+
                                 <View className="mb-2 flex-row items-center">
                                   <Text className="w-1/4 text-xs text-gray-700 mb-1">
                                     照明类型
@@ -1120,18 +1108,16 @@ import {
                                               type.value
                                             )
                                           }
-                                          className={`px-3 py-1 rounded-md border ${
-                                            lamp.lightingType === type.value
-                                              ? "bg-blue-500 border-blue-500"
-                                              : "bg-white border-gray-300"
-                                          }`}
+                                          className={`px-3 py-1 rounded-md border ${lamp.lightingType === type.value
+                                            ? "bg-blue-500 border-blue-500"
+                                            : "bg-white border-gray-300"
+                                            }`}
                                         >
                                           <Text
-                                            className={`text-xs ${
-                                              lamp.lightingType === type.value
-                                                ? "text-white"
-                                                : "text-gray-700"
-                                            }`}
+                                            className={`text-xs ${lamp.lightingType === type.value
+                                              ? "text-white"
+                                              : "text-gray-700"
+                                              }`}
                                           >
                                             {type.label}
                                           </Text>
@@ -1140,7 +1126,7 @@ import {
                                     </View>
                                   </ScrollView>
                                 </View>
-  
+
                                 {/* 交流接触器选择 */}
                                 <View className="mb-2 flex-row items-center">
                                   <Text className="w-1/4 text-xs text-gray-700 mb-1">
@@ -1174,7 +1160,7 @@ import {
                                     />
                                   </View>
                                 </View>
-  
+
                                 <View className="mb-2 flex-row items-center">
                                   <Text className="w-1/4 text-xs text-gray-700">
                                     相序 *
@@ -1191,18 +1177,16 @@ import {
                                             phase
                                           )
                                         }
-                                        className={`w-10 h-8 rounded-md items-center justify-center ${
-                                          lamp.phase === phase
-                                            ? "bg-blue-500"
-                                            : "bg-gray-100 border border-gray-300"
-                                        }`}
+                                        className={`w-10 h-8 rounded-md items-center justify-center ${lamp.phase === phase
+                                          ? "bg-blue-500"
+                                          : "bg-gray-100 border border-gray-300"
+                                          }`}
                                       >
                                         <Text
-                                          className={`text-sm ${
-                                            lamp.phase === phase
-                                              ? "text-white"
-                                              : "text-gray-700"
-                                          }`}
+                                          className={`text-sm ${lamp.phase === phase
+                                            ? "text-white"
+                                            : "text-gray-700"
+                                            }`}
                                         >
                                           {phase}
                                         </Text>
@@ -1212,7 +1196,7 @@ import {
                                 </View>
                                 {controller.controllerType ===
                                   "SINGLE_HEAD_CAT1" ||
-                                controller.controllerType ===
+                                  controller.controllerType ===
                                   "DOBLE_HEAD_CAT1" ? (
                                   <>
                                     <View className="mb-1 flex-row items-center">
@@ -1234,7 +1218,7 @@ import {
                               </View>
                             ))
                           )}
-  
+
                           {/* 灯头列表 */}
                           <View className="mt-1">
                             <View className="flex-row items-center justify-between mb-2">
@@ -1258,7 +1242,7 @@ import {
                 </View>
               </ScrollView>
             )}
-  
+
             {/* 底部按钮 */}
             <View className="flex-row justify-end gap-2 p-4 border-t border-gray-200">
               <TouchableOpacity
@@ -1269,12 +1253,11 @@ import {
                 <Text className="text-sm text-white">确认</Text>
               </TouchableOpacity>
             </View>
-            </View>
           </View>
-        )}
-      </Modal>
-    );
-  };
-  
-  export default SingleLampEditModal;
-  
+        </View>
+      )}
+    </Modal>
+  );
+};
+
+export default SingleLampEditModal;

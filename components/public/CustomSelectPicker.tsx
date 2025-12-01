@@ -59,58 +59,58 @@ export default function CustomSelectPicker({
 
   const filteredOptions = useMemo(() => {
     if (!searchText) return options;
-    return options.filter(option => 
+    return options.filter(option =>
       option.label.toLowerCase().includes(searchText.toLowerCase())
     );
   }, [options, searchText]);
 
   const calculateDropdownPosition = () => {
     if (!buttonLayout) return {};
-    
+
     const screenHeight = Dimensions.get('window').height;
     const screenWidth = Dimensions.get('window').width;
-    
+
     // 检查下拉框是否超出屏幕底部
     const spaceBelow = screenHeight - buttonLayout.y - buttonLayout.height;
     const spaceAbove = buttonLayout.y;
-    
+
     // 决定显示方向
-    const shouldShowAbove = dropdownDirection === 'top' || 
+    const shouldShowAbove = dropdownDirection === 'top' ||
       (dropdownDirection === 'bottom' && spaceBelow < maxHeight && spaceAbove > spaceBelow);
-    
+
     // 计算位置
     let left = buttonLayout.x;
     let width = buttonLayout.width;
-    
+
     // 确保不超出屏幕右边
     if (left + width > screenWidth - 16) {
       left = screenWidth - width - 16;
     }
-    
+
     // 确保不超出屏幕左边
     if (left < 16) {
       left = 16;
       width = Math.min(width, screenWidth - 32);
     }
-    
+
     const position: any = {
       left,
       width,
       maxHeight: shouldShowAbove ? Math.min(maxHeight, spaceAbove - 20) : Math.min(maxHeight, spaceBelow - 20),
     };
-    
+
     if (shouldShowAbove) {
       position.bottom = screenHeight - buttonLayout.y + 4;
     } else {
-      position.top = buttonLayout.y + buttonLayout.height -25;
+      position.top = buttonLayout.y + buttonLayout.height - 25;
     }
-    
+
     return position;
   };
 
   const handleOpen = () => {
     if (disabled) return;
-    
+
     buttonRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setButtonLayout({
         x: pageX,
@@ -161,7 +161,7 @@ export default function CustomSelectPicker({
       <View className="w-full items-center py-2">
         <View className="w-12 h-1 bg-gray-300 rounded-full" />
       </View>
-      
+
       {searchable && (
         <View className="px-4 py-1 border-b border-gray-100">
           <TextInput
@@ -253,10 +253,10 @@ export default function CustomSelectPicker({
         <Text className="text-base text-gray-900">
           {selectedOption?.label || placeholder}
         </Text>
-        <Ionicons 
-          name={isOpen ? "chevron-up" : "chevron-down"} 
-          size={20} 
-          color="#666" 
+        <Ionicons
+          name={isOpen ? "chevron-up" : "chevron-down"}
+          size={20}
+          color="#666"
         />
       </Pressable>
 
@@ -272,7 +272,7 @@ export default function CustomSelectPicker({
               style={styles.modalOverlay}
               onPress={handleClose}
             >
-              <Pressable onPress={() => {}}>
+              <Pressable onPress={() => { }}>
                 <GestureDetector gesture={gesture}>
                   {renderModalContent()}
                 </GestureDetector>
@@ -293,7 +293,7 @@ export default function CustomSelectPicker({
                   style={StyleSheet.absoluteFillObject}
                   onPress={handleClose}
                 />
-                
+
                 {/* 下拉内容 - 根据按钮位置精确定位 */}
                 <View
                   style={[

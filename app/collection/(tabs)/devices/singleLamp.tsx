@@ -126,25 +126,25 @@ export default function SingleLampScreen() {
                     const normalizedLineId = item.line_id === null || item.line_id === undefined ? undefined : Number(item.line_id);
                     const normalizedEboxId = item.ebox_id === null || item.ebox_id === undefined ? undefined : Number(item.ebox_id);
                     return {
-                    id: item.id,
-                    name: item.pole_name || item.pole_code,
-                    sn: item.addr || item.location || '无位置信息',
-                    area_id: item.area_id as number,
-                    area_name: allAreaList.find(a => a.area_id === item.area_id)?.name || '未知区域',
-                    created_at: item.created_at,
-                    pole_code: item.pole_code,
-                    pole_type: item.pole_type,
-                    location: item.addr || item.location,
-                    addr: item.addr,
-                    direction: item.direction ? Number(item.direction) : undefined,
-                    line_id: normalizedLineId,
-                    ebox_id: normalizedEboxId,
-                    lat: item.lat,
-                    lng: item.lng,
-                    controllers: item.controllers,
-                    container_id: item.container_id,
-                    originalData: item
-                };
+                        id: item.id,
+                        name: item.pole_name || item.pole_code,
+                        sn: item.addr || item.location || '无位置信息',
+                        area_id: item.area_id as number,
+                        area_name: allAreaList.find(a => a.area_id === item.area_id)?.name || '未知区域',
+                        created_at: item.created_at,
+                        pole_code: item.pole_code,
+                        pole_type: item.pole_type,
+                        location: item.addr || item.location,
+                        addr: item.addr,
+                        direction: item.direction ? Number(item.direction) : undefined,
+                        line_id: normalizedLineId,
+                        ebox_id: normalizedEboxId,
+                        lat: item.lat,
+                        lng: item.lng,
+                        controllers: item.controllers,
+                        container_id: item.container_id,
+                        originalData: item
+                    };
                 });
 
                 setItems((prev) => {
@@ -400,6 +400,7 @@ export default function SingleLampScreen() {
                     onOpenDrawer={handleOpenDrawer}
                     selectedArea={selectedArea}
                     searchText={searchText}
+                    showOpenDrawer={false}
                     placeholder="搜索灯杆编号"
                 />
 

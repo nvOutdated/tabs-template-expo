@@ -632,3 +632,25 @@ export const deleteSingleLamp = (id: number) => {
   const result = db.runSync('DELETE FROM single_lamps WHERE id = ?', [id]);
   return result;
 };
+
+// Clear Data Operations
+export const clearAreas = () => {
+  const result = db.runSync('DELETE FROM areas');
+  return result;
+};
+
+export const clearConcentrators = () => {
+  const result = db.runSync('DELETE FROM concentrators');
+  return result;
+};
+
+export const clearLines = () => {
+  const result = db.runSync('DELETE FROM lines');
+  return result;
+};
+
+export const clearSingleLamps = () => {
+  const result = db.runSync('DELETE FROM single_lamps');
+  return result;
+};
+

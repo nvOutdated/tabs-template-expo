@@ -13,10 +13,13 @@ import {
   View
 } from "react-native";
 import Animated, {
+  Easing,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withSpring
+  withRepeat,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 // import { useAuthStore } from "@/store/auther";
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
@@ -25,7 +28,6 @@ import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
 const kabuda = require("@/assets/images/street/smartLight/smartLamp.png")
-const sharkHot = require("@/assets/images/images/searchActive.png")
 export default function LoginIndex() {
   // const {init}  = useWebSocketStore()
   const { showError } = useCustomToast()
@@ -48,6 +50,15 @@ export default function LoginIndex() {
   const [isStreetSystem, setIsStreetSystem] = useState(true);
   // 动画共享值：0 -> 路灯系统, 1 -> 采集系统
   const transition = useSharedValue(0);
+  const scanValue = useSharedValue(0);
+
+  useEffect(() => {
+    scanValue.value = withRepeat(
+      withTiming(1, { duration: 2000, easing: Easing.linear }),
+      -1,
+      true
+    );
+  }, []);
 
   const toggleSystem = () => {
     const nextState = !isStreetSystem;
@@ -68,6 +79,12 @@ export default function LoginIndex() {
     return {
       opacity,
       display: opacity === 0 ? 'none' : 'flex',
+    };
+  });
+
+  const scanLineStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: interpolate(scanValue.value, [0, 1], [0, 180]) }]
     };
   });
   // 从存储中获取保存的用户信息
@@ -200,16 +217,22 @@ export default function LoginIndex() {
           style={styles.logoContainer}
         >
           <Animated.Image
-
             source={kabuda}
             style={[styles.logo, styles.absoluteLogo, streetAvatarStyle]}
             resizeMode="contain"
           />
-          <Animated.Image
-            source={sharkHot}
-            style={[styles.logo, styles.absoluteLogo, collectionAvatarStyle]}
-            resizeMode="contain"
-          />
+          <Animated.View style={[styles.logo, styles.absoluteLogo, collectionAvatarStyle, styles.scanWrapper]}>
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+            <Animated.Image
+              source={kabuda}
+              style={styles.innerLogo}
+              resizeMode="contain"
+            />
+            <Animated.View style={[styles.scanLine, scanLineStyle]} />
+          </Animated.View>
         </TouchableOpacity>
 
         <View style={styles.card}>
@@ -332,7 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     marginBottom: 100,
-    color: "#fff",
+    color: "#00e5ff",
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
@@ -414,5 +437,66 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 10,
+  },
+  scanWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 229, 255, 0.3)',
+    backgroundColor: 'rgba(0, 20, 30, 0.3)',
+  },
+  innerLogo: {
+    width: '90%',
+    height: '90%',
+  },
+  scanLine: {
+    position: 'absolute',
+    top: 10,
+    left: '5%',
+    width: '90%',
+    height: 2,
+    backgroundColor: '#00e5ff',
+    shadowColor: '#00e5ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  corner: {
+    position: 'absolute',
+    width: 15,
+    height: 15,
+    borderColor: '#00e5ff',
+    borderWidth: 2,
+  },
+  topLeft: {
+    top: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 8,
+  },
+  topRight: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 8,
+  },
+  bottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+  },
+  bottomRight: {
+    bottom: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 8,
   },
 });

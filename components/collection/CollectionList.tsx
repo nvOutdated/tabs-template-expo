@@ -97,8 +97,13 @@ const CollectionList: React.FC<CollectionListProps> = ({
           <Text style={[styles.name, { color: currentTheme.activeTint }]} numberOfLines={1}>
             {item.pole_code || item.name}
           </Text>
+          {item.sn && (
+            <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
+              编号: {item.sn}
+            </Text>
+          )}
           {item.location && (
-            <Text style={[styles.sn, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
+            <Text style={[styles.detail, { color: currentTheme.inactiveTint }]} numberOfLines={1}>
               位置: {item.location}
             </Text>
           )}

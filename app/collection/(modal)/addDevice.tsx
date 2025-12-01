@@ -2,6 +2,7 @@ import EboxForm, { EboxFormData } from '@/components/addDevice/EboxForm';
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { useCurrentTheme } from '@/components/ui/gluestack-ui-provider/ThemeProvider';
 import { getEboxById } from '@/services/database';
+import { useCollectionEntitiesStore } from '@/store/collectionEntitiesStore';
 import useLoadingStore from '@/store/loadingStore';
 import { ExpoAmapLocationService } from '@/utils/mapUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +11,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCollectionEntitiesStore } from '@/store/collectionEntitiesStore';
 const locationService = new ExpoAmapLocationService('3eecd5c781cbafb6efc01aecb6149836');
 
 export default function AddDeviceModal() {
@@ -34,7 +34,7 @@ export default function AddDeviceModal() {
         name: '',
         sn: '',
         area_id: '',
-        version: '',
+        version: '未知协议',
         install_time: undefined,
         lng: '',
         lat: '',
@@ -88,7 +88,7 @@ export default function AddDeviceModal() {
                 useIPFallback: true,
                 useCachedLocation: true
             });
-           
+
             if (location && location.coords) {
                 setEboxFormData(prev => ({
                     ...prev,
@@ -149,11 +149,12 @@ export default function AddDeviceModal() {
     useEffect(() => {
         // Mock version list for offline mode
         setVersionList([
-            { key: 'v1.0', value: 'v1.0', label: 'v1.0' },
-            { key: 'v2.0', value: 'v2.0', label: 'v2.0' }
+            { key: 0, value: '未知协议', label: '未知协议' },
+            { key: 1, value: '老协议', label: '老协议' },
+            { key: 2, value: '20240424协议', label: '20240424协议' },
         ]);
         if (!isEdit) {
-            setEboxFormData(prev => ({ ...prev, version: 'v1.0' }));
+            setEboxFormData(prev => ({ ...prev, version: '20240424协议' }));
         }
     }, [isEdit]);
 
