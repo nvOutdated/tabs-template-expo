@@ -310,7 +310,7 @@ export default function SettingsScreen() {
                         <TouchableOpacity
                             style={{
                                 backgroundColor: '#ff4d4f',
-                                padding: 15,
+                                padding: 10,
                                 borderRadius: 8,
                                 alignItems: 'center',
                             }}
@@ -322,7 +322,7 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Logout */}
-                <View style={{ marginTop: 0, width: '90%', alignSelf: 'center' }}>
+                <View style={{ marginTop: 0, padding: 10 }}>
                     <TouchableOpacity
                         style={{
                             backgroundColor: '#ff4d4f',

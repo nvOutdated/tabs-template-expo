@@ -1,10 +1,10 @@
 import { useCurrentTheme, useTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { getUserInfo, saveToken } from "@/utils/useStorageState";
 import { Ionicons } from "@expo/vector-icons";
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,7 +13,6 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 type Theme = 'light' | 'dark' | 'blue' | 'yellow' | 'pink' | 'green';
 
 const themes: { name: Theme; color: string }[] = [
@@ -58,11 +57,7 @@ export default function PersonIndex() {
       {/* 用户信息区域 */}
      <View className="p-4">
      <View className="items-center mb-8">
-        
-        <Image
-          source={require("@/assets/images/images/kabudaxiangsu.jpg")}
-          className="w-24 h-24 rounded-full mb-4"
-        />
+        <AntDesign name="user" size={24} color="black" />
         <Text className={`text-xl font-bold text-typography-700`}>
           {userInfo}
         </Text>
