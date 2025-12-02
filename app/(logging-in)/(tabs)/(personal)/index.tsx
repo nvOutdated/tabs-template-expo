@@ -14,14 +14,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 type Theme = 'light' | 'dark' | 'blue' | 'yellow' | 'pink' | 'green';
-
 const themes: { name: Theme; color: string }[] = [
   { name: 'light', color: '#ffffff' },
   { name: 'dark', color: '#000000' },
-  { name: 'blue', color: '#2196F3' },
-  { name: 'yellow', color: '#FFD700' },
-  { name: 'pink', color: '#FF69B4' },
-  { name: 'green', color: '#4CAF50' },
+  // { name: 'blue', color: '#2196F3' },
+  // { name: 'yellow', color: '#FFD700' },
+  // { name: 'pink', color: '#FF69B4' },
+  // { name: 'green', color: '#4CAF50' },
 ];
 
 export default function PersonIndex() {
@@ -47,72 +46,97 @@ export default function PersonIndex() {
   };
 
   return (
-    <ScrollView className={`flex-1 bg-background-100`}>
+    <View className="flex-1 bg-background-100" style={{ paddingBottom: 80 }}>
       {/* 页面标题 */}
-      <View style={{ paddingTop: insets.top,backgroundColor:currentTheme.headerBg }} className="mb-4 " >
+      <View style={{ paddingTop: insets.top, backgroundColor: currentTheme.headerBg }} className="mb-4">
         <Text className="text-2xl font-bold text-primary-500 text-center border-outline-200">个人中心</Text>
-        <StatusBar translucent backgroundColor="transparent" barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}/>
-      </View>
-     
-      {/* 用户信息区域 */}
-     <View className="p-4">
-     <View className="items-center mb-8">
-        <AntDesign name="user" size={24} color="black" />
-        <Text className={`text-xl font-bold text-typography-700`}>
-          {userInfo}
-        </Text>
-      </View>
-      {/* 主题选择区域 */}
-      <View className="mb-8">
-        <Text className="text-lg font-semibold mb-4 text-typography-800">主题选择</Text>
-        <View className="flex-row flex-wrap justify-between">
-          {themes.map((item) => (
-            <TouchableOpacity
-              key={item.name}
-              onPress={() => setTheme(item.name)}
-              style={styles.themeItem}
-            >
-              <View
-                style={[
-                  styles.colorBox,
-                  { backgroundColor: item.color },
-                  theme === item.name && styles.selectedBox
-                ]}
-              />
-              <Text
-                style={[
-                  styles.themeName,
-                  theme === item.name && styles.selectedText
-                ]}
-              >
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <StatusBar translucent backgroundColor="transparent" barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'} />
       </View>
 
-      {/* 退出登录按钮 */}
-      <TouchableOpacity
-        onPress={logout}
-        className="flex-row items-center justify-center bg-typography-800 p-4 rounded-lg"
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ 
+          paddingBottom: 80, // Add bottom padding to ensure content is scrollable above the button
+          flexGrow: 1
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <Ionicons name="log-out" size={20} color="white" />
-        <Text className="text-white ml-2 text-lg">退出登录</Text>
-      </TouchableOpacity>
-     </View>
-    </ScrollView>
+        {/* 用户信息区域 */}
+        <View className="p-4">
+          <View className="items-center mb-8 px-4">
+            <View className="items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-3">
+              <AntDesign name="user" size={32} color="#666" />
+            </View>
+            <Text 
+              className="text-xl font-bold text-typography-700 text-center"
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {userInfo}
+            </Text>
+          </View>
+          {/* 主题选择区域 */}
+          <View className="mb-8">
+            <Text className="text-lg font-semibold mb-4 text-typography-800">主题选择</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {themes.map((item) => (
+                <TouchableOpacity
+                  key={item.name}
+                  onPress={() => setTheme(item.name)}
+                  style={styles.themeItem}
+                >
+                  <View
+                    style={[
+                      styles.colorBox,
+                      { backgroundColor: item.color },
+                      theme === item.name && styles.selectedBox
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.themeName,
+                      theme === item.name && styles.selectedText
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* 退出登录按钮 - 固定在底部 */}
+      <View 
+        className="w-full px-4 mb-8 bg-background-100" 
+        style={{ 
+          paddingBottom: (insets.bottom > 0 ? insets.bottom : 16) + 20, // Add extra bottom padding
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+        }}>
+        <TouchableOpacity
+          onPress={logout}
+          className="flex-row items-center justify-center bg-error-500 p-4 rounded-lg"
+        >
+          <Ionicons name="log-out" size={20} color="white" />
+          <Text className="text-white ml-2 text-lg">退出登录</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   themeItem: {
-    width: '30%',
+    width: '50%',
     alignItems: 'center',
     marginBottom: 8,
   },
   colorBox: {
-    width: 40,
+    width: 100,
     height: 40,
     borderRadius: 4,
     marginBottom: 4,

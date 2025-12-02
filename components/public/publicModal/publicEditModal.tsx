@@ -1,7 +1,7 @@
+import { useAreaStore } from '@/store/areaStore';
 import { Ionicons } from "@expo/vector-icons";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
-
 import EboxForm, { EboxFormData } from '../../addDevice/EboxForm';
 
 interface PublicEditModalProps {
@@ -10,7 +10,6 @@ interface PublicEditModalProps {
   onSave: (data: EboxFormData) => void;
   initialData: EboxFormData;
   versionList: { label: string; value: string; }[];
-  allAreaList: { label: string; value: string; }[];
 }
 
 const PublicEditModal: React.FC<PublicEditModalProps> = ({
@@ -19,15 +18,24 @@ const PublicEditModal: React.FC<PublicEditModalProps> = ({
   onSave,
   initialData,
   versionList,
-  allAreaList,
 }) => {
   const [formData, setFormData] = React.useState<EboxFormData>(initialData);
   // console.log(initialData,"修改数据");
-  
+  const { allAreaList } = useAreaStore();
+  const [allAreaListprops, setAllAreaListprops] = useState<any>([])
   React.useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
-
+  useEffect(() => {
+    const setAllAreaListpropsData = allAreaList.map((item: any) => {
+      return {
+        key: item.area_id,
+        value: item.area_id,
+        label: item.name,
+      }
+    })
+    setAllAreaListprops(setAllAreaListpropsData)
+  }, [allAreaList])
   const handleFormDataChange = (data: EboxFormData) => {
     setFormData(data);
   };
@@ -47,12 +55,12 @@ const PublicEditModal: React.FC<PublicEditModalProps> = ({
               <Ionicons name="close" size={24} color="#666" />
             </Pressable>
           </View>
-          
+
           <EboxForm
             formData={formData}
             onFormDataChange={handleFormDataChange}
             versionList={versionList}
-            allAreaList={allAreaList}
+            allAreaList={allAreaListprops}
           />
 
           <View className="flex-row justify-end gap-4 p-4 border-t border-outline-100">

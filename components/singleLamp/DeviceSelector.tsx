@@ -24,7 +24,7 @@ const DeviceSelector = ({
   onAddLamp,
 }: DeviceSelectorProps) => {
   return (
-    <View className="bg-white border-b border-gray-200 mt-1">
+    <View className="bg-background-100 border-b border-outline-200 ">
       {/* First Row - Device Info and Operations */}
       <View className="px-3 py-1 flex-row items-center justify-between">
         <TouchableOpacity
@@ -34,8 +34,8 @@ const DeviceSelector = ({
           <Text className="text-white text-xs">切换集中器</Text>
         </TouchableOpacity>
         <View className="flex-1 ml-2">
-          <Text className="text-sm font-medium text-gray-900 leading-tight">{selectedDevice?.name || '未选择集中器'}</Text>
-          <Text className="text-xs text-gray-500 leading-tight">编号: {selectedDevice?.device_info.device_code || '-'}</Text>
+          <Text className="text-sm font-medium text-primary-900 leading-tight">{selectedDevice?.name || '未选择集中器'}</Text>
+          <Text className="text-xs text-primary-500 leading-tight">编号: {selectedDevice?.device_info.device_code || '-'}</Text>
         </View>
         <View className="flex-row items-center space-x-2">
           {hasLine && onAddLamp && currentOperation === 'all' && (
@@ -49,15 +49,15 @@ const DeviceSelector = ({
           )}
           <TouchableOpacity
             onPress={() => onOperationChange('all')}
-            className={`px-3 py-2 rounded ${currentOperation === 'all' ? 'bg-blue-500' : 'bg-gray-200'}`}
+            className={`px-3 py-2 rounded ${currentOperation === 'all' ? 'bg-blue-500' : 'bg-primary-200'}`}
           >
-            <Text className={`text-xs ${currentOperation === 'all' ? 'text-white' : 'text-gray-700'}`}>信息</Text>
+            <Text className={`text-xs ${currentOperation === 'all' ? 'text-white' : 'text-primary-700'}`}>信息</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => onOperationChange('controller')}
-            className={`px-3 py-2 rounded ${currentOperation === 'controller' ? 'bg-blue-500' : 'bg-gray-200'}`}
+            className={`px-3 py-2 rounded ${currentOperation === 'controller' ? 'bg-blue-500' : 'bg-primary-200'}`}
           >
-            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-gray-700'}`}>操作</Text>
+            <Text className={`text-xs ${currentOperation === 'controller' ? 'text-white' : 'text-primary-700'}`}>操作</Text>
           </TouchableOpacity>
         </View>
       </View>

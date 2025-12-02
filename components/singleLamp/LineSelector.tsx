@@ -109,7 +109,7 @@ const LineSelector = ({
   // }
 
   return (
-    <View className="h-12 bg-white border-b border-gray-200 flex-row">
+    <View className="h-12 bg-background-100 border-b border-outline-200 flex-row">
       <View className="w-[75%] h-full">
         <ScrollView 
           horizontal 
@@ -127,15 +127,15 @@ const LineSelector = ({
                 onPress={() => handleSelectLine(line)}
                 className={`px-3 h-8 mx-1 rounded-full justify-center ${
                   selectedLine?.id === line.id
-                    ? 'bg-blue-500'
-                    : 'bg-gray-100'
+                    ? 'bg-tertiary-600'
+                    : 'bg-background-200'
                 }`}
               >
                 <Text
                   className={`text-sm ${
                     selectedLine?.id === line.id
-                      ? 'text-white'
-                      : 'text-gray-700'
+                      ? 'text-primary-500'
+                      : 'text-primary-100'
                   }`}
                 >
                   {line.name}
@@ -150,7 +150,7 @@ const LineSelector = ({
         {currentOperation === 'controller' && (
           <>
             <Animated.View 
-              className="flex-row items-center bg-gray-100 rounded-md h-10 mr-2 overflow-hidden border border-gray-200"
+              className="flex-row items-center bg-background-100 rounded-md h-10 mr-2 overflow-hidden border border-outline-200"
               style={searchAnimatedStyle}
             >
               <TextInput

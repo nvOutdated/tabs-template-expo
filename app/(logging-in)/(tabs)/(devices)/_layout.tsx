@@ -13,7 +13,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import EleBoxScreen from "./ebox";
 import SingleLampScreen from "./singleLamp";
-
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get("window");
 
@@ -87,7 +86,7 @@ TabItem.displayName = 'TabItem';
 const CustomTabBar = memo(({ state, descriptors, navigation, onTabChange }: MaterialTopTabBarProps & { onTabChange?: (tabName: string) => void }) => {
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
-  
+
   const tabWidth = useMemo(() => {
     const availableWidth = width * 0.5;
     return availableWidth / TAB_CONFIG.length;
@@ -164,7 +163,7 @@ const CustomTabBar = memo(({ state, descriptors, navigation, onTabChange }: Mate
         );
       })}
       {/* 下划线指示器 */}
-    {/*   <Animated.View
+      {/*   <Animated.View
         style={[
           {
             position: 'absolute',
@@ -186,7 +185,7 @@ CustomTabBar.displayName = 'CustomTabBar';
 export default function TabConfigurationLayout() {
   const currentTheme = useCurrentTheme();
   const insets = useSafeAreaInsets();
-  
+
   // 跟踪当前选中的tab
   const [currentTab, setCurrentTab] = useState<string>('index');
 
@@ -201,7 +200,7 @@ export default function TabConfigurationLayout() {
   }), []);
 
   // 优化StatusBar样式
-  const statusBarStyle = useMemo(() => 
+  const statusBarStyle = useMemo(() =>
     currentTheme.headerBg === "#fff" ? "dark-content" : "light-content",
     [currentTheme.headerBg]
   );
@@ -221,10 +220,7 @@ export default function TabConfigurationLayout() {
 
   // 根据当前tab跳转到不同的新增页面
   const handleAddPress = useCallback(() => {
-    if (currentTab === 'singleLamp') {
-      router.push("/(logging-in)/(modal)/addSinglamp");
-    } else {
-      // 默认跳转到集中器新增页面
+    if (currentTab === 'index') {
       router.push("/(logging-in)/(modal)/addDeviceModal");
     }
   }, [currentTab]);

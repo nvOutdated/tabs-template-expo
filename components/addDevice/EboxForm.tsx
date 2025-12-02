@@ -1,4 +1,5 @@
 import ScannerModal from "@/app/(logging-in)/(modal)/scannerModal";
+import { useProductStore } from "@/store/productStore";
 import { useScannerStore } from "@/store/scannerStore";
 import { transferDate } from '@/utils/date';
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +7,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import CustomSelectPicker from '../public/CustomSelectPicker';
-
 const gatewayTypes = [
   { label: "集中控制器", value: "Central" },
   { label: "景观灯控制器", value: "LandscapeLamp" },
@@ -16,16 +16,16 @@ const gatewayTypes = [
 ];
 
 const containerTypes = [
-  { value: 'CABINET', label: "配电箱"},
-  { value: 'TRANSFORMER', label: "箱变"},
-  { value: "OTHER", label: "其他"}
+  { value: 'CABINET', label: "配电箱" },
+  { value: 'TRANSFORMER', label: "箱变" },
+  { value: "OTHER", label: "其他" }
 ];
 
 export type EboxFormData = {
   device_info: {
-    device_code:string,
-    device_type:string,
-    e_meter:string,
+    device_code: string,
+    device_type: string,
+    e_meter: string,
   },
   ebox_type: string;
   name: string;
@@ -38,25 +38,27 @@ export type EboxFormData = {
   model: string;
   e_meter: string;
   remark: string;
-} 
+  acProductId: number;
+}
 interface EboxFormProps {
   formData: EboxFormData;
   onFormDataChange: (data: EboxFormData) => void;
   versionList: { label: string; value: string; }[];
   allAreaList: { label: string; value: string; }[];
 }
+const EboxForm = ({ formData, onFormDataChange, versionList, allAreaList }: EboxFormProps) => {
 
-const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormProps) => {
-  
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanTarget, setScanTarget] = useState<'device_code' | 'sn' | null>(null);
   const { scanResult, setScanResult } = useScannerStore();
+  const { productList } = useProductStore()
+  const formProDuctList = productList.map(i => { return { label: i.name, value: i.id } })
 
   React.useEffect(() => {
     if (scanResult && scanTarget) {
       if (scanTarget === 'device_code') {
-        onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code: scanResult} });
+        onFormDataChange({ ...formData, device_info: { ...formData.device_info ?? {}, device_code: scanResult } });
       } else if (scanTarget === 'sn') {
         onFormDataChange({ ...formData, sn: scanResult });
       }
@@ -75,225 +77,235 @@ const EboxForm =({formData, onFormDataChange,versionList,allAreaList}:EboxFormPr
       >
         <ScannerModal onClose={() => setShowScanner(false)} />
       </Modal>
-    {
-      showDatePicker && (
-        <DateTimePicker
-          value={formData.install_time || new Date()}
-          mode="date"
-          onChange={(event, date) => {
-            if (event.type === 'set' && date) {
-              onFormDataChange({ ...formData, install_time: date });
-            }
-            setShowDatePicker(false)
-          }}
-        />
-      )
-    }
-    <ScrollView className="flex-1 p-4 bg-background-50">
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">网关编号</Text>
-          <View className="flex-1 flex-row items-center gap-2">
-            <TextInput
-              className="flex-1 h-12 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-              placeholder="1-11个数字(必填)"
-              placeholderTextColor="#999"
-              value={formData.device_info?.device_code || ''}
-              onChangeText={(value) =>
-                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_code:value} })
+      {
+        showDatePicker && (
+          <DateTimePicker
+            value={formData.install_time || new Date()}
+            mode="date"
+            onChange={(event, date) => {
+              if (event.type === 'set' && date) {
+                onFormDataChange({ ...formData, install_time: date });
               }
-            />
-            <TouchableOpacity onPress={() => {
-              setScanTarget('device_code');
-              setShowScanner(true);
-            }}>
-              <Ionicons name="scan-outline" size={24} color="#666" />
-            </TouchableOpacity>
+              setShowDatePicker(false)
+            }}
+          />
+        )
+      }
+      <ScrollView className="flex-1 p-4 bg-background-50">
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">网关编号</Text>
+            <View className="flex-1 flex-row items-center gap-2">
+              <TextInput
+                className="flex-1 h-12 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+                placeholder="1-11个数字(必填)"
+                placeholderTextColor="#999"
+                value={formData.device_info?.device_code || ''}
+                onChangeText={(value) =>
+                  onFormDataChange({ ...formData, device_info: { ...formData.device_info ?? {}, device_code: value } })
+                }
+              />
+              <TouchableOpacity onPress={() => {
+                setScanTarget('device_code');
+                setShowScanner(true);
+              }}>
+                <Ionicons name="scan-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20 ">网关类型</Text>
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20 ">网关类型</Text>
             <CustomSelectPicker
               options={gatewayTypes}
               value={formData.device_info?.device_type}
               initialLabel={'集中控制器'}
               onChange={(value) =>
-                onFormDataChange({ ...formData, device_info:{...formData.device_info ?? {}, device_type:value} })
+                onFormDataChange({ ...formData, device_info: { ...formData.device_info ?? {}, device_type: value } })
               }
               className='flex-1'
               placeholder="请选择网关类型"
             />
-      
-        </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">设备名称</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="1-20个字(必填)"
-            placeholderTextColor="#999"
-            value={formData.name}
-            onChangeText={(value) => onFormDataChange({ ...formData, name: value })}
-          />
-        </View>
-      </View>
-
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">设备编号</Text>
-          <View className="flex-1 flex-row items-center gap-2">
-            <TextInput
-              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-              placeholder="1-12个字(必填)"
-              placeholderTextColor="#999"
-              value={formData.sn}
-              onChangeText={(value) => onFormDataChange({ ...formData, sn: value })}
-            />
-            <TouchableOpacity onPress={() => {
-              setScanTarget('sn');
-              setShowScanner(true);
-            }}>
-              <Ionicons name="scan-outline" size={24} color="#666" />
-            </TouchableOpacity>
           </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">容器类型</Text>
-          <CustomSelectPicker
-            options={containerTypes}
-            value={formData.ebox_type}
-            initialLabel={'配电箱'}
-            onChange={(value) =>
-              onFormDataChange({ ...formData, ebox_type: value })
-            }
-            className='flex-1'
-            placeholder="请选择容器类型"
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">设备名称</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="1-20个字(必填)"
+              placeholderTextColor="#999"
+              value={formData.name}
+              onChangeText={(value) => onFormDataChange({ ...formData, name: value })}
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">区域名称</Text>
-          <CustomSelectPicker
-            options={allAreaList}
-            value={formData.area_id}
-            initialLabel={allAreaList[0]?.label || ''}
-            onChange={(value) =>
-              onFormDataChange({ ...formData, area_id: value })
-            }
-            className='flex-1'
-            placeholder="请选择区域"
-            searchable={true}
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">设备编号</Text>
+            <View className="flex-1 flex-row items-center gap-2">
+              <TextInput
+                className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+                placeholder="1-12个字(必填)"
+                placeholderTextColor="#999"
+                value={formData.sn}
+                onChangeText={(value) => onFormDataChange({ ...formData, sn: value })}
+              />
+              <TouchableOpacity onPress={() => {
+                setScanTarget('sn');
+                setShowScanner(true);
+              }}>
+                <Ionicons name="scan-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">版本协议</Text>
-          <CustomSelectPicker
-            options={versionList}
-            value={formData.version}
-            initialLabel={versionList[0]?.label || ''}
-            onChange={(value) =>
-              onFormDataChange({ ...formData, version: value })
-            }
-            className='flex-1'
-            placeholder="请选择版本协议"
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">容器类型</Text>
+            <CustomSelectPicker
+              options={containerTypes}
+              value={formData.ebox_type}
+              initialLabel={'配电箱'}
+              onChange={(value) =>
+                onFormDataChange({ ...formData, ebox_type: value })
+              }
+              className='flex-1'
+              placeholder="请选择容器类型"
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">安装时间</Text>
-          <Pressable onPress={() => setShowDatePicker(true)}  
-          className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 flex-row items-center justify-between">
-            <Text className="text-base text-primary-400">{formData.install_time ? transferDate((formData.install_time).getTime()) : '请选择安装时间'}</Text>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
-          </Pressable>
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">区域名称</Text>
+            <CustomSelectPicker
+              options={allAreaList}
+              value={formData.area_id}
+              initialLabel={allAreaList[0]?.label || ''}
+              onChange={(value) => onFormDataChange({ ...formData, area_id: value })}
+              className='flex-1'
+              placeholder="请选择区域"
+              searchable={true}
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">设备经度</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="请输入经度"
-            placeholderTextColor="#999"
-            value={formData.lng}
-            onChangeText={(value) => onFormDataChange({ ...formData, lng: value })}
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">版本协议</Text>
+            <CustomSelectPicker
+              options={versionList}
+              value={formData.version}
+              initialLabel={versionList[0]?.label || ''}
+              onChange={(value) =>
+                onFormDataChange({ ...formData, version: value })
+              }
+              className='flex-1'
+              placeholder="请选择版本协议"
+            />
+          </View>
         </View>
-      </View>
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">所属产品</Text>
+            <CustomSelectPicker
+              options={formProDuctList as any}
+              value={formProDuctList[formData.acProductId]?.value}
+              initialLabel={formProDuctList[0]?.label || ''}
+              onChange={(value) => onFormDataChange({ ...formData, acProductId: formProDuctList.findIndex(i => i.value === Number(value)) })}
+              className='flex-1'
+              placeholder="请选择所属产品"
+            />
+          </View>
+        </View>
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">安装时间</Text>
+            <Pressable onPress={() => setShowDatePicker(true)}
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 flex-row items-center justify-between">
+              <Text className="text-base text-primary-400">{formData.install_time ? transferDate((formData.install_time).getTime()) : '请选择安装时间'}</Text>
+              <Ionicons name="calendar-outline" size={20} color="#666" />
+            </Pressable>
+          </View>
+        </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">设备纬度</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="请输入纬度"
-            placeholderTextColor="#999"
-            value={formData.lat}
-            onChangeText={(value) => onFormDataChange({ ...formData, lat: value })}
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">设备经度</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="请输入经度"
+              placeholderTextColor="#999"
+              value={formData.lng}
+              onChangeText={(value) => onFormDataChange({ ...formData, lng: value })}
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">容器型号</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="请输入容器型号"
-            placeholderTextColor="#999"
-            value={formData.model}
-            onChangeText={(value) => onFormDataChange({ ...formData, model: value })}
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">设备纬度</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="请输入纬度"
+              placeholderTextColor="#999"
+              value={formData.lat}
+              onChangeText={(value) => onFormDataChange({ ...formData, lat: value })}
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">电表地址</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="请输入电表地址"
-            placeholderTextColor="#999"
-            value={formData.e_meter}
-            onChangeText={(value) =>
-              onFormDataChange({ ...formData, e_meter: value })
-            }
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">容器型号</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="请输入容器型号"
+              placeholderTextColor="#999"
+              value={formData.model}
+              onChangeText={(value) => onFormDataChange({ ...formData, model: value })}
+            />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1">
-        <View className="flex-row items-center mb-0">
-          <Text className="text-base text-primary-500 w-20">备注</Text>
-          <TextInput
-            className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
-            placeholder="请输入备注"
-            placeholderTextColor="#999"
-            value={formData.remark}
-            onChangeText={(value) =>
-              onFormDataChange({ ...formData, remark: value })
-            }
-          />
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">电表地址</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="请输入电表地址"
+              placeholderTextColor="#999"
+              value={formData.e_meter}
+              onChangeText={(value) =>
+                onFormDataChange({ ...formData, e_meter: value })
+              }
+            />
+          </View>
         </View>
-      </View>
-      
-    </ScrollView>
+
+        <View className="mb-1">
+          <View className="flex-row items-center mb-0">
+            <Text className="text-base text-primary-500 w-20">备注</Text>
+            <TextInput
+              className="flex-1 h-11 bg-white border border-outline-100 rounded-lg px-3 py-1 text-base text-primary-500"
+              placeholder="请输入备注"
+              placeholderTextColor="#999"
+              value={formData.remark}
+              onChangeText={(value) =>
+                onFormDataChange({ ...formData, remark: value })
+              }
+            />
+          </View>
+        </View>
+
+      </ScrollView>
     </>
   );
 };

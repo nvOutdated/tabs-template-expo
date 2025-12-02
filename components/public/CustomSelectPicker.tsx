@@ -16,7 +16,7 @@ interface Option {
 
 interface CustomSelectPickerProps {
   options: Option[];
-  value?: string;
+  value?: string | number;
   placeholder?: string;
   onChange?: (value: string) => void;
   disabled?: boolean;
@@ -250,7 +250,7 @@ export default function CustomSelectPicker({
           ${disabled ? 'opacity-50' : ''}
         `}
       >
-        <Text className="text-base text-gray-900">
+        <Text className="text-base text-gray-900 flex-1 mr-2" numberOfLines={1} ellipsizeMode="tail">
           {selectedOption?.label || placeholder}
         </Text>
         <Ionicons

@@ -12,19 +12,19 @@ import RemoveTipModal from "@/components/public/publicModal/removeTipmodal";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
 import { useAreaStore } from "@/store/areaStore";
 import {
-    DEVICE_STATUS,
-    EboxOperation,
-    ElectricItem,
-    useEboxStore
+  DEVICE_STATUS,
+  EboxOperation,
+  ElectricItem,
+  useEboxStore
 } from "@/store/eboxStore";
 import { useGlobalStore } from "@/store/globalStateStore";
 import useLoadingStore from "@/store/loadingStore";
 import { useWebSocketStore } from "@/store/websocketStore";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dimensions, RefreshControl, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-const { width } = Dimensions.get("window");
+// const { width } = Dimensions.get("window");
 
 // 将常量移到组件外部
 const centralControllerImage = require("@/assets/images/street/electricBox/centralController.png");
@@ -83,86 +83,76 @@ export default function EboxScreen() {
     removeEboxNode
   } = useEboxStore();
   const [versionList, setVersionList] = useState<any>([]);
-  const { areaList, areaWithDevicesList,allAreaList } = useAreaStore();
-  const [allAreaListprops,setAllAreaListprops] = useState<any>([])
-  const [editItem,setEditItem] =  useState<EboxFormData>()
+  const { areaList, areaWithDevicesList, allAreaList } = useAreaStore();
+  const [editItem, setEditItem] = useState<EboxFormData>()
 
   const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
 
-  const {showLoading,hideLoading} = useLoadingStore() 
+  const { showLoading, hideLoading } = useLoadingStore()
   const currentServer = useGlobalStore((state) => state.currentServer);
-  
+
   const isScreenFocused = useRef(true);
-  
+
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<any>(null);
-  
+
   useEffect(() => {
     get_version_list({}).then(res => {
       if (res.code === 200) {
-        const setVersionListData = res.data.map((item:any)=>{
+        const setVersionListData = res.data.map((item: any) => {
           return {
-            key:item,
-            value:item,
-            label:item,
+            key: item,
+            value: item,
+            label: item,
           }
         })
         setVersionList(setVersionListData)
       }
     })
-    const setAllAreaListpropsData = allAreaList.map((item:any)=>{
-      return {
-        key:item.area_id,
-        value:item.area_id,
-        label:item.name,
-      }
-    })
-    setAllAreaListprops(setAllAreaListpropsData)
   }, [])
-   
-  const onEditBox = (item:EboxFormData) => {
+
+  const onEditBox = (item: EboxFormData) => {
     // Ensure install_time is initialized as a Date object
     const formData = {
       ...item,
       install_time: item.install_time ? new Date(item.install_time) : new Date()
     };
-    
     setEditItem(formData);
     setEditModalVisible(true);
   }
 
-  const onRemoveBox = (item:any)=>{
+  const onRemoveBox = (item: any) => {
     setRemoveTarget(item);
     setRemoveModalVisible(true);
   }
-  
-  const closeEditModal = ()=>{
+
+  const closeEditModal = () => {
     setEditModalVisible(false)
   }
 
-  const  saveEdit = async(item:any)=>{
-    try{
-    showLoading()
-     const response = await edit_ebox({...item})
-     if(response.code===200){
-      updateEboxNode(item)
-      showMessageModal({
-        type:'success',
-        message:"修改成功"
-      })
-     }else{
-      showMessageModal({
-        type:'error',
-        message:response.message||'修改失败'
-      })
-     }
-    }catch(e){
+  const saveEdit = async (item: any) => {
+    try {
+      showLoading()
+      const response = await edit_ebox({ ...item })
+      if (response.code === 200) {
+        updateEboxNode(item)
+        showMessageModal({
+          type: 'success',
+          message: "修改成功"
+        })
+      } else {
+        showMessageModal({
+          type: 'error',
+          message: response.message || '修改失败'
+        })
+      }
+    } catch (e) {
       console.log(e);
-    }finally{
+    } finally {
       closeEditModal()
       hideLoading()
     }
-     
+
   }
 
   const handleSaveEdit = (data: any) => {
@@ -253,7 +243,7 @@ export default function EboxScreen() {
       WS_SmartLight_Data?.deviceName &&
       isScreenFocused.current
     ) {
-      const findEboxItems = allEboxes.find(i=>i.device_info.id===WS_SmartLight_Data.did)
+      const findEboxItems = allEboxes.find(i => i.device_info.id === WS_SmartLight_Data.did)
       // 只在页面获得焦点时处理数据
       if (
         WS_SmartLight_Data.type === "dataChange" ||
@@ -277,12 +267,12 @@ export default function EboxScreen() {
             currentDevice.device_info.open !== deviceInfo.open ||
             currentDevice.device_info.warn !== deviceInfo.warn ||
             JSON.stringify(currentDevice.device_info.loops) !==
-              JSON.stringify(deviceInfo.loops)
+            JSON.stringify(deviceInfo.loops)
           ) {
             // 更新设备状态
             updateDeviceStatus(WS_SmartLight_Data.did, deviceInfo);
           }
-          if (findEboxItems&&
+          if (findEboxItems &&
             (findEboxItems.device_info.online !== deviceInfo.online ||
               findEboxItems.device_info.open !== deviceInfo.open ||
               findEboxItems.device_info.warn !== deviceInfo.warn ||
@@ -291,9 +281,9 @@ export default function EboxScreen() {
           ) {
             // 更新设备状态
             // findEboxItems.
-            setElectricBoxes((pre)=>{
-              const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
-              if(index!==-1){
+            setElectricBoxes((pre) => {
+              const index = pre.findIndex(i => i.device_info.id === WS_SmartLight_Data.did)
+              if (index !== -1) {
                 pre[index].device_info = {
                   ...pre[index].device_info,
                   ...deviceInfo
@@ -313,14 +303,11 @@ export default function EboxScreen() {
             // 添加操作记录（不需要判断状态变化）
             const newOperation: EboxOperation = {
               id: `${WS_SmartLight_Data.did}_${Date.now()}`,
-              title: `${WS_SmartLight_Data.deviceName} - ${
-                WS_SmartLight_Data.data?.eventType || "状态更新"
-              }`,
-              content: `设备状态: ${
-                WS_SmartLight_Data.data?.description || "无描述"
-              }\n操作模式: ${
-                WS_SmartLight_Data.data?.mode || "未知"
-              }\n操作时间: ${WS_SmartLight_Data.data?.optTime || "未知"}`,
+              title: `${WS_SmartLight_Data.deviceName} - ${WS_SmartLight_Data.data?.eventType || "状态更新"
+                }`,
+              content: `设备状态: ${WS_SmartLight_Data.data?.description || "无描述"
+                }\n操作模式: ${WS_SmartLight_Data.data?.mode || "未知"
+                }\n操作时间: ${WS_SmartLight_Data.data?.optTime || "未知"}`,
               type: deviceInfo.warn ? "warning" : "info",
               module: deviceStatus.module,
               timestamp: WS_SmartLight_Data.data?.dateTimeMillis || Date.now(),
@@ -369,9 +356,9 @@ export default function EboxScreen() {
           warn: false,
           loops: Array(8).fill(false),
         };
-        setElectricBoxes((pre)=>{
-          const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
-          if(index!==-1){
+        setElectricBoxes((pre) => {
+          const index = pre.findIndex(i => i.device_info.id === WS_SmartLight_Data.did)
+          if (index !== -1) {
             pre[index].device_info = {
               ...pre[index].device_info,
               ...deviceInfo
@@ -388,9 +375,9 @@ export default function EboxScreen() {
           warn: false,
           loops: Array(8).fill(false),
         };
-        setElectricBoxes((pre)=>{
-          const index = pre.findIndex(i=>i.device_info.id===WS_SmartLight_Data.did)
-          if(index!==-1){
+        setElectricBoxes((pre) => {
+          const index = pre.findIndex(i => i.device_info.id === WS_SmartLight_Data.did)
+          if (index !== -1) {
             pre[index].device_info = {
               ...pre[index].device_info,
               ...deviceInfo
@@ -503,11 +490,11 @@ export default function EboxScreen() {
       const thumbnailSource =
         attachments.length > 0
           ? {
-              uri: currentServer
-                ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}`
-                : "",
-              id: attachments[0].id,
-            }
+            uri: currentServer
+              ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}`
+              : "",
+            id: attachments[0].id,
+          }
           : centralControllerImage;
 
       // 计算设备状态
@@ -542,11 +529,11 @@ export default function EboxScreen() {
             const thumbnailSource =
               attachments.length > 0
                 ? {
-                    uri: currentServer
-                      ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}`
-                      : "",
-                    id: attachments[0].id,
-                  }
+                  uri: currentServer
+                    ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}`
+                    : "",
+                  id: attachments[0].id,
+                }
                 : centralControllerImage;
 
             // 计算设备状态
@@ -670,12 +657,11 @@ export default function EboxScreen() {
       />
 
       <PublicEditModal
-       visible={editModalVisible}
-       onClose={closeEditModal}
-       onSave={saveEdit}
-       initialData={editItem || {} as EboxFormData}
-       versionList={versionList}
-       allAreaList={allAreaListprops}
+        visible={editModalVisible}
+        onClose={closeEditModal}
+        onSave={saveEdit}
+        initialData={editItem || {} as EboxFormData}
+        versionList={versionList}
       />
       {/* 删除确认Modal */}
       <RemoveTipModal

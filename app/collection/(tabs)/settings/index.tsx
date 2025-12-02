@@ -302,7 +302,7 @@ export default function SettingsScreen() {
                             title="单灯数据 (Single Lamps)"
                             onExport={handleExportSingleLamps}
                             onClear={handleClearSingleLamps}
-                            exportColor="#fa8c16"
+                            exportColor="orange"
                         />
 
                         <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 10 }} />
@@ -325,7 +325,7 @@ export default function SettingsScreen() {
                 <View style={{ marginTop: 0, padding: 10 }}>
                     <TouchableOpacity
                         style={{
-                            backgroundColor: '#ff4d4f',
+                            backgroundColor: '#fa8c16',
                             padding: 10,
                             borderRadius: 8,
                             alignItems: 'center',

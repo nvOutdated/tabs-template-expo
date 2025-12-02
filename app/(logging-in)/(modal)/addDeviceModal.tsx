@@ -21,16 +21,16 @@ export default function AddDeviceModal() {
   const { showWarning, showSuccess } = useCustomToast();
   const [versionList, setVersionList] = useState<any>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const {showLoading,hideLoading} = useLoadingStore()
+  const { showLoading, hideLoading } = useLoadingStore()
   const { addEboxNode } = useEboxStore();
   const { allAreaList } = useAreaStore();
-  const [allAreaListprops,setAllAreaListprops] = useState<any>([])
+  const [allAreaListprops, setAllAreaListprops] = useState<any>([])
   // 表单数据状态
   const [eboxFormData, setEboxFormData] = useState<EboxFormData>({
-    device_info:{
-      device_code:"",
-      device_type:"Central",
-      e_meter:"",
+    device_info: {
+      device_code: "",
+      device_type: "Central",
+      e_meter: "",
     },
     ebox_type: 'CABINET',
     name: '',
@@ -43,6 +43,7 @@ export default function AddDeviceModal() {
     model: '',
     e_meter: '',
     remark: '',
+    acProductId: 0,
   });
 
   const getCurrentLocation = async () => {
@@ -64,7 +65,7 @@ export default function AddDeviceModal() {
           lat: location.coords.latitude.toString(),
           lng: location.coords.longitude.toString()
         }));
-        
+
         showSuccess({
           message: `位置获取成功${location.address ? `: ${location.address}` : ''}`,
         });
@@ -84,18 +85,18 @@ export default function AddDeviceModal() {
   const handleSubmit = () => {
     try {
       showLoading()
-      add_ebox({...eboxFormData}).then(res => {
+      add_ebox({ ...eboxFormData }).then(res => {
         if (res.code == 200) {
-          const addEboxData:any = {...eboxFormData,id:res?.data?.id}
-          addEboxNode(addEboxData) 
+          const addEboxData: any = { ...eboxFormData, id: res?.data?.id }
+          addEboxNode(addEboxData)
           showSuccess({ message: '添加成功' });
-        }else{
+        } else {
           showWarning({ message: res.message || '添加失败' });
         }
       });
-    } catch (error:any) {
+    } catch (error: any) {
       showWarning({ message: error.message || '添加失败' });
-    }finally{
+    } finally {
       hideLoading()
     }
   };
@@ -103,35 +104,35 @@ export default function AddDeviceModal() {
   useEffect(() => {
     get_version_list({}).then(res => {
       if (res.code === 200) {
-        const setVersionListData = res.data.map((item:any)=>{
+        const setVersionListData = res.data.map((item: any) => {
           return {
-            key:item,
-            value:item,
-            label:item,
+            key: item,
+            value: item,
+            label: item,
           }
         })
         setVersionList(setVersionListData)
-        setEboxFormData((prev:any)=>{
+        setEboxFormData((prev: any) => {
           return {
             ...prev,
-            version:setVersionListData[0].value
+            version: setVersionListData[0].value
           }
-        })  
+        })
       }
     })
   }, [])
 
-  useEffect(()=>{
-    const setAllAreaListpropsData = allAreaList.map((item:any)=>{
+  useEffect(() => {
+    const setAllAreaListpropsData = allAreaList.map((item: any) => {
       return {
-        key:item.area_id,
-        value:item.area_id,
-        label:item.name,
+        key: item.area_id,
+        value: item.area_id,
+        label: item.name,
       }
     })
     setAllAreaListprops(setAllAreaListpropsData)
-  },[allAreaList])
-  
+  }, [allAreaList])
+
   // useEffect(()=>{
   //   getLocation()
   // },[])
@@ -139,7 +140,7 @@ export default function AddDeviceModal() {
   return (
     <View className="flex-1 bg-primary-100" style={{ paddingTop: insets.top }}>
       {/* 顶部导航栏 */}
-      <View className="flex-row items-center  px-3 py-1 border-b border-outline-100" style={{backgroundColor:currentTheme.headerBg}}>
+      <View className="flex-row items-center  px-3 py-1 border-b border-outline-100" style={{ backgroundColor: currentTheme.headerBg }}>
         <TouchableOpacity
           onPress={() => router.back()}
           className="p-2 "
@@ -147,8 +148,8 @@ export default function AddDeviceModal() {
           <Ionicons name="arrow-back" size={24} color={currentTheme.textColor} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold ml-[30%]" style={{ color: currentTheme.textColor }}>新增集中器</Text>
-      
-      {/*   <TouchableOpacity
+
+        {/*   <TouchableOpacity
           onPress={() => router.push('/(logging-in)/(modal)/scannerModal')}
           className="p-2"
         >
@@ -162,7 +163,7 @@ export default function AddDeviceModal() {
       {/* 底部按钮区域 */}
       <View className="p-4 bg-secondary-200 border-t border-t-outline-100 text-center border-outline-100">
         <View className="flex-row space-x-4">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-1 h-11 rounded-lg items-center justify-center bg-typography-500 mr-2"
             onPress={getCurrentLocation}
             disabled={isLoadingLocation}
@@ -173,7 +174,7 @@ export default function AddDeviceModal() {
               <Text className="text-base font-semibold text-tertiary-100">获取位置</Text>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-1 h-11 rounded-lg items-center justify-center bg-info-500"
             onPress={handleSubmit}
           >

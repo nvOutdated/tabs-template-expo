@@ -2,6 +2,7 @@ import { useCustomToast } from '@/components/public/UIComponents/ToastComponent'
 import { useAuth } from '@/hooks/useAuth';
 import { useAreaStore } from "@/store/areaStore";
 import { DEVICE_STATUS, useEboxStore } from "@/store/eboxStore";
+import { useProductStore } from "@/store/productStore";
 import { useRunLogStore } from '@/store/runlogStore';
 import { useSmartLightStore } from "@/store/smartLightStore";
 import { useWebSocketStore } from '@/store/websocketStore';
@@ -11,7 +12,6 @@ import { Redirect, Stack } from 'expo-router';
 import React, { JSX, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 export default function AuthLayout(): JSX.Element {
   const { init, disconnect, isConnected, WS_SmartLight_Data } = useWebSocketStore();
   const { showError } = useCustomToast();
@@ -21,9 +21,10 @@ export default function AuthLayout(): JSX.Element {
   const { fetchAreaList } = useAreaStore();
   const { addAlarm } = useRunLogStore();
   const insets = useSafeAreaInsets();
+  const { fetchProductList, removeProductList } = useProductStore()
   // 监听 WebSocket 报警数据
   useEffect(() => {
-    if (WS_SmartLight_Data?.type === "warning"&& isConnected) {
+    if (WS_SmartLight_Data?.type === "warning" && isConnected) {
       const deviceInfo = {
         online: WS_SmartLight_Data.data?.online ?? true,
         open: WS_SmartLight_Data.data?.open ?? false,
@@ -98,7 +99,10 @@ export default function AuthLayout(): JSX.Element {
       }
     };
   }, [isLoggedIn, isConnected, init, disconnect]);
-
+  useEffect(() => {
+    fetchProductList()
+    return removeProductList()
+  }, [])
   // Show loading indicator while checking authentication status
   if (isLoading) {
     return (
@@ -127,7 +131,7 @@ export default function AuthLayout(): JSX.Element {
   return (
     // <Slot/>
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false,contentStyle: { paddingBottom: insets.bottom } }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: { paddingBottom: insets.bottom } }} />
       <Stack.Screen name="(modal)" options={{ headerShown: false }} />
     </Stack>
   );

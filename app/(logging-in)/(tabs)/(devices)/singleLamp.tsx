@@ -113,11 +113,11 @@ export default function SingleLampScreen() {
   };
   const { areaList } = useAreaStore();
   const { allEboxes } = useEboxStore();
-  const {WS_SingleControlResp_Data,
+  const { WS_SingleControlResp_Data,
     WS_CentralParamsResp_Data,
     WS_SingleDatetimeResp_Data,
     WS_SwitchAutoResp_Data,
-    WS_DetectDatetimeParamsResp_Data} = useWebSocketStore()
+    WS_DetectDatetimeParamsResp_Data } = useWebSocketStore()
   // 初始化时选择第一个可用的集中器
   useEffect(() => {
     if (allEboxes.length > 0 && !selectedDevice) {
@@ -128,24 +128,24 @@ export default function SingleLampScreen() {
       getCfgObject(firstDevice.id);
     }
   }, [allEboxes]);
-  useEffect(()=>{
-     if(WS_CentralParamsResp_Data&&currentOperation === 'controller'){
-        const {data,deviceName,sn} = WS_CentralParamsResp_Data;
-        if(data&&deviceName&&sn){
-          const messageContent = ` ${deviceName}(${sn})  循环次数：${data.lamp_circle_no},接收超时：${data.lamp_timeout},重试次数：${data.lamp_retry},手自动状态：${data.auto?'自动':'手动'}`;
-          const newMessage = {
-            id: Date.now().toString(),
-            content: messageContent,
-            timestamp: Date.now()
-          };
-          setMessages(prev => [newMessage, ...prev]);
-        }
-     }
-  },[WS_CentralParamsResp_Data])
-  useEffect(()=>{
-    if(WS_SingleDatetimeResp_Data&&currentOperation === 'controller'){
-      const {data,deviceName,sn} = WS_SingleDatetimeResp_Data;
-      if(data&&deviceName&&sn){
+  useEffect(() => {
+    if (WS_CentralParamsResp_Data && currentOperation === 'controller') {
+      const { data, deviceName, sn } = WS_CentralParamsResp_Data;
+      if (data && deviceName && sn) {
+        const messageContent = ` ${deviceName}(${sn})  循环次数：${data.lamp_circle_no},接收超时：${data.lamp_timeout},重试次数：${data.lamp_retry},手自动状态：${data.auto ? '自动' : '手动'}`;
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageContent,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [newMessage, ...prev]);
+      }
+    }
+  }, [WS_CentralParamsResp_Data])
+  useEffect(() => {
+    if (WS_SingleDatetimeResp_Data && currentOperation === 'controller') {
+      const { data, deviceName, sn } = WS_SingleDatetimeResp_Data;
+      if (data && deviceName && sn) {
         const messageContent = ` ${deviceName}(${sn})  设备时钟：${data.dateTime}`;
         const newMessage = {
           id: Date.now().toString(),
@@ -155,11 +155,11 @@ export default function SingleLampScreen() {
         setMessages(prev => [newMessage, ...prev]);
       }
     }
-  },[WS_SingleDatetimeResp_Data]) 
-  useEffect(()=>{
-    if(WS_SwitchAutoResp_Data&&currentOperation === 'controller'){
-      const {data,deviceName,sn} = WS_SwitchAutoResp_Data;
-      if(data&&deviceName&&sn){
+  }, [WS_SingleDatetimeResp_Data])
+  useEffect(() => {
+    if (WS_SwitchAutoResp_Data && currentOperation === 'controller') {
+      const { data, deviceName, sn } = WS_SwitchAutoResp_Data;
+      if (data && deviceName && sn) {
         const messageContent = ` ${deviceName}(${sn})  手自动状态：${data.auto}`;
         const newMessage = {
           id: Date.now().toString(),
@@ -169,11 +169,11 @@ export default function SingleLampScreen() {
         setMessages(prev => [newMessage, ...prev]);
       }
     }
-  },[WS_SwitchAutoResp_Data]) 
-  useEffect(()=>{
-    if(WS_DetectDatetimeParamsResp_Data&&currentOperation === 'controller'){
-      const {data,deviceName,sn} = WS_DetectDatetimeParamsResp_Data;
-      if(data&&deviceName&&sn){
+  }, [WS_SwitchAutoResp_Data])
+  useEffect(() => {
+    if (WS_DetectDatetimeParamsResp_Data && currentOperation === 'controller') {
+      const { data, deviceName, sn } = WS_DetectDatetimeParamsResp_Data;
+      if (data && deviceName && sn) {
         const messageContent = ` ${deviceName}(${sn})  设备时钟：${data.dateTime}`;
         const newMessage = {
           id: Date.now().toString(),
@@ -183,9 +183,9 @@ export default function SingleLampScreen() {
         setMessages(prev => [newMessage, ...prev]);
       }
     }
-  },[WS_DetectDatetimeParamsResp_Data])  
+  }, [WS_DetectDatetimeParamsResp_Data])
   useEffect(() => {
-    if (WS_SingleControlResp_Data&&currentOperation === 'controller') {
+    if (WS_SingleControlResp_Data && currentOperation === 'controller') {
       const { data, deviceName } = WS_SingleControlResp_Data;
       if (data) {
         // 处理消息面板数据
@@ -237,8 +237,8 @@ export default function SingleLampScreen() {
                     ...controller,
                     stateA: data.stateA,
                     stateB: data.stateB,
-                    powerOnA:data.enabledA,
-                    powerOnB:data.enabledB
+                    powerOnA: data.enabledA,
+                    powerOnB: data.enabledB
                   } as Controller;
                 }
                 return controller;
@@ -267,7 +267,7 @@ export default function SingleLampScreen() {
     }
 
     const filtered = singleLamps.filter(lamp => {
-      return lamp.controllers.some((controller: Controller) => 
+      return lamp.controllers.some((controller: Controller) =>
         controller.controllerId.toLowerCase().includes(text.toLowerCase())
       );
     });
@@ -287,7 +287,7 @@ export default function SingleLampScreen() {
     try {
       setLoading(true);
       const res = await query_eleBox_line({ ebox_id: deviceId });
-      if (res.code === 200&&res.data) {
+      if (res.code === 200 && res.data) {
         const lineList = res.data || [];
         setLines(lineList);
         if (lineList.length > 0) {
@@ -297,7 +297,7 @@ export default function SingleLampScreen() {
           setSingleLamps([]);
           setSelectedLine(null);
         }
-      }else{
+      } else {
         setLines([]);
         setSelectedLine(null);
         setSingleLamps([]);
@@ -322,14 +322,14 @@ export default function SingleLampScreen() {
         lineId,
       };
       // 获取普通灯列表（包含图片信息）
-      const res1 = await ordinaryLamp_query_list({line_id:lineId});
+      const res1 = await ordinaryLamp_query_list({ line_id: lineId });
       const ordinaryLamps = res1?.data || [];
-      
+
       // 获取单灯列表
       const res = await lightPole_query_list(params);
       if (res.code === 200) {
         const lampList = res.data || [];
-        
+
         // 合并图片信息
         const mergedLampList = lampList.map((lamp: SingleLamp) => {
           // 查找对应的普通灯数据
@@ -337,13 +337,13 @@ export default function SingleLampScreen() {
           if (matchingOrdinaryLamp) {
             return {
               ...lamp,
-              container_id:matchingOrdinaryLamp.container_id,
+              container_id: matchingOrdinaryLamp.container_id,
               lamp_attachments: matchingOrdinaryLamp.lamp_attachments || []
             };
           }
           return lamp;
         });
-        
+
         setSingleLamps(mergedLampList);
         // 提取所有控制器并展平数组
         const controllerList = mergedLampList.reduce((acc: Controller[], lamp: SingleLamp) => {
@@ -407,7 +407,7 @@ export default function SingleLampScreen() {
     } catch (error) {
       setContactorList([]);
     }
-  }, []); 
+  }, []);
 
   const handleSelectDevice = useCallback((device: Device) => {
     const eboxDevice = allEboxes.find(ebox => ebox.id === device.id);
@@ -455,11 +455,11 @@ export default function SingleLampScreen() {
         if (lamp.id === updatedSingleLamp.id) {
           // 更新图片数据
           const attachments = updatedSingleLamp.lamp_attachments || [];
-          const thumbnailSource = attachments.length > 0 
+          const thumbnailSource = attachments.length > 0
             ? {
-                uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
-                id: attachments[0].id
-              }
+              uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+              id: attachments[0].id
+            }
             : singleLampOffline;
 
           return {
@@ -566,7 +566,7 @@ export default function SingleLampScreen() {
       </View>
     );
   };
-  
+
   return (
     <GestureHandlerRootView className="flex-1">
       <View style={styles.container}>
@@ -611,7 +611,7 @@ export default function SingleLampScreen() {
                 singleLamps={singleLamps}
                 loading={loading}
                 hasMore={false}
-                onEndReached={() => {}}
+                onEndReached={() => { }}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}
@@ -627,8 +627,8 @@ export default function SingleLampScreen() {
           </>
         ) : (
           <View style={{ flex: 1 }}>
-            <ControllerInfoCard 
-              singleLamps={filteredSingleLamps} 
+            <ControllerInfoCard
+              singleLamps={filteredSingleLamps}
               onSelectionChange={handleSelectionChange}
               selectedControllers={selectedControllers}
             />
@@ -639,7 +639,7 @@ export default function SingleLampScreen() {
           </View>
         )}
       </View>
-     
+
       <SingleLampDrawer
         visible={showDrawer}
         onClose={handleCloseDrawer}
