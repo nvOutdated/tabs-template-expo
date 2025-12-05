@@ -27,7 +27,7 @@ const CARD_HEIGHT = 80; // 减小卡片高度，因为内容较少
 const LogItem = memo(({ item }: { item: any }) => {
   return (
     <View className="mb-2 h-[80px]">
-      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3">
+      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3 border border-outline-100">
         <View className="flex-1">
           <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">

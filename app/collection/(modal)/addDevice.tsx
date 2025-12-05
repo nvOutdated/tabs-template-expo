@@ -41,6 +41,7 @@ export default function AddDeviceModal() {
         model: '',
         e_meter: '',
         remark: '',
+        acProductId: 0,
     });
 
     const flatAreas = useCollectionEntitiesStore(state => state.flatAreas);
@@ -69,6 +70,7 @@ export default function AddDeviceModal() {
                     ...data,
                     area_id: data.area_id?.toString() || '',
                     install_time: data.install_time ? new Date(data.install_time) : undefined,
+                    acProductId: data.acProductId ?? 0,
                 });
             }
         } else if (area_id) {

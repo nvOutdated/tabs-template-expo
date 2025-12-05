@@ -227,27 +227,29 @@ const SingleLampList = ({
     );
   }, []);
   return (
-    <>
-      <FlatList
-        data={singleLamps}
-        renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
-        refreshControl={refreshControl}
-        ListEmptyComponent={ListEmptyComponent}
-        contentContainerStyle={singleLamps.length === 0 ? { flex: 1 } : { paddingBottom: 40 }}
-        ListFooterComponent={ListFooterComponent}
-      />
-      <ImageModal
-        visible={previewVisible}
-        onClose={() => setPreviewVisible(false)}
-        images={previewImages}
-        containerId={previewLampId ? String(previewLampId) : undefined}
-        itemId={itemId ? itemId : 0}
-        type="singleLamp"
-        onUpdateSuccess={handleImageUpdate}
-      />
+      <>
+      <View className="flex-1 bg-background-100">
+        <FlatList
+          data={singleLamps}
+          renderItem={renderItem}
+          keyExtractor={item => item.id.toString()}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          refreshControl={refreshControl}
+          ListEmptyComponent={ListEmptyComponent}
+          contentContainerStyle={singleLamps.length === 0 ? { flex: 1 } : { paddingBottom: 40 }}
+          ListFooterComponent={ListFooterComponent}
+        />
+        <ImageModal
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          images={previewImages}
+          containerId={previewLampId ? String(previewLampId) : undefined}
+          itemId={itemId ? itemId : 0}
+          type="singleLamp"
+          onUpdateSuccess={handleImageUpdate}
+        />
+      </View>
     </>
   );
 };

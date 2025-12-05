@@ -36,7 +36,7 @@ const ALARM_TYPES = [
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 180; // 增加卡片高度以适应更多内容
+const CARD_HEIGHT = 160; // 增加卡片高度以适应更多内容
 
 // Move LogItem outside the main component and optimize it
 const LogItem = memo(({ item }: { item: any }) => {
@@ -55,8 +55,8 @@ const LogItem = memo(({ item }: { item: any }) => {
   ), [item.loops]);
 
   return (
-    <View className="mb-2 h-[180px]">
-      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3">
+    <View className="mb-2 h-[160px]">
+      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3 border border-outline-100">
         <View className="flex-1">
           <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
@@ -64,11 +64,26 @@ const LogItem = memo(({ item }: { item: any }) => {
               <Text className="text-tertiary-900 text-sm">{item.deviceCode}</Text>
             </View>
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
+              <Text className="text-tertiary-900 font-bold text-sm">三相电压：</Text>
+              <Text className="text-tertiary-900 text-sm">{item.voltages}V</Text>
+            </View>
+          </View>
+          <View className="flex-row flex-wrap gap-2 mb-2">
+            {/* <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
+              <Text className="text-tertiary-900 font-bold text-sm">三相电压：</Text>
+              <Text className="text-tertiary-900 text-sm">{item.voltages}V</Text>
+            </View> */}
+            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
+              <Text className="text-tertiary-900 font-bold text-sm">电流值：</Text>
+              <Text className="text-tertiary-900 text-sm">{item.currents}A</Text>
+            </View>
+          </View>
+          <View className="flex-row flex-wrap gap-2 mb-2">
+          <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">报警类型：</Text>
               <Text className="text-warning-500 text-sm">{item.alarmType}</Text>
             </View>
           </View>
-
           <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">报警描述：</Text>
@@ -78,23 +93,14 @@ const LogItem = memo(({ item }: { item: any }) => {
             </View>
           </View>
 
-          <View className="flex-row flex-wrap gap-2 mb-2">
-            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
-              <Text className="text-tertiary-900 font-bold text-sm">三相电压：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.voltages}V</Text>
-            </View>
-            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
-              <Text className="text-tertiary-900 font-bold text-sm">电流值：</Text>
-              <Text className="text-tertiary-900 text-sm">{item.currents}A</Text>
-            </View>
-          </View>
+          
 
-          <View className="flex-row flex-wrap gap-2 mb-2">
+         {/*  <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">开关量状态：</Text>
               <Text className="text-tertiary-900 text-sm">{item.ios}</Text>
             </View>
-          </View>
+          </View> */}
 
           <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">

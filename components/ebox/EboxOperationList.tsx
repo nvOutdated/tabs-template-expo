@@ -72,7 +72,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const [loopButtons, setLoopButtons] = useState<LoopButton[]>(
     Array.from({ length: 8 }, (_, i) => ({ id: i + 1, isActive: false }))
   );
-  const [isDragging, setIsDragging] = useState(false);
   const [lastActiveIndex, setLastActiveIndex] = useState<number | null>(null);
   const [initialTouchIndex, setInitialTouchIndex] = useState<number | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -126,7 +125,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   const panGesture = Gesture.Pan()
     .onStart((e) => {
-      runOnJS(setIsDragging)(true);
       const x = e.absoluteX;
       const relativeX = x - 12;
       const index = Math.floor(relativeX / CIRCLE_SIZE);
@@ -161,7 +159,6 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       }
     })
     .onEnd(() => {
-      runOnJS(setIsDragging)(false);
       runOnJS(setLastActiveIndex)(null);
       runOnJS(setInitialTouchIndex)(null);
     });
@@ -192,7 +189,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
             message: response.message || '状态检测失败',
           });
         }
-      } catch (error) {
+      } catch {
         toast.showError({
           message: '网络错误，请稍后重试',
         });
@@ -259,7 +256,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
           });
         }
       }
-    } catch (error) {
+    } catch {
       toast.showError({
         message: '网络错误，请稍后重试',
       });
@@ -313,21 +310,21 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         onPress={() => handleOperation('open')}
       >
         <Ionicons name="sunny" size={20} color="white" />
-        <Text className="text-white text-sm font-medium">开灯</Text>
+        <Text className="text-typography-500 text-sm font-medium">开灯</Text>
       </TouchableOpacity>
       <TouchableOpacity
         className="flex-1 h-9 rounded-md flex-row justify-center items-center gap-1 bg-error-500"
         onPress={() => handleOperation('close')}
       >
         <Ionicons name="moon" size={20} color="white" />
-        <Text className="text-white text-sm font-medium">关灯</Text>
+        <Text className="text-typography-500 text-sm font-medium">关灯</Text>
       </TouchableOpacity>
       <TouchableOpacity
         className="flex-1 h-9 rounded-md flex-row justify-center items-center gap-1 bg-info-500"
         onPress={() => handleOperation('check')}
       >
         <Ionicons name="analytics" size={20} color="white" />
-        <Text className="text-white text-sm font-medium">检测状态</Text>
+        <Text className="text-typography-500 text-sm font-medium">检测状态</Text>
       </TouchableOpacity>
     </View>
   );
@@ -399,10 +396,10 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       return {
         bgColor: status?.dotStyle === 'warn' ? 'bg-error-50' :
           status?.dotStyle === 'open' ? 'bg-warning-50' :
-            status?.dotStyle === 'online' ? 'bg-success-50' : 'bg-gray-100',
+            status?.dotStyle === 'online' ? 'bg-success-50' : 'bg-background-100',
         color: status?.dotStyle === 'warn' ? 'text-error-500' :
           status?.dotStyle === 'open' ? 'text-warning-500' :
-            status?.dotStyle === 'online' ? 'text-success-500' : 'text-gray-500',
+            status?.dotStyle === 'online' ? 'text-success-500' : 'text-typography-500',
         label: item.module
       };
     }, [item.module]);
@@ -412,7 +409,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         {item.data.loops.map((loop, index) => (
           <View
             key={index}
-            className={`w-5 h-5 rounded-full justify-center items-center ${loop ? 'bg-blue-500' : 'bg-gray-400'
+            className={`w-5 h-5 rounded-full justify-center items-center ${loop ? 'bg-info-500' : 'bg-outline-300'
               }`}
           >
             <Text className="text-white text-xs">{index + 1}</Text>
@@ -426,7 +423,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         {item.data.ios.map((io, index) => (
           <View
             key={index}
-            className={`w-6 h-6 rounded-full justify-center items-center ${io ? 'bg-blue-500' : 'bg-gray-400'
+            className={`w-6 h-6 rounded-full justify-center items-center ${io ? 'bg-info-500' : 'bg-outline-300'
               }`}
           >
             <Text className="text-white text-xs">{index + 1}</Text>
@@ -465,12 +462,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
         <TouchableOpacity
           onPress={handleItemPress}
-          className={`bg-background-50 p-4 rounded-xl mb-2 shadow-sm ${isEditMode ? 'opacity-80' : ''}`}
-          style={{
-            borderWidth: 1,
-            borderColor: '#e5e7eb',
-            marginHorizontal: 2,
-          }}
+          className={`bg-background-50 p-4 rounded-xl mb-2 shadow-sm border border-outline-200 mx-0.5 ${isEditMode ? 'opacity-80' : ''}`}
         >
           <View className="flex-row items-center">
             {isEditMode && (
@@ -481,7 +473,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                 <Ionicons
                   name={selectedOperations.has(item.id) ? "checkbox" : "square-outline"}
                   size={24}
-                  color={selectedOperations.has(item.id) ? "#409eff" : "#909399"}
+                  className={selectedOperations.has(item.id) ? "text-primary-500" : "text-tertiary-500"}
                 />
               </TouchableOpacity>
             )}
@@ -489,13 +481,13 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
               {/* 顶部信息：SN和模块 */}
               <View className="flex-row justify-between items-center mb-2">
                 <View className="flex-row items-center flex-1">
-                  <Text className={`text-base font-bold mr-2 ${item.type === 'warning' ? 'text-red-500' : ''}`}>
+                  <Text className={`text-base text-typography-500 font-bold mr-2 ${item.type === 'warning' ? 'text-red-500' : ''}`}>
                     {item.sn}
                   </Text>
-                  <Text className="text-base flex-1" numberOfLines={1}>{item.deviceName}</Text>
+                  <Text className="text-base text-typography-500 flex-1" numberOfLines={1}>{item.deviceName}</Text>
                 </View>
-                <View className={`px-2 py-1 rounded-full ${moduleStyle.bgColor}`}>
-                  <Text className={moduleStyle.color}>
+                <View className={`px-2 py-1 rounded-full bg-outline-200 ${moduleStyle.bgColor}`}>
+                  <Text className={`text-typography-500 ${moduleStyle.color}`}>
                     {moduleStyle.label}
                   </Text>
                 </View>
@@ -503,34 +495,34 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
               {/* 输出控制状态 */}
               <View className="flex-row items-center mb-2">
-                <Text className="text-sm text-gray-500 mr-2">输出控制:</Text>
+                <Text className="text-sm text-typography-500 mr-2">输出控制:</Text>
                 {renderLoopButtons()}
               </View>
 
               {/* 当前动作方式及时间 */}
               <View className="flex-row justify-between items-center">
                 <View className="flex-1">
-                  <Text className="text-sm text-gray-500">当前动作: {item.data.mode}</Text>
-                  <Text className="text-xs text-gray-500">{item.data.optTime}</Text>
+                  <Text className="text-sm text-typography-500">当前动作: {item.data.mode}</Text>
+                  <Text className="text-xs text-typography-500">{item.data.optTime}</Text>
                 </View>
                 <Ionicons
                   name={isExpanded ? "chevron-up" : "chevron-down"}
                   size={20}
-                  color="#666"
+                  className="text-tertiary-500"
                 />
               </View>
 
               {/* 展开的详细信息 */}
               <Animated.View style={animatedStyle}>
-                <View className="mt-3 pt-3 border-t border-gray-200">
+                <View className="mt-3 pt-3 border-t border-outline-200">
                   {/* 电压电流信息 */}
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-1 mr-2">
-                      <Text className="text-sm text-gray-500 mb-1">三相电压(V)</Text>
+                      <Text className="text-sm text-typography-500 mb-1">三相电压(V)</Text>
                       <View className="space-y-1">
                         {item.data.phase3Voltage.map((voltage, index) => (
                           <View key={index} className="flex-row items-center">
-                            <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                            <Text className="text-sm text-typography-500 w-8">L{index + 1}</Text>
                             <Text className="text-sm">{voltage}</Text>
                           </View>
                         ))}
@@ -538,11 +530,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                     </View>
 
                     <View className="flex-1 mx-2">
-                      <Text className="text-sm text-gray-500 mb-1">三相电流(A)</Text>
+                      <Text className="text-sm text-typography-500 mb-1">三相电流(A)</Text>
                       <View className="space-y-1">
                         {item.data.phase3Electric.map((current, index) => (
                           <View key={index} className="flex-row items-center">
-                            <Text className="text-sm text-gray-500 w-8">L{index + 1}</Text>
+                            <Text className="text-sm text-typography-500 w-8">L{index + 1}</Text>
                             <Text className="text-sm">{current}</Text>
                           </View>
                         ))}
@@ -550,7 +542,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                     </View>
 
                     <View className="flex-1 ml-2">
-                      <Text className="text-sm text-gray-500 mb-1">用电量(Kwh)</Text>
+                      <Text className="text-sm text-typography-500 mb-1">用电量(Kwh)</Text>
                       <Text className="text-sm">{item.data.power}</Text>
                     </View>
                   </View>
@@ -558,11 +550,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                   {/* 时间信息 */}
                   <View className="flex-row justify-between mb-3">
                     <View className="flex-1 mr-2">
-                      <Text className="text-sm text-gray-500 mb-1">设备时钟</Text>
+                      <Text className="text-sm text-typography-500 mb-1">设备时钟</Text>
                       <Text className="text-sm">{item.data.dateTime}</Text>
                     </View>
                     <View className="flex-1 ml-2">
-                      <Text className="text-sm text-gray-500 mb-1">日出日落</Text>
+                      <Text className="text-sm text-typography-500 mb-1">日出日落</Text>
                       <View className="space-y-1">
                         <Text className="text-sm">日出: {item.data.powerOff}</Text>
                         <Text className="text-sm">日落: {item.data.powerOn}</Text>
@@ -573,19 +565,19 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                   {/* I/O状态 */}
                   <View className="mb-3">
                     <View className="flex-row items-center mb-2">
-                      <Text className="text-sm text-gray-500 w-20">输入开关</Text>
+                      <Text className="text-sm text-typography-500 w-20">输入开关</Text>
                       {renderIOButtons()}
                     </View>
                   </View>
 
                   {/* 预案启用情况 */}
                   <View className="mb-3">
-                    <Text className="text-sm text-gray-500 mb-2">启用预案</Text>
+                    <Text className="text-sm text-typography-500 mb-2">启用预案</Text>
                     {renderPlanTags()}
                   </View>
 
                   {/* 运行描述 */}
-                  <View className="border-t border-gray-200 pt-3">
+                <View className="border-t border-outline-200 pt-3">
                     <Text className={`text-sm ${item.type === 'warning' ? 'text-red-500' : 'text-green-500'}`}>
                       {item.content}
                     </Text>
@@ -605,7 +597,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
   const renderItem = useCallback(({ item }: { item: EboxOperation }) => (
     <OperationItem item={item} />
-  ), []);
+  ), [OperationItem]);
 
   const keyExtractor = useCallback((item: EboxOperation) => item.id, []);
 
@@ -627,9 +619,9 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   );
 
   return (
-    <View className="flex-1 bg-background-50">
+    <View className="flex-1 bg-background-100">
       {/* 统计信息 */}
-      <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+      <View className="flex-row justify-between items-center p-4 border-b border-outline-200">
         <View className="flex-row items-center">
           {/*   <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text> */}
           <Text className="text-base text-warning-500 mr-4">警告: {stats.warning}</Text>
@@ -654,7 +646,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={toggleEditMode}
-                className="bg-gray-500 px-3 py-1 rounded-full"
+                className="bg-outline-500 px-3 py-1 rounded-full"
               >
                 <Text className="text-white">完成</Text>
               </TouchableOpacity>

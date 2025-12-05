@@ -377,7 +377,7 @@ export default function EboxList({
 
   return (
     <>
-      <View className="flex-1">
+      <View className="flex-1 bg-background-100">
         <FlashList
           data={electricBoxes}
           renderItem={renderItem}

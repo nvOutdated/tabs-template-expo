@@ -175,7 +175,7 @@ const SearchSection = memo(({
           <View style={[styles.searchInput, { minWidth: 200 }]} className="bg-background-50 border border-tertiary-200">
             <TextInput
               style={{ flex: 1 }}
-              className="h-8 text-left py-1 align-middle text-typography-900"
+              className="h-8 text-left py-0.5 align-middle text-typography-900"
               placeholder="搜索设备..."
               placeholderTextColor="#999"
               value={searchText}

@@ -180,7 +180,10 @@ const SingleLampEditModal: React.FC<SingleLampEditModalProps> = ({
       //  console.log(status);  // 可能的状态值是 'granted', 'denied', 'undetermined'
 
       const expoLocation = await Location.getLastKnownPositionAsync();
-      console.log(expoLocation, 2222);
+      // const  expoLocationData = await Location.getCurrentPositionAsync({
+      // });
+
+      // console.log(expoLocationData, 22221111);
       const location = await locationService.getCurrentLocation({
         enableHighAccuracy: true,
         timeout: 15000,

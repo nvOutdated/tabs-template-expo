@@ -21,7 +21,7 @@ export interface LampRunLogProps {
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 8;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
-const CARD_HEIGHT = 220; // 添加固定卡片高度常量
+const CARD_HEIGHT = 200; // 添加固定卡片高度常量
 
 // Move LogItem outside the main component and optimize it
 const LogItem = memo(({ item }: { item: any }) => {
@@ -40,8 +40,8 @@ const LogItem = memo(({ item }: { item: any }) => {
   ), [item.loops]);
 
   return (
-    <View className="mb-2 h-[220px]">
-      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3">
+    <View className="mb-1 h-[200px]">
+      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3 border border-outline-100">
         <View className="flex-1">
           <View className="flex-row flex-wrap gap-2 mb-2">
             <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
