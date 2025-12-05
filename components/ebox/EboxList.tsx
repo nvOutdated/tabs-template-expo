@@ -22,7 +22,6 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 import ImageModal from "../public/ImageModal";
-
 type ImageSource = {
   uri?: string;
   default?: any;
@@ -81,8 +80,8 @@ type Props = {
   onUpdateEbox?: (updatedEbox: any) => void;
   onEditEbox?: (ebox: any) => void;
   onDeleteEbox?: (ebox: ElectricItem) => void;
-  setIsAnyItemEditing:(params:boolean)=>void;
-  isAnyItemEditing:boolean
+  setIsAnyItemEditing: (params: boolean) => void;
+  isAnyItemEditing: boolean
 };
 
 const { width } = Dimensions.get("window");
@@ -101,12 +100,11 @@ export default function EboxList({
   onDeleteEbox,
   setIsAnyItemEditing,
   isAnyItemEditing,
-}: Props){
+}: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageSource[]>([]);
   const [selectedEbox, setSelectedEbox] = useState<ElectricItem | null>(null);
   // const [isAnyItemEditing, setIsAnyItemEditing] = useState(false);
-
   const handleImagePress = useCallback((images: ImageSource[], ebox: ElectricItem) => {
     setSelectedImages(images);
     setSelectedEbox(ebox);
@@ -162,7 +160,7 @@ export default function EboxList({
       const newShowActions = !showActions;
       setShowActions(newShowActions);
       setIsAnyItemEditing(newShowActions);
-      
+
       if (newShowActions) {
         translateX.value = withSpring(40, {
           damping: 15,
@@ -263,7 +261,7 @@ export default function EboxList({
                   {item.name}
                 </Text>
               </View>
-              
+
               <View style={styles.pointConfig}>
                 <Pressable
                   style={styles.configButton}
@@ -273,7 +271,7 @@ export default function EboxList({
                   <Text style={styles.configButtonText}>组态</Text>
                 </Pressable>
               </View>
-              
+
               <View style={styles.imageRowContainer}>
                 <Pressable
                   style={styles.thumbnailContainer}
@@ -301,7 +299,7 @@ export default function EboxList({
                   >
                     位置: {item.addr}
                   </Text>
-                  
+
                   <View style={styles.statusContainer}>
                     <Text style={styles.statusText} className="text-tertiary-900">状态: </Text>
                     {item.computed.deviceStatus && (
@@ -313,7 +311,7 @@ export default function EboxList({
                       </View>
                     )}
                   </View>
-                  
+
                   <View style={styles.loopsContainer}>
                     <Text style={styles.loopsTitle} className="text-tertiary-900">回路:</Text>
                     <View style={styles.loopsGrid}>
@@ -324,14 +322,14 @@ export default function EboxList({
               </View>
             </Pressable>
             <Animated.View style={[styles.actionButtons]}>
-              <Pressable 
-                style={[styles.actionButton, styles.editButton]} 
+              <Pressable
+                style={[styles.actionButton, styles.editButton]}
                 onPress={handleEdit}
               >
                 <Ionicons name="create-outline" size={20} color="#fff" />
               </Pressable>
-              <Pressable 
-                style={[styles.actionButton, styles.deleteButton]} 
+              <Pressable
+                style={[styles.actionButton, styles.deleteButton]}
                 onPress={handleDelete}
               >
                 <Ionicons name="trash-outline" size={20} color="#fff" />
@@ -626,7 +624,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    marginLeft:5,
+    marginLeft: 5,
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,

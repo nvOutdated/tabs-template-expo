@@ -21,7 +21,7 @@ interface SearchSectionProps {
   endTime: Date | null;
   setStartTime: (date: Date | null) => void;
   setEndTime: (date: Date | null) => void;
-//   onSearch: () => void;
+  //   onSearch: () => void;
   containerList: Container[];
   additionalSearchContent?: React.ReactNode;
 }
@@ -32,7 +32,7 @@ const SearchSection = memo(({
   setSelectedDevice,
   setStartTime,
   setEndTime,
-//   onSearch,
+  //   onSearch,
   containerList,
   additionalSearchContent
 }: SearchSectionProps) => {
@@ -58,7 +58,7 @@ const SearchSection = memo(({
 
   const handleSearchInput = (text: string) => {
     setSearchText(text);
-    if(text.length > 0) {
+    if (text.length > 0) {
       const filtered = containerList.filter(item =>
         item.searchName && item.searchName.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 10);
@@ -154,9 +154,9 @@ const SearchSection = memo(({
     setEndTime(null);
   };
 
-//   const handleSearch = () => {
-//     onSearch();
-//   };
+  //   const handleSearch = () => {
+  //     onSearch();
+  //   };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('zh-CN', {
@@ -285,7 +285,7 @@ const SearchSection = memo(({
 
           {additionalSearchContent}
 
-        {/*   <TouchableOpacity
+          {/*   <TouchableOpacity
             style={styles.searchButton}
             className="bg-info-500 w-full text-center px-auto"
             onPress={handleSearch}

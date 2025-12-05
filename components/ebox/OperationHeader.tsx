@@ -32,7 +32,7 @@ export default function OperationHeader({
           已选择设备: {selectedDevicesCount}
         </Text>
       </View>
-      
+
       <View style={styles.rightButtons}>
         <TouchableOpacity
           style={styles.operationButton}

@@ -6,23 +6,27 @@ import {
     clearSingleLamps,
     getAllEboxes,
     getAllLines,
-    getAllSingleLamps,
-    getAreaList
+    getAreaList,
+    getLinesByEboxId,
+    getSingleLampList
 } from '@/services/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import XLSX from 'xlsx';
+import { AREA_HEADERS_MAP, CONCENTRATOR_HEADERS_MAP, SINGLE_LAMP_HEADERS_MAP, translateHeaders } from '../../../../utils/excelHeaders';
 const SERVER_URL_KEY = 'remote_server_url';
 
 export default function SettingsScreen() {
     const currentTheme = useCurrentTheme();
     const [serverUrl, setServerUrl] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showConcentratorModal, setShowConcentratorModal] = useState(false);
+    const [concentratorList, setConcentratorList] = useState<any[]>([]);
     const insets = useSafeAreaInsets();
     useEffect(() => {
         loadServerUrl();
@@ -95,7 +99,8 @@ export default function SettingsScreen() {
 
     const handleExportAreas = () => {
         const data = getAreaList();
-        generateExcel(data, 'areas_export.xlsx');
+        const translatedData = translateHeaders(data, AREA_HEADERS_MAP);
+        generateExcel(translatedData, 'areas_export.xlsx');
     };
 
     const handleClearAreas = () => {
@@ -126,7 +131,8 @@ export default function SettingsScreen() {
             ...item,
             device_info: JSON.stringify(item.device_info)
         }));
-        generateExcel(cleanData, 'concentrators_export.xlsx');
+        const translatedData = translateHeaders(cleanData, CONCENTRATOR_HEADERS_MAP);
+        generateExcel(translatedData, 'concentrators_export.xlsx');
     };
 
     const handleClearConcentrators = () => {
@@ -178,14 +184,103 @@ export default function SettingsScreen() {
         );
     };
 
+    const executeSingleLampExport = async (concentrator: any) => {
+        setShowConcentratorModal(false);
+        setLoading(true);
+        try {
+            const lines = getLinesByEboxId(concentrator.id);
+            const wb = XLSX.utils.book_new();
+            let hasData = false;
+
+            // Process each line as a separate sheet
+            for (const line of lines) {
+                const lamps = getSingleLampList({ ebox_id: concentrator.id, line_id: line.id });
+                if (lamps.length === 0) continue;
+
+                const flattenedData = lamps.flatMap(lamp => {
+                    const baseInfo = {
+                        poleName: lamp.pole_name || '',
+                        poleCode: lamp.pole_code,
+                        poleType: lamp.pole_type,
+                        direction: lamp.direction === 1 ? '东' : lamp.direction === 2 ? '南' : lamp.direction === 3 ? '西' : lamp.direction === 4 ? '北' : '', // Simple mapping, adjust as needed
+                        lng: lamp.lng,
+                        lat: lamp.lat,
+                        remark: '', // Not in DB currently
+                    };
+
+                    if (!lamp.controllers || lamp.controllers.length === 0) {
+                        return [baseInfo];
+                    }
+
+                    return lamp.controllers.flatMap(controller => {
+                        const controllerInfo = {
+                            controllerId: controller.controllerId,
+                            controllerType: controller.controllerType,
+                            groupIds4Save: controller.groupIds4Save?.join(',') || '',
+                            productId: controller.productId || '',
+                        };
+
+                        if (!controller.lamps || controller.lamps.length === 0) {
+                            return [{ ...baseInfo, ...controllerInfo }];
+                        }
+
+                        return controller.lamps.map(head => ({
+                            ...baseInfo,
+                            ...controllerInfo,
+                            lightLoop: head.lightLoop,
+                            lightingType: head.lightingType === 1 ? '机动车' : head.lightingType === 2 ? '非机动车' : '其他', // Simple mapping
+                            cfgName: head.cfgName,
+                            phase: head.phase
+                        }));
+                    });
+                });
+
+                if (flattenedData.length > 0) {
+                    const translatedData = translateHeaders(flattenedData, SINGLE_LAMP_HEADERS_MAP);
+                    const ws = XLSX.utils.json_to_sheet(translatedData);
+                    XLSX.utils.book_append_sheet(wb, ws, line.name || `Line ${line.id}`);
+                    hasData = true;
+                }
+            }
+
+
+
+            if (!hasData) {
+                Alert.alert('提示', '该集中器下没有线路或单灯数据');
+                return;
+            }
+
+            const fileName = `${concentrator.device_code || concentrator.sn || 'export'}.xlsx`;
+            const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+
+            const fs = FileSystem as any;
+            const uri = (fs.cacheDirectory || fs.documentDirectory) + fileName;
+
+            await fs.writeAsStringAsync(uri, wbout, { encoding: 'base64' });
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(uri, {
+                    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    dialogTitle: '导出数据',
+                    UTI: 'com.microsoft.excel.xlsx'
+                });
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            Alert.alert('错误', '导出失败: ' + (error as any).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleExportSingleLamps = () => {
-        const data = getAllSingleLamps();
-        const cleanData = data.map(item => ({
-            ...item,
-            controllers: JSON.stringify(item.controllers),
-            lamp_attachments: JSON.stringify(item.lamp_attachments)
-        }));
-        generateExcel(cleanData, 'single_lamps_export.xlsx');
+        const eboxes = getAllEboxes();
+        if (eboxes.length === 0) {
+            Alert.alert('提示', '没有集中器数据，无法导出');
+            return;
+        }
+        setConcentratorList(eboxes);
+        setShowConcentratorModal(true);
     };
 
     const handleClearSingleLamps = () => {
@@ -292,12 +387,12 @@ export default function SettingsScreen() {
                             onClear={handleClearConcentrators}
                             exportColor="#13c2c2"
                         />
-                        <DataManagementRow
+                        {/*   <DataManagementRow
                             title="线路数据 (Lines)"
                             onExport={handleExportLines}
                             onClear={handleClearLines}
                             exportColor="#722ed1"
-                        />
+                        /> */}
                         <DataManagementRow
                             title="单灯数据 (Single Lamps)"
                             onExport={handleExportSingleLamps}
@@ -348,6 +443,39 @@ export default function SettingsScreen() {
                     <ActivityIndicator size="large" color="#1890ff" />
                 </View>
             )}
+
+            <Modal
+                visible={showConcentratorModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowConcentratorModal(false)}
+            >
+                <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <View style={{ backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' }}>
+                        <View style={{ padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>选择集中器导出</Text>
+                            <TouchableOpacity onPress={() => setShowConcentratorModal(false)}>
+                                <Text style={{ color: '#666', fontSize: 16 }}>取消</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={concentratorList}
+                            keyExtractor={item => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={{ padding: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' }}
+                                    onPress={() => executeSingleLampExport(item)}
+                                >
+                                    <Text style={{ fontSize: 16, fontWeight: '500' }}>{item.name}</Text>
+                                    <Text style={{ color: '#666', fontSize: 12, marginTop: 4 }}>
+                                        SN: {item.sn} | Code: {item.device_code || 'N/A'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }

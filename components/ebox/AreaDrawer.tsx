@@ -80,15 +80,15 @@ type AreaDrawerProps = {
 };
 
 // 设备项组件
-const DeviceItem = ({ 
-  device, 
-  level, 
-  isSelected, 
-  onSelect 
-}: { 
-  device: Device; 
-  level: number; 
-  isSelected: boolean; 
+const DeviceItem = ({
+  device,
+  level,
+  isSelected,
+  onSelect
+}: {
+  device: Device;
+  level: number;
+  isSelected: boolean;
   onSelect: (device: Device) => void;
 }) => {
   const currentTheme = useCurrentTheme();
@@ -96,7 +96,7 @@ const DeviceItem = ({
   const deviceStatus = Object.values(DEVICE_STATUS).find(
     status => status.condition(device.device_info)
   ) || DEVICE_STATUS.OFFLINE;
-  
+
   return (
     <TouchableOpacity
       style={[
@@ -129,20 +129,20 @@ const DeviceItem = ({
 };
 
 // 区域项组件
-const AreaItem = ({ 
-  area, 
-  level, 
-  isExpanded, 
-  isSelected, 
+const AreaItem = ({
+  area,
+  level,
+  isExpanded,
+  isSelected,
   hasChildren,
   onToggle,
   onSelect,
   themeColor
-}: { 
-  area: Area; 
-  level: number; 
-  isExpanded: boolean; 
-  isSelected: boolean; 
+}: {
+  area: Area;
+  level: number;
+  isExpanded: boolean;
+  isSelected: boolean;
   hasChildren: boolean;
   onToggle: (id: number) => void;
   onSelect: (area: Area) => void;
@@ -169,7 +169,7 @@ const AreaItem = ({
           {area.name}
         </Text>
         {hasChildren && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onToggle(area.area_id);
@@ -203,7 +203,7 @@ export default function AreaDrawer({
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const scrollPositionRef = useRef(0);
-  
+
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const opacity = useSharedValue(0);
 
@@ -305,10 +305,10 @@ export default function AreaDrawer({
       if (isExpanded) {
         // 根据搜索文本过滤设备
         const filteredDevices = searchText
-          ? devices.filter(device => 
-              device.name.toLowerCase().includes(searchText.toLowerCase()) ||
-              device.sn.toLowerCase().includes(searchText.toLowerCase())
-            )
+          ? devices.filter(device =>
+            device.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            device.sn.toLowerCase().includes(searchText.toLowerCase())
+          )
           : devices;
 
         filteredDevices.forEach(device => {
@@ -378,8 +378,8 @@ export default function AreaDrawer({
   return (
     <View style={[styles.overlay, { display: visible ? 'flex' : 'none' }]}>
       <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
-        <TouchableOpacity 
-          style={StyleSheet.absoluteFill} 
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
           onPress={onClose}
           activeOpacity={1}
         />

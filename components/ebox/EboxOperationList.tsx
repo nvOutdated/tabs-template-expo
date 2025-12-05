@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -99,7 +99,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
     // 删除选中的操作记录
     deleteOperations(selectedOperations);
-    
+
     toast.showSuccess({
       message: `已删除 ${selectedOperations.size} 条记录`,
     });
@@ -130,11 +130,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       const x = e.absoluteX;
       const relativeX = x - 12;
       const index = Math.floor(relativeX / CIRCLE_SIZE);
-      
+
       const buttonStartX = index * CIRCLE_SIZE;
       const buttonEndX = buttonStartX + CIRCLE_SIZE;
       const touchX = relativeX;
-      
+
       if (index >= 0 && index < 8 && touchX >= buttonStartX && touchX <= buttonEndX) {
         const currentState = loopButtons[index].isActive;
         runOnJS(setInitialTouchIndex)(index);
@@ -144,17 +144,17 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     })
     .onUpdate((e) => {
       if (lastActiveIndex === null || initialTouchIndex === null) return;
-      
+
       const x = e.absoluteX;
       const relativeX = x - 12;
       const index = Math.floor(relativeX / CIRCLE_SIZE);
-      
+
       const buttonStartX = index * CIRCLE_SIZE;
       const buttonEndX = buttonStartX + CIRCLE_SIZE;
       const touchX = relativeX;
-      
-      if (index >= 0 && index < 8 && index !== lastActiveIndex && 
-          touchX >= buttonStartX && touchX <= buttonEndX) {
+
+      if (index >= 0 && index < 8 && index !== lastActiveIndex &&
+        touchX >= buttonStartX && touchX <= buttonEndX) {
         const isActive = loopButtons[initialTouchIndex].isActive;
         runOnJS(updateLoopButton)(index, isActive);
         runOnJS(setLastActiveIndex)(index);
@@ -223,9 +223,9 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         });
         return;
       }
-    
+
       const deviceIds = Array.from(selectedDevices.values()).map(device => device.device_info.id);
-      
+
       if (currentOperation === 'check') {
         const response = await light_central_detect_status({
           devices: deviceIds
@@ -269,7 +269,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       setCurrentOperation(null);
     }
   };
-  
+
   // 添加全选/取消全选的处理函数
   const handleSelectAll = useCallback(() => {
     if (selectedOperations.size === operations.length) {
@@ -286,20 +286,19 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   }, [operations, selectedOperations, clearSelectedOperations, toggleOperationSelect]);
 
   const renderLoopButtons = () => (
-    <View style={styles.loopContainer}>
+    <View className="flex-row justify-between px-3 mb-4">
       {loopButtons.map((button, index) => (
         <TouchableOpacity
           key={button.id}
-          style={[
-            styles.loopButton,
-            button.isActive && styles.loopButtonActive
-          ]}
+          className={`justify-center items-center border ${button.isActive
+              ? 'bg-primary-500 border-primary-500'
+              : 'bg-background-100 border-outline-200'
+            }`}
+          style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2 }}
           onPress={() => handleLoopPress(index)}
         >
-          <Text style={[
-            styles.loopButtonText,
-            button.isActive && styles.loopButtonTextActive
-          ]}>
+          <Text className={`text-base font-semibold ${button.isActive ? 'text-white' : 'text-typography-600'
+            }`}>
             {button.id}
           </Text>
         </TouchableOpacity>
@@ -308,30 +307,27 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   );
 
   const renderOperationButtons = () => (
-    <View style={styles.operationContainer}>
-      <TouchableOpacity 
-        style={styles.operationButton} 
-        className="bg-success-500"
+    <View className="flex-row justify-between gap-2">
+      <TouchableOpacity
+        className="flex-1 h-9 rounded-md flex-row justify-center items-center gap-1 bg-success-500"
         onPress={() => handleOperation('open')}
       >
         <Ionicons name="sunny" size={20} color="white" />
-        <Text style={styles.operationButtonText}>开灯</Text>
+        <Text className="text-white text-sm font-medium">开灯</Text>
       </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.operationButton} 
-        className="bg-error-500"
+      <TouchableOpacity
+        className="flex-1 h-9 rounded-md flex-row justify-center items-center gap-1 bg-error-500"
         onPress={() => handleOperation('close')}
       >
         <Ionicons name="moon" size={20} color="white" />
-        <Text style={styles.operationButtonText}>关灯</Text>
+        <Text className="text-white text-sm font-medium">关灯</Text>
       </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.operationButton} 
-        className="bg-info-500"
+      <TouchableOpacity
+        className="flex-1 h-9 rounded-md flex-row justify-center items-center gap-1 bg-info-500"
         onPress={() => handleOperation('check')}
       >
         <Ionicons name="analytics" size={20} color="white" />
-        <Text style={styles.operationButtonText}>检测状态</Text>
+        <Text className="text-white text-sm font-medium">检测状态</Text>
       </TouchableOpacity>
     </View>
   );
@@ -343,31 +339,31 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     const MAX_HEIGHT = 400;
     const isMounted = useRef(true);
     const { isEditMode, selectedOperations, toggleOperationSelect } = useEboxStore();
-    
+
     useEffect(() => {
       return () => {
         isMounted.current = false;
       };
     }, []);
-    
+
     const toggleExpand = useCallback(() => {
       if (!isMounted.current) return;
-      
+
       if (!isExpanded) {
-        animatedHeight.value = withTiming(1, { 
+        animatedHeight.value = withTiming(1, {
           duration: 300,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1)
         });
-        animatedOpacity.value = withTiming(1, { 
+        animatedOpacity.value = withTiming(1, {
           duration: 300,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1)
         });
       } else {
-        animatedHeight.value = withTiming(0, { 
+        animatedHeight.value = withTiming(0, {
           duration: 300,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1)
         });
-        animatedOpacity.value = withTiming(0, { 
+        animatedOpacity.value = withTiming(0, {
           duration: 300,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1)
         });
@@ -402,11 +398,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
       );
       return {
         bgColor: status?.dotStyle === 'warn' ? 'bg-error-50' :
-                status?.dotStyle === 'open' ? 'bg-warning-50' :
-                status?.dotStyle === 'online' ? 'bg-success-50' : 'bg-gray-100',
+          status?.dotStyle === 'open' ? 'bg-warning-50' :
+            status?.dotStyle === 'online' ? 'bg-success-50' : 'bg-gray-100',
         color: status?.dotStyle === 'warn' ? 'text-error-500' :
-               status?.dotStyle === 'open' ? 'text-warning-500' :
-               status?.dotStyle === 'online' ? 'text-success-500' : 'text-gray-500',
+          status?.dotStyle === 'open' ? 'text-warning-500' :
+            status?.dotStyle === 'online' ? 'text-success-500' : 'text-gray-500',
         label: item.module
       };
     }, [item.module]);
@@ -414,11 +410,10 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     const renderLoopButtons = useCallback(() => (
       <View className="flex-row flex-wrap gap-1">
         {item.data.loops.map((loop, index) => (
-          <View 
-            key={index} 
-            className={`w-5 h-5 rounded-full justify-center items-center ${
-              loop ? 'bg-blue-500' : 'bg-gray-400'
-            }`}
+          <View
+            key={index}
+            className={`w-5 h-5 rounded-full justify-center items-center ${loop ? 'bg-blue-500' : 'bg-gray-400'
+              }`}
           >
             <Text className="text-white text-xs">{index + 1}</Text>
           </View>
@@ -429,11 +424,10 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
     const renderIOButtons = useCallback(() => (
       <View className="flex-row flex-wrap gap-2">
         {item.data.ios.map((io, index) => (
-          <View 
-            key={index} 
-            className={`w-6 h-6 rounded-full justify-center items-center ${
-              io ? 'bg-blue-500' : 'bg-gray-400'
-            }`}
+          <View
+            key={index}
+            className={`w-6 h-6 rounded-full justify-center items-center ${io ? 'bg-blue-500' : 'bg-gray-400'
+              }`}
           >
             <Text className="text-white text-xs">{index + 1}</Text>
           </View>
@@ -469,7 +463,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
 
     return (
       <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleItemPress}
           className={`bg-background-50 p-4 rounded-xl mb-2 shadow-sm ${isEditMode ? 'opacity-80' : ''}`}
           style={{
@@ -480,11 +474,11 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         >
           <View className="flex-row items-center">
             {isEditMode && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleCheckboxPress}
                 className="mr-3"
               >
-                <Ionicons 
+                <Ionicons
                   name={selectedOperations.has(item.id) ? "checkbox" : "square-outline"}
                   size={24}
                   color={selectedOperations.has(item.id) ? "#409eff" : "#909399"}
@@ -519,9 +513,9 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                   <Text className="text-sm text-gray-500">当前动作: {item.data.mode}</Text>
                   <Text className="text-xs text-gray-500">{item.data.optTime}</Text>
                 </View>
-                <Ionicons 
-                  name={isExpanded ? "chevron-up" : "chevron-down"} 
-                  size={20} 
+                <Ionicons
+                  name={isExpanded ? "chevron-up" : "chevron-down"}
+                  size={20}
                   color="#666"
                 />
               </View>
@@ -616,16 +610,16 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   const keyExtractor = useCallback((item: EboxOperation) => item.id, []);
 
   const EmptyComponent = () => (
-    <View style={styles.emptyContainer}>
+    <View className="p-4 pb-8 items-center justify-center">
       <Ionicons name="list-outline" size={48} className="text-tertiary-500" />
-      <Text style={styles.emptyText} className="text-tertiary-500">暂无操作记录/点击设备列表勾选设备操作</Text>
+      <Text className="mt-3 text-base text-tertiary-500">暂无操作记录/点击设备列表勾选设备操作</Text>
     </View>
   );
 
   const ListFooterComponent = () => (
-    <View style={styles.footer}>
+    <View className="py-4 items-center">
       {operations.length > 0 ? (
-        <Text style={styles.footerText} className="text-tertiary-500">
+        <Text className="text-sm text-tertiary-500">
           暂无更多操作记录
         </Text>
       ) : null}
@@ -633,18 +627,18 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   );
 
   return (
-    <View style={styles.container} className="bg-background-50">
+    <View className="flex-1 bg-background-50">
       {/* 统计信息 */}
       <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
         <View className="flex-row items-center">
-        {/*   <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text> */}
+          {/*   <Text className="text-base font-medium mr-4">总记录: {stats.total}</Text> */}
           <Text className="text-base text-warning-500 mr-4">警告: {stats.warning}</Text>
           <Text className="text-base text-success-500">信息: {stats.info}</Text>
         </View>
         <View className="flex-row items-center">
           {isEditMode ? (
             <>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleSelectAll}
                 className="bg-primary-500 px-3 py-1 rounded-full mr-2"
               >
@@ -652,13 +646,13 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
                   {selectedOperations.size === operations.length ? '取消全选' : '全选'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleDeleteSelected}
                 className="bg-error-500 px-3 py-1 rounded-full mr-2"
               >
                 <Text className="text-white">删除</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={toggleEditMode}
                 className="bg-gray-500 px-3 py-1 rounded-full"
               >
@@ -666,7 +660,7 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={toggleEditMode}
               className="bg-primary-500 px-3 py-1 rounded-full"
             >
@@ -680,19 +674,19 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
         data={operations}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        contentContainerStyle={operations.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         ListEmptyComponent={EmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
         estimatedItemSize={200}
         ItemSeparatorComponent={() => (
-          <View style={{ height: 8 }} />
+          <View className="h-2" />
         )}
       />
 
       <GestureDetector gesture={panGesture}>
-        <View style={[styles.operationPanel, { paddingBottom: tabBarHeight + 16 }]} className="bg-background-50 border-t border-outline-200">
+        <View style={{ paddingBottom: tabBarHeight + 16 }} className="p-4 pb-4 bg-background-50 border-t border-outline-200">
           {renderLoopButtons()}
           {renderOperationButtons()}
         </View>
@@ -712,202 +706,4 @@ const EboxOperationList: React.FC<EboxOperationListProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  operationPanel: {
-    padding: 16,
-    paddingBottom: 16,
-  },
-  loopContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  loopButton: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  loopButtonActive: {
-    backgroundColor: '#409EFF',
-    borderColor: '#409EFF',
-  },
-  loopButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-  },
-  loopButtonTextActive: {
-    color: 'white',
-  },
-  operationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  operationButton: {
-    flex: 1,
-    height: 36,
-    borderRadius: 6,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-  },
-  operationButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  list: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  emptyList: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  footer: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-  },
-  operationItem: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deviceId: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  deviceName: {
-    fontSize: 16,
-    flex: 1,
-  },
-  warningText: {
-    color: '#F56C6C',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  infoColumn: {
-    flex: 1,
-    marginRight: 8,
-  },
-  label: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  subValue: {
-    fontSize: 12,
-    color: '#666',
-  },
-  ioSection: {
-    marginBottom: 12,
-  },
-  ioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  loopsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  loopBall: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loopActive: {
-    backgroundColor: '#409EFF',
-  },
-  loopInactive: {
-    backgroundColor: '#909399',
-  },
-  loopText: {
-    color: 'white',
-    fontSize: 12,
-  },
-  planSection: {
-    marginBottom: 12,
-  },
-  planContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  planItem: {
-    fontSize: 12,
-    color: '#409EFF',
-    backgroundColor: '#ecf5ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  descriptionSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 12,
-  },
-  description: {
-    fontSize: 14,
-    color: '#00D86C',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-  valueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  phaseLabel: {
-    fontSize: 12,
-    color: '#666',
-    width: 24,
-  },
-});
-
-export default EboxOperationList; 
+export default EboxOperationList;

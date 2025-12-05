@@ -1,6 +1,6 @@
 import { useRunLogStore } from '@/store/runlogStore';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 export const AlarmBadge: React.FC = () => {
   const { unreadCount } = useRunLogStore();
@@ -8,30 +8,10 @@ export const AlarmBadge: React.FC = () => {
   if (unreadCount === 0) return null;
 
   return (
-    <View style={styles.badge}>
-      <Text style={styles.text}>
+    <View className="absolute -top-1 -right-[18px] bg-error-500 rounded-full min-w-[18px] h-[18px] justify-center items-center px-1">
+      <Text className="text-white text-xs font-medium">
         {unreadCount > 99 ? '99+' : unreadCount}
       </Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -18,
-    backgroundColor: '#ff4d4f',
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  text: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-}); 

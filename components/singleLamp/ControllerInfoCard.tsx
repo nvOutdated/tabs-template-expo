@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 interface Lamp {
   id: number;
@@ -81,11 +81,11 @@ interface ControllerInfoCardProps {
   selectedControllers?: { lampId: number; controllerId: number }[];
 }
 
-const LampPoleItem = ({ 
-  singleLamp, 
+const LampPoleItem = ({
+  singleLamp,
   selectedControllers,
-  onControllerSelect 
-}: { 
+  onControllerSelect
+}: {
   singleLamp: SingleLamp;
   selectedControllers: { lampId: number; controllerId: number }[];
   onControllerSelect: (lampId: number, controllerId: string) => void;
@@ -97,82 +97,80 @@ const LampPoleItem = ({
   };
 
   return (
-    <View style={styles.lampPoleBlock}>
+    <View className="mb-2 bg-background-0 rounded-lg p-1 shadow-sm">
       {/* 灯杆信息头部 */}
-      <View style={styles.lampPoleHeader}>
-        <Text style={styles.lampPoleName}>{singleLamp.poleName} ({singleLamp.poleCode})</Text>
+      <View className="mb-2 pb-1.5 border-b border-outline-100">
+        <Text className="text-[15px] font-bold text-typography-900">{singleLamp.poleName} ({singleLamp.poleCode})</Text>
       </View>
 
       {/* 控制器列表 */}
       {singleLamp.controllers.map((controller, index) => (
         <React.Fragment key={controller.id}>
-          {index > 0 && <View style={styles.controllerDivider} />}
-          <TouchableOpacity 
-            style={[
-              styles.controllerContent,
-              isControllerSelected(controller.controllerId) && styles.selectedController
-            ]}
+          {index > 0 && <View className="h-[1px] bg-outline-100 my-2" />}
+          <TouchableOpacity
+            className={`flex-row justify-between items-center px-0.5 py-2 rounded-md ${isControllerSelected(controller.controllerId) ? 'bg-info-50' : ''
+              }`}
             onPress={() => onControllerSelect(singleLamp.id, controller.controllerId)}
             activeOpacity={0.7}
           >
             {/* Checkbox */}
-            <View style={styles.checkboxContainer}>
-              <Ionicons 
-                name={isControllerSelected(controller.controllerId) ? "checkbox" : "square-outline"} 
-                size={24} 
+            <View className="w-8 items-center justify-center">
+              <Ionicons
+                name={isControllerSelected(controller.controllerId) ? "checkbox" : "square-outline"}
+                size={24}
                 color={isControllerSelected(controller.controllerId) ? "#409eff" : "#909399"}
               />
             </View>
             {/* 左侧控制器信息 - 垂直排列 */}
-            <View style={styles.controllerInfo}>
-              <View style={styles.controllerHeader}>
-               {controller.domain?
-               (<Text style={styles.domainControlId}>ID: {controller.controllerId}</Text>):
-               <Text style={styles.controllerId}>ID: {controller.controllerId}</Text>
-              }
-                
-               
+            <View className="w-[28%] mr-2 pr-2 border-r border-outline-100">
+              <View className="mb-1.5">
+                {controller.domain ?
+                  (<Text className="font-bold text-[13px] text-success-500">ID: {controller.controllerId}</Text>) :
+                  <Text className="font-bold text-[13px] text-typography-900">ID: {controller.controllerId}</Text>
+                }
+
+
               </View>
-              <View style={styles.controllerDetails}>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>类型：</Text>
+              <View className="mt-0.5">
+                <Text className="text-xs text-typography-600 mb-1 leading-4">
+                  <Text className="text-typography-400">类型：</Text>
                   {getControllerType(controller.controllerType)}
                 </Text>
-               
+
                 {(
-                  <Text style={styles.detailText}>
-                    <Text style={styles.detailLabel}>A灯状态:</Text>
-                    <Text style={{ color: getStateMessage(controller.stateA||'').color }}>{getStateMessage(controller.stateA||'').text}</Text>
+                  <Text className="text-xs text-typography-600 mb-1 leading-4">
+                    <Text className="text-typography-400">A灯状态:</Text>
+                    <Text style={{ color: getStateMessage(controller.stateA || '').color }}>{getStateMessage(controller.stateA || '').text}</Text>
                   </Text>
                 )}
                 {(
-                  <Text style={styles.detailText}>
-                    <Text style={styles.detailLabel}>B灯状态:</Text>
-                    <Text style={{ color: getStateMessage(controller.stateB||'').color }}>{getStateMessage(controller.stateB||'').text}</Text>
+                  <Text className="text-xs text-typography-600 mb-1 leading-4">
+                    <Text className="text-typography-400">B灯状态:</Text>
+                    <Text style={{ color: getStateMessage(controller.stateB || '').color }}>{getStateMessage(controller.stateB || '').text}</Text>
                   </Text>
                 )}
-                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>所属组：</Text>
+                <Text className="text-xs text-typography-600 mb-1 leading-4">
+                  <Text className="text-typography-400">所属组：</Text>
                   {controller.groupIds4Save.join(',')}
                 </Text>
               </View>
             </View>
             {/* 右侧灯头信息 */}
-            <View style={styles.lampInfo}>
-              <View style={styles.lampHeader}>
-                <Text style={styles.lampCol}>照明控制</Text>
-                <Text style={styles.lampCol}>上电状态</Text>
-                <Text style={styles.lampCol}>照明类型</Text>
-                <Text style={styles.lampCol}>相序</Text>
+            <View className="w-[70%] flex-1 min-w-0">
+              <View className="flex-row justify-between mb-0.5">
+                <Text className="w-1/4 text-center text-xs text-typography-600 font-medium shrink-0 py-1">照明控制</Text>
+                <Text className="w-1/4 text-center text-xs text-typography-600 font-medium shrink-0 py-1">上电状态</Text>
+                <Text className="w-1/4 text-center text-xs text-typography-600 font-medium shrink-0 py-1">照明类型</Text>
+                <Text className="w-1/4 text-center text-xs text-typography-600 font-medium shrink-0 py-1">相序</Text>
               </View>
               {controller.lamps.map(lamp => (
-                <View key={lamp.id} style={styles.lampRow}>
-                  <Text style={styles.lampColValue}>{lamp.lightLoop}</Text>
-                  <Text style={{ ...styles.lampColValue, color: getPowerStateWithColor(controller, lamp.lightLoop).color }}>
+                <View key={lamp.id} className="flex-row border-b border-outline-200 py-1">
+                  <Text className="w-1/4 text-center text-xs text-typography-900 shrink-0 py-1">{lamp.lightLoop}</Text>
+                  <Text className="w-1/4 text-center text-xs shrink-0 py-1" style={{ color: getPowerStateWithColor(controller, lamp.lightLoop).color }}>
                     {getPowerState(controller, lamp.lightLoop)}
                   </Text>
-                  <Text style={styles.lampColValue}>{getLightingType(lamp.lightingType)}</Text>
-                  <Text style={styles.lampColValue}>{lamp.phase}</Text>
+                  <Text className="w-1/4 text-center text-xs text-typography-900 shrink-0 py-1">{getLightingType(lamp.lightingType)}</Text>
+                  <Text className="w-1/4 text-center text-xs text-typography-900 shrink-0 py-1">{lamp.phase}</Text>
                 </View>
               ))}
             </View>
@@ -183,13 +181,13 @@ const LampPoleItem = ({
   );
 };
 
-const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({ 
+const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
   singleLamps,
   onSelectionChange,
   selectedControllers: externalSelectedControllers,
 }) => {
   const [internalSelectedControllers, setInternalSelectedControllers] = useState<{ lampId: number; controllerId: number }[]>([]);
-  
+
   // 同步外部选中状态
   useEffect(() => {
     if (externalSelectedControllers) {
@@ -203,7 +201,7 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
       sc => sc.lampId === lampId && sc.controllerId === Number(controllerId)
     );
 
-    const newSelection: { lampId: number; controllerId: number }[] = isSelected 
+    const newSelection: { lampId: number; controllerId: number }[] = isSelected
       ? [] // 如果已经选中，则取消选中
       : [{ lampId, controllerId: Number(controllerId) }]; // 如果未选中，则只选中当前控制器
 
@@ -212,8 +210,8 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
   };
 
   const renderItem = ({ item }: { item: SingleLamp }) => (
-    <LampPoleItem 
-      singleLamp={item} 
+    <LampPoleItem
+      singleLamp={item}
       selectedControllers={externalSelectedControllers || internalSelectedControllers}
       onControllerSelect={handleControllerSelect}
     />
@@ -221,7 +219,7 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
 
   const ListFooterComponent = () => (
     <View className="py-1 items-center">
-      <Text className="text-gray-400 text-sm">暂无更多数据</Text>
+      <Text className="text-typography-400 text-sm">暂无更多数据</Text>
     </View>
   );
 
@@ -230,121 +228,13 @@ const ControllerInfoCard: React.FC<ControllerInfoCardProps> = ({
       data={singleLamps}
       renderItem={renderItem}
       keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={[styles.listContainer, { paddingBottom: 100 }]}
+      contentContainerStyle={{ padding: 6, paddingBottom: 100 }}
       showsVerticalScrollIndicator={false}
       ListFooterComponent={ListFooterComponent}
     />
   );
 };
 
-const styles = StyleSheet.create({
-  listContainer: {
-    padding: 6,
-  },
-  lampPoleBlock: {
-    marginBottom: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 4,
-    elevation: 2,
-  },
-  lampPoleHeader: {
-    marginBottom: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  lampPoleName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  controllerDivider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 8,
-  },
-  controllerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  selectedController: {
-    backgroundColor: '#f0f7ff',
-  },
-  checkboxContainer: {
-    width: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controllerInfo: {
-    width:'28%',
-    marginRight: 8,
-    paddingRight: 8,
-    borderRightWidth: 1,
-    borderRightColor: '#eee',
-  },
-  controllerHeader: {
-    marginBottom: 6,
-  },
-  controllerId: {
-    fontWeight: 'bold',
-    fontSize: 13,
-    color: '#333',
-  },
-  domainControlId:{
-    color:"#67C23A"
-  },
-  controllerDetails: {
-    marginTop: 2,
-  },
-  detailText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-    lineHeight: 16,
-  },
-  detailLabel: {
-    color: '#999',
-  },
-  lampInfo: {
-    width:'70%',
-    flex: 1,
-    minWidth: 'auto',
-  },
-  lampHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  lampRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingVertical: 4,
-  },
-  lampCol: {
-    width: '25%',
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-    flexShrink: 0,
-    flexGrow: 0,
-    paddingVertical: 4,
-  },
-  lampColValue: {
-    width: '25%',
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#333',
-    flexShrink: 0,
-    flexGrow: 0,
-    paddingVertical: 4,
-  },
-});
+
 
 export default ControllerInfoCard;

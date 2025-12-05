@@ -1,7 +1,7 @@
 import { useGlobalStore } from '@/store/globalStateStore';
 import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import ImageModal from '../public/ImageModal';
 const singleLampOffline = require('../../assets/images/street/singleLamp/singleLampOfflin.png');
 interface Attachment {
@@ -20,7 +20,7 @@ interface Lamp {
   cfgMatched: boolean;
   phase: string;
   phaseMatched: boolean;
-  productId?:number
+  productId?: number
 }
 
 interface Controller {
@@ -89,7 +89,7 @@ const getControllerType = (type: string) => ({
   SINGLE_HEAD_4G: '4G单头',
   SINGLE_HEAD_ZIGBEE: 'ZIGBEE单灯',
   SINGLE_HEAD_CAT1: 'Cat1单头',
-  DOUBLE_HEAD_CAT1:'Cat1双头'
+  DOUBLE_HEAD_CAT1: 'Cat1双头'
 }[type] || type);
 const getPowerState = (ctrl: Controller, loop: string) => {
   if (loop === 'A') return ctrl.powerOnA ? '开' : '关';
@@ -113,7 +113,7 @@ const SingleLampList = ({
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImages, setPreviewImages] = useState<any[]>([]);
   // const [previewIndex, setPreviewIndex] = useState(0);
-  const [itemId,setItemId] = useState<number>();
+  const [itemId, setItemId] = useState<number>();
   const [previewLampId, setPreviewLampId] = useState<string | undefined>(undefined);
   const currentServer = useGlobalStore(state => state.currentServer);
 
@@ -123,11 +123,11 @@ const SingleLampList = ({
 
   const handleImagePress = useCallback((item: SingleLamp) => {
     const attachments = item.lamp_attachments || [];
-    const images = attachments.length > 0 
+    const images = attachments.length > 0
       ? attachments.map(attachment => ({
-          uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
-          id: attachment.id
-        }))
+        uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachment.url}` : '',
+        id: attachment.id
+      }))
       : [];
     setPreviewImages(images);
     setItemId(item.id);
@@ -140,75 +140,75 @@ const SingleLampList = ({
       onUpdateSuccess(updatedLamp);
     }
   }, [onUpdateSuccess]);
-  
+
   const renderItem = useCallback(({ item }: { item: SingleLamp }) => {
     const isExpanded = !!expanded[item.id];
     const attachments = item.lamp_attachments || [];
-    const lampImage = attachments.length > 0 
-      ? { 
-          uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
-          id: attachments[0].id
-        }
+    const lampImage = attachments.length > 0
+      ? {
+        uri: currentServer ? `http://${currentServer.ip}:${currentServer.filePort}${attachments[0].url}` : '',
+        id: attachments[0].id
+      }
       : singleLampOffline;
 
     return (
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <TouchableOpacity onPress={() => handleImagePress(item)}>
-            <Image source={lampImage} style={styles.image} contentFit="contain" />
+      <View className='m-1 rounded-lg overflow-hidden shadow-sm bg-background-0'>
+        <View className='flex-row items-center p-2'>
+          <TouchableOpacity onPress={() => handleImagePress(item)} className="w-[60px] h-[60px] rounded-lg bg-background-100 overflow-hidden mr-3">
+            <Image source={lampImage} style={{ width: '100%', height: '100%' }} contentFit="contain" />
           </TouchableOpacity>
-          <View style={styles.info}>
-            <Text style={styles.title}>{item.poleName}</Text>
-            <Text style={styles.sub}>编号: {item.poleCode}</Text>
-            <Text style={styles.sub}>类型: {getPoleType(item.poleType)} 方向: {getDirection(item.direction)}</Text>
+          <View className='flex-1'>
+            <Text className='text-base font-bold text-typography-900'>{item.poleName}</Text>
+            <Text className='text-xs text-typography-500 mt-0.5'>编号: {item.poleCode}</Text>
+            <Text className='text-xs text-typography-500 mt-0.5'>类型: {getPoleType(item.poleType)} 方向: {getDirection(item.direction)}</Text>
           </View>
-          <View style={styles.actionButtons}>
+          <View className='flex-row items-center'>
             {onEdit && (
-              <TouchableOpacity 
-                onPress={() => onEdit(item)} 
-                style={[styles.editBtn, { marginRight: 4 }]} 
+              <TouchableOpacity
+                onPress={() => onEdit(item)}
+                className='p-1.5 mr-1'
                 activeOpacity={0.7}
               >
-                <Text style={styles.editText}>编辑</Text>
+                <Text className='text-info-500 text-xs'>编辑</Text>
               </TouchableOpacity>
             )}
             {onDelete && (
-              <TouchableOpacity 
-                onPress={() => onDelete(item)} 
-                style={[styles.deleteBtn, { marginRight: 4 }]} 
+              <TouchableOpacity
+                onPress={() => onDelete(item)}
+                className='p-1.5 mr-1'
                 activeOpacity={0.7}
               >
-                <Text style={styles.deleteText}>删除</Text>
+                <Text className='text-error-500 text-xs'>删除</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => handleToggle(item.id)} style={styles.expandBtn} activeOpacity={0.7}>
-              <Text style={styles.expandText}>{isExpanded ? '收起' : '展开'}</Text>
+            <TouchableOpacity onPress={() => handleToggle(item.id)} className='p-2' activeOpacity={0.7}>
+              <Text className='text-info-500'>{isExpanded ? '收起' : '展开'}</Text>
             </TouchableOpacity>
           </View>
         </View>
         {isExpanded && (
-          <View style={styles.detail}>
+          <View className='p-2 bg-background-50'>
             {item.controllers.map(controller => (
-              <View key={controller.id} style={styles.controllerBlock}>
-                <View style={styles.controllerRow}>
-                  <Text style={styles.controllerId}>ID: {controller.controllerId}</Text>
-                  <Text style={styles.controllerType}>类型:{getControllerType(controller.controllerType)}</Text>
-                  <Text>所属组: {controller.groupIds4Save.join(',')}</Text>
+              <View key={controller.id} className='mb-1'>
+                <View className='flex-row justify-around mb-1'>
+                  <Text className='font-bold text-typography-900'>ID: {controller.controllerId}</Text>
+                  <Text className='text-info-500'>类型:{getControllerType(controller.controllerType)}</Text>
+                  <Text className='text-typography-700'>所属组: {controller.groupIds4Save.join(',')}</Text>
                 </View>
-                <View style={styles.lampHeader}>
-                  <Text style={styles.lampCol}>照明控制</Text>
-                  <Text style={styles.lampCol}>上电状态</Text>
-                  <Text style={styles.lampCol}>照明类型</Text>
-                  <Text style={styles.lampCol}>相序</Text>
-                  <Text style={styles.lampCol}>产品ID</Text>
+                <View className='flex-row justify-between mt-1'>
+                  <Text className='w-1/5 text-center text-xs text-typography-700'>照明控制</Text>
+                  <Text className='w-1/5 text-center text-xs text-typography-700'>上电状态</Text>
+                  <Text className='w-1/5 text-center text-xs text-typography-700'>照明类型</Text>
+                  <Text className='w-1/5 text-center text-xs text-typography-700'>相序</Text>
+                  <Text className='w-1/5 text-center text-xs text-typography-700'>产品ID</Text>
                 </View>
                 {controller.lamps.map(lamp => (
-                  <View key={lamp.id} style={styles.lampRow}>
-                    <Text style={styles.lampCol}>{lamp.lightLoop}</Text>
-                    <Text style={styles.lampCol}>{getPowerState(controller, lamp.lightLoop)}</Text>
-                    <Text style={styles.lampCol}>{getLightingType(lamp.lightingType)}</Text>
-                    <Text style={styles.lampCol}>{lamp.phase}</Text>
-                    <Text style={styles.lampCol}>{lamp.productId}</Text>
+                  <View key={lamp.id} className='flex-row justify-between mt-0.5'>
+                    <Text className='w-1/5 text-center text-xs text-typography-700'>{lamp.lightLoop}</Text>
+                    <Text className='w-1/5 text-center text-xs text-typography-700'>{getPowerState(controller, lamp.lightLoop)}</Text>
+                    <Text className='w-1/5 text-center text-xs text-typography-700'>{getLightingType(lamp.lightingType)}</Text>
+                    <Text className='w-1/5 text-center text-xs text-typography-700'>{lamp.phase}</Text>
+                    <Text className='w-1/5 text-center text-xs text-typography-700'>{lamp.productId}</Text>
                   </View>
                 ))}
               </View>
@@ -218,11 +218,11 @@ const SingleLampList = ({
       </View>
     );
   }, [expanded, handleToggle, handleImagePress, currentServer, onEdit, onDelete]);
-  
+
   const ListFooterComponent = useMemo(() => {
     return (
-      <View style={{ paddingVertical: 20, justifyContent: 'center', alignItems: 'center' }}>
-        <Text className="font-normal text-center">没有更多数据了</Text>
+      <View className="py-5 justify-center items-center">
+        <Text className="font-normal text-center text-typography-500">没有更多数据了</Text>
       </View>
     );
   }, []);
@@ -244,7 +244,7 @@ const SingleLampList = ({
         onClose={() => setPreviewVisible(false)}
         images={previewImages}
         containerId={previewLampId ? String(previewLampId) : undefined}
-        itemId={itemId?itemId:0}
+        itemId={itemId ? itemId : 0}
         type="singleLamp"
         onUpdateSuccess={handleImageUpdate}
       />
@@ -252,29 +252,7 @@ const SingleLampList = ({
   );
 };
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', margin: 4, borderRadius: 8, overflow: 'hidden', elevation: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 8 },
-  image: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#eee' },
-  info: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 16, fontWeight: 'bold' },
-  sub: { fontSize: 12, color: '#888', marginTop: 2 },
-  actionButtons: { flexDirection: 'row', alignItems: 'center' },
-  editBtn: { padding: 6 },
-  editText: { color: '#409eff', fontSize: 12 },
-  deleteBtn: { padding: 6 },
-  deleteText: { color: '#f56c6c', fontSize: 12 },
-  expandBtn: { padding: 8 },
-  expandText: { color: '#409eff' },
-  detail: { backgroundColor: '#f7f7f7', padding: 8 },
-  controllerBlock: { marginBottom: 4 },
-  controllerRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 4 },
-  controllerId: { fontWeight: 'bold' },
-  controllerType: { color: '#409eff' },
-  lampHeader: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  lampRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  lampCol: { width: '25%', textAlign: 'center', fontSize: 12 }
-});
+
 
 export default SingleLampList;
 

@@ -20,7 +20,7 @@ export function GluestackUIProvider({
   //   if (mode !== 'system') {
   //     setColorScheme(mode);
   //     console.log(mode,colorScheme,"当前主题");
-      
+
   //   }
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [mode]);

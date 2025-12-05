@@ -1,7 +1,7 @@
 import { stats_onlineOffline_log_list } from '@/api/runLog/lampRunLogApi';
 import { formatDate } from '@/utils/date';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, RefreshControl, Text, View } from 'react-native';
 import SearchSection from '../common/SearchSection';
 
 interface Container {
@@ -26,15 +26,15 @@ const CARD_HEIGHT = 80; // 减小卡片高度，因为内容较少
 // Move LogItem outside the main component and optimize it
 const LogItem = memo(({ item }: { item: any }) => {
   return (
-    <View style={styles.logCardWrapper}>
-      <View style={styles.logCard} className="bg-background-50">
-        <View style={styles.logCardContent}>
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
+    <View className="mb-2 h-[80px]">
+      <View className="flex-1 rounded-lg shadow-sm bg-background-50 p-3">
+        <View className="flex-1">
+          <View className="flex-row flex-wrap gap-2 mb-2">
+            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">设备编号：</Text>
               <Text className="text-tertiary-900 text-sm">{item.deviceCode}</Text>
             </View>
-            <View style={styles.logCardGridItem}>
+            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">设备状态：</Text>
               <View className={`px-2 py-1 rounded ${item.isOnline ? 'bg-success-100' : 'bg-tertiary-100'}`}>
                 <Text className={`text-sm ${item.isOnline ? 'text-success-600' : 'text-tertiary-600'}`}>
@@ -43,8 +43,8 @@ const LogItem = memo(({ item }: { item: any }) => {
               </View>
             </View>
           </View>
-          <View style={styles.logCardGrid}>
-            <View style={styles.logCardGridItem}>
+          <View className="flex-row flex-wrap gap-2">
+            <View className="flex-1 min-w-[45%] flex-row items-center gap-1">
               <Text className="text-tertiary-900 font-bold text-sm">创建时间：</Text>
               <Text className="text-tertiary-900 text-sm">{formatDate(item.createTime)}</Text>
             </View>
@@ -92,7 +92,7 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
         deviceId: selectedDevice || null,
         start_time: startTime ? formatDateTime(startTime) : null,
         end_time: endTime ? formatDateTime(endTime, true) : null,
-      }; 
+      };
       const response = await stats_onlineOffline_log_list(params);
       if (response.code === 200) {
         const newLogs = response.data || [];
@@ -167,8 +167,8 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
   // Memoize ListEmptyComponent
   const ListEmptyComponent = useMemo(
     () => (
-      <View style={[styles.emptyContainer, { height: '100%' }]}>
-        <Text style={styles.emptyText}>暂无上下线日志数据</Text>
+      <View className="flex-1 justify-center items-center p-5 h-full">
+        <Text className="text-base text-tertiary-600 flex-1">暂无上下线日志数据</Text>
       </View>
     ),
     []
@@ -177,16 +177,16 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
   // Memoize ListFooterComponent
   const ListFooterComponent = useMemo(
     () => (
-      <View style={styles.footer}>
+      <View className="p-2.5 items-center justify-center min-h-[50px] mb-5">
         {loading && logs.length > 0 ? (
-          <View style={styles.loadingContainer}>
+          <View className="flex-row items-center justify-center p-2.5">
             <ActivityIndicator size="small" color="#666" />
-            <Text style={styles.loadingText}>加载中...</Text>
+            <Text className="ml-2 text-sm text-tertiary-600">加载中...</Text>
           </View>
         ) : logs.length === 0 ? (
-          <Text style={styles.emptyText}>暂无数据</Text>
+          <Text className="text-base text-tertiary-600 flex-1">暂无数据</Text>
         ) : !hasMore ? (
-          <Text style={styles.footerText}>没有更多数据了</Text>
+          <Text className="text-sm text-tertiary-600 text-center">没有更多数据了</Text>
         ) : null}
       </View>
     ),
@@ -194,7 +194,7 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
   );
 
   return (
-    <View style={styles.container} className="bg-background-50">
+    <View className="flex-1 bg-background-50">
       <SearchSection
         isSearchExpanded={isSearchExpanded}
         setIsSearchExpanded={setIsSearchExpanded}
@@ -215,7 +215,7 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
         keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
-          styles.logsContainer,
+          { padding: 8, paddingBottom: 50 },
           logs.length === 0 && { flex: 1 }
         ]}
         onEndReached={handleLoadMore}
@@ -238,80 +238,5 @@ const OnOfflineLog: React.FC<OnOfflineLogProps> = ({ containerList, selectedDevi
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  logsContainer: {
-    padding: 8,
-    paddingBottom: 50,
-  },
-  logCardWrapper: {
-    marginBottom: 8,
-    height: CARD_HEIGHT,
-  },
-  logCard: {
-    flex: 1,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    backgroundColor: '#fff',
-  },
-  logCardContent: {
-    flex: 1,
-    padding: 12,
-  },
-  logCardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
-  logCardGridItem: {
-    flex: 1,
-    minWidth: '45%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#666",
-    flex: 1,
-  },
-  footer: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 50,
-    marginBottom: 20,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-  },
-  loadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-});
 
 export default OnOfflineLog;

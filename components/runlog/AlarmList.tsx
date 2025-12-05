@@ -2,7 +2,7 @@ import { useRunLogStore } from '@/store/runlogStore';
 import { AlarmMessage } from '@/types/runlog';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInLeft, FadeOutRight } from 'react-native-reanimated';
 
 const formatDate = (timestamp: number) => {
@@ -50,34 +50,35 @@ const AlarmList: React.FC = () => {
   const renderAlarm = ({ item }: { item: AlarmMessage }) => (
     <Animated.View entering={FadeInLeft} exiting={FadeOutRight}>
       <TouchableOpacity
-        style={styles.alarmItem}
-        className="bg-background-50"
+        className="flex-row p-3 rounded-lg mb-2 items-center shadow-sm bg-background-0"
         onPress={() => toggleSelect(item.id)}
       >
-        <TouchableOpacity 
-          style={styles.checkbox}
+        <TouchableOpacity
+          className="mr-2 p-1"
           onPress={() => toggleSelect(item.id)}
         >
-          <Ionicons 
-            name={selectedAlarms.has(item.id) ? "checkbox" : "square-outline"} 
-            size={24} 
+          <Ionicons
+            name={selectedAlarms.has(item.id) ? "checkbox" : "square-outline"}
+            size={24}
             color={selectedAlarms.has(item.id) ? "#409eff" : "#909399"}
           />
         </TouchableOpacity>
-        <View style={[styles.typeIndicator, styles[item.type]]} />
-        <View style={styles.contentContainer}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title} className="text-error-500" numberOfLines={1}>
+        <View className={`w-1 h-full rounded-sm mr-3 ${item.type === 'alarm' ? 'bg-error-500' :
+            item.type === 'warning' ? 'bg-warning-500' : 'bg-info-500'
+          }`} />
+        <View className="flex-1">
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="text-base font-bold flex-1 mr-2 text-error-500" numberOfLines={1}>
               {item.title}
             </Text>
-            <Text style={styles.module} className="bg-tertiary-100 text-tertiary-900">
+            <Text className="text-xs px-2 py-0.5 rounded bg-tertiary-100 text-tertiary-900">
               {item.module}
             </Text>
           </View>
-          <Text style={styles.content} className="text-tertiary-900" numberOfLines={2}>
+          <Text className="text-sm mb-1 leading-5 text-tertiary-900" numberOfLines={2}>
             {item.content}
           </Text>
-          <Text style={styles.timestamp} className="text-tertiary-500">
+          <Text className="text-xs text-tertiary-500">
             {formatDate(item.timestamp)}
           </Text>
         </View>
@@ -86,16 +87,16 @@ const AlarmList: React.FC = () => {
   );
 
   const EmptyComponent = () => (
-    <View style={styles.emptyContainer}>
+    <View className="flex-1 justify-center items-center py-8">
       <Ionicons name="notifications-off-outline" size={48} color="#909399" />
-      <Text style={styles.emptyText} className="text-tertiary-500">暂无报警信息</Text>
+      <Text className="mt-3 text-base text-tertiary-500">暂无报警信息</Text>
     </View>
   );
 
   const ListFooterComponent = () => (
-    <View style={styles.footer}>
+    <View className="py-4 items-center">
       {alarms.length > 0 ? (
-        <Text style={styles.footerText} className="text-tertiary-500">
+        <Text className="text-sm text-tertiary-500">
           暂无更多报警信息
         </Text>
       ) : null}
@@ -103,26 +104,26 @@ const AlarmList: React.FC = () => {
   );
 
   return (
-    <View style={styles.container} className="bg-background-50">
-      <View style={styles.header} className="bg-background-100 border-b border-tertiary-100">
-        <Text style={styles.headerTitle} className="text-info-500">未读信息</Text>
-        <View style={styles.headerButtons}>
+    <View className="flex-1 bg-background-50">
+      <View className="flex-row justify-between items-center p-4 bg-background-100 border-b border-tertiary-100">
+        <Text className="text-lg font-bold text-info-500">未读信息</Text>
+        <View className="flex-row gap-3">
           {alarms.length > 0 && (
             <>
-              <TouchableOpacity 
-                style={styles.headerButton} 
+              <TouchableOpacity
+                className="px-2 py-1"
                 onPress={toggleSelectAll}
               >
-                <Text style={styles.selectButton} className="text-info-500">
+                <Text className="text-sm text-info-500">
                   {selectedAlarms.size === alarms.length ? '取消全选' : '全选'}
                 </Text>
               </TouchableOpacity>
               {selectedAlarms.size > 0 && (
-                <TouchableOpacity 
-                  style={styles.headerButton}
+                <TouchableOpacity
+                  className="px-2 py-1"
                   onPress={handleMarkAsRead}
                 >
-                  <Text style={styles.clearButton} className="text-success-500">已读</Text>
+                  <Text className="text-sm text-success-500">已读</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -133,10 +134,11 @@ const AlarmList: React.FC = () => {
         data={alarms}
         renderItem={renderAlarm}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.list,
-          alarms.length === 0 && styles.emptyList
-        ]}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: 32,
+          flexGrow: alarms.length === 0 ? 1 : 0
+        }}
         ListEmptyComponent={EmptyComponent}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
@@ -144,118 +146,5 @@ const AlarmList: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  headerButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  selectButton: {
-    fontSize: 14,
-  },
-  clearButton: {
-    fontSize: 14,
-  },
-  list: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  emptyList: {
-    flex: 1,
-  },
-  footer: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-  },
-  alarmItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  checkbox: {
-    marginRight: 8,
-    padding: 4,
-  },
-  typeIndicator: {
-    width: 4,
-    borderRadius: 2,
-    marginRight: 12,
-  },
-  alarm: {
-    backgroundColor: '#F56C6C',
-  },
-  warning: {
-    backgroundColor: '#E6A23C',
-  },
-  info: {
-    backgroundColor: '#409EFF',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
-    marginRight: 8,
-  },
-  module: {
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  content: {
-    fontSize: 14,
-    marginBottom: 4,
-    lineHeight: 20,
-  },
-  timestamp: {
-    fontSize: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-});
 
 export default AlarmList;
