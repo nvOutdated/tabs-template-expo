@@ -25,7 +25,7 @@ export class WebRTCManager {
       console.log('开始获取流地址...');
       const data = await getCameraPlayUrl({ channel_id: this.channelId, play_type: 2 });
       console.log('获取流地址响应:', data);
-
+      
       if (data.code === 200) {
         const streamUrl = data.data;
         console.log('流地址:', streamUrl);
@@ -43,6 +43,8 @@ export class WebRTCManager {
   private async setupWebRTC(streamUrl: string) {
     if (!this.isMounted) return;
 
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
     try {
       console.log('开始设置 WebRTC...');
       const configuration = {
@@ -55,10 +57,11 @@ export class WebRTCManager {
       this.peerConnection = new RTCPeerConnection(configuration);
 
       // 设置超时
-      const timeout = setTimeout(() => {
+      timeout = setTimeout(() => {
         if (this.isMounted && this.peerConnection?.iceConnectionState !== 'connected') {
           console.log('Connection timeout');
           this.stopStream();
+          this.onError(new Error('WebRTC connection timeout'));
         }
       }, 10000);
 
@@ -78,10 +81,12 @@ export class WebRTCManager {
 
         if (state === 'failed' || state === 'disconnected' || state === 'closed') {
           console.log('ICE connection failed or disconnected');
+          if (timeout) clearTimeout(timeout);
           this.stopStream();
         } else if (state === 'connected' || state === 'completed') {
           console.log('ICE connection established');
-          clearTimeout(timeout);
+          if (timeout) clearTimeout(timeout);
+          timeout = null;
         }
       };
 
@@ -93,6 +98,8 @@ export class WebRTCManager {
         if (event.streams && event.streams[0]) {
           this.stream = event.streams[0];
           this.isPlaying = true;
+          if (timeout) clearTimeout(timeout);
+          timeout = null;
           this.onStreamChange({ stream: this.stream, isPlaying: this.isPlaying });
         }
       };
@@ -118,10 +125,9 @@ export class WebRTCManager {
         throw new Error('Invalid stream URL: missing stream parameter');
       }
 
-      const serverBaseUrl = 'http://182.99.177.29:30080';
-      // const serverBaseUrl = 'http://192.1.168.180:30080';
+      const serverBaseUrl = 'http://192.168.1.180:30080';
       const requestUrl = `${serverBaseUrl}/index/api/webrtc?app=rtp&stream=${stream}&type=play`;
-      console.log(stream,requestUrl,"发送地址");
+      console.log(stream, requestUrl, "发送地址");
       
       const fetchResponse = await fetch(requestUrl, {
         method: 'POST',
@@ -133,23 +139,33 @@ export class WebRTCManager {
       });
 
       if (!fetchResponse.ok) {
-        throw new Error('Network response was not ok');
+        const errorText = await fetchResponse.text().catch(() => 'Unknown error');
+        console.log('Server response error:', fetchResponse.status, errorText);
+        throw new Error(`Network response was not ok: ${fetchResponse.status} - ${errorText}`);
       }
+      
       const responseData = await fetchResponse.json();
+      console.log('Server response:', responseData);
 
       if (responseData.code === 0 || responseData.sdp) {
         const answerSdp = responseData.sdp || responseData.data;
+        if (!answerSdp) {
+          throw new Error('Server response missing SDP data');
+        }
         await this.peerConnection.setRemoteDescription(
           new RTCSessionDescription({
             type: 'answer',
             sdp: answerSdp,
           })
         );
+        console.log('Remote description set successfully');
       } else {
-        throw new Error('Invalid server response');
+        console.log('Invalid server response:', responseData);
+        throw new Error(`Invalid server response: ${JSON.stringify(responseData)}`);
       }
     } catch (error) {
       console.log('WebRTC setup error:', error);
+      if (timeout) clearTimeout(timeout);
       this.stopStream();
       this.onError(error as Error);
     }
