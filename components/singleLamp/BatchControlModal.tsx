@@ -4,16 +4,16 @@ import {
   detect_lamp_time,
   deviceCtrl_sendTimingCmd,
   singleLamp_reset,
-  smart_personal_matchOptCode
+  smart_personal_matchOptCode,
 } from "@/api/street/configuration";
 import { lightPole_devicectrl_sendSingleControlCmd } from "@/api/street/singleLampApi";
 import { showMessageModal } from "@/components/ui/MessageGlobalModal";
-import useLoadingStore from '@/store/loadingStore';
+import useLoadingStore from "@/store/loadingStore";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import CustomSelectPicker from '../public/CustomSelectPicker';
+import CustomSelectPicker from "../public/CustomSelectPicker";
 
 interface BatchControlModalProps {
   visible: boolean;
@@ -48,7 +48,9 @@ export default function BatchControlModal({
   deviceInfo,
   controllerId,
 }: BatchControlModalProps) {
-  const [activeTab, setActiveTab] = useState<'single' | 'concentrator'>('single');
+  const [activeTab, setActiveTab] = useState<"single" | "concentrator">(
+    "single",
+  );
   const [concentratorParams, setConcentratorParams] = useState(1);
   const [formData, setFormData] = useState<BatchControlFormData>({
     comm: "COMM_GROUP",
@@ -65,34 +67,34 @@ export default function BatchControlModal({
   const commOptions = [
     { label: "单控", value: "COMM_NORMAL" },
     { label: "组控", value: "COMM_GROUP" },
-    { label: "广播", value: "COMM_BROADCAST" }
+    { label: "广播", value: "COMM_BROADCAST" },
   ];
 
   const methodOptions = [
     { label: "开灯", value: "MD_ON" },
     { label: "关灯", value: "MD_OFF" },
     { label: "调光", value: "MD_DIM" },
-    { label: "查询", value: "MD_DETECT" }
+    { label: "查询", value: "MD_DETECT" },
   ];
 
   const groupOptions = Array.from({ length: 16 }, (_, i) => ({
     label: `${i + 1}组`,
-    value: i + 1
+    value: i + 1,
   }));
 
   const handleConfirm = async () => {
     if (!eboxId || !lineId) {
       showMessageModal({
-        type: 'error',
-        message: '请选择设备'
+        type: "error",
+        message: "请选择设备",
       });
       return;
     }
 
     if (formData.comm === "COMM_NORMAL" && !controllerId) {
       showMessageModal({
-        type: 'error',
-        message: '单控请选择控制器'
+        type: "error",
+        message: "单控请选择控制器",
       });
       return;
     }
@@ -108,13 +110,13 @@ export default function BatchControlModal({
       if (response.code === 200) {
         onConfirm(formData);
         showMessageModal({
-          type: 'success',
-          message: '设置成功'
+          type: "success",
+          message: "设置成功",
         });
       } else {
         showMessageModal({
-          type: 'error',
-          message: response.message || '设置失败'
+          type: "error",
+          message: response.message || "设置失败",
         });
       }
       /* 11 */
@@ -132,13 +134,13 @@ export default function BatchControlModal({
       // 验证密码
       const passwordResponse = await smart_personal_matchOptCode({
         isCreated: true,
-        optCode: password
+        optCode: password,
       });
 
       if (passwordResponse.code !== 200) {
         showMessageModal({
-          type: 'error',
-          message: '密码验证失败'
+          type: "error",
+          message: "密码验证失败",
         });
         return;
       }
@@ -152,19 +154,19 @@ export default function BatchControlModal({
       if (response.code === 200) {
         onConfirm(formData);
         showMessageModal({
-          type: 'success',
-          message: '设置成功'
+          type: "success",
+          message: "设置成功",
         });
       } else {
         showMessageModal({
-          type: 'error',
-          message: response.message || '设置失败'
+          type: "error",
+          message: response.message || "设置失败",
         });
       }
     } catch (error) {
       showMessageModal({
-        type: 'error',
-        message: '网络错误，请稍后重试'
+        type: "error",
+        message: "网络错误，请稍后重试",
       });
     } finally {
       setIsLoading(false);
@@ -175,8 +177,8 @@ export default function BatchControlModal({
   const handleConcentratorConfirm = async () => {
     if (!deviceInfo?.device_info.id) {
       showMessageModal({
-        type: 'error',
-        message: '请选择设备'
+        type: "error",
+        message: "请选择设备",
       });
       return;
     }
@@ -186,19 +188,29 @@ export default function BatchControlModal({
       let response;
       switch (concentratorParams) {
         case 1:
-          response = await detect_dev_param({ deviceId: deviceInfo.device_info.id });
+          response = await detect_dev_param({
+            deviceId: deviceInfo.device_info.id,
+          });
           break;
         case 2:
-          response = await singleLamp_reset({ deviceId: deviceInfo.device_info.id });
+          response = await singleLamp_reset({
+            deviceId: deviceInfo.device_info.id,
+          });
           break;
         case 3:
-          response = await changeSwitchAuto({ deviceId: deviceInfo.device_info.id });
+          response = await changeSwitchAuto({
+            deviceId: deviceInfo.device_info.id,
+          });
           break;
         case 4:
-          response = await detect_lamp_time({ deviceId: deviceInfo.device_info.id });
+          response = await detect_lamp_time({
+            deviceId: deviceInfo.device_info.id,
+          });
           break;
         case 5:
-          response = await deviceCtrl_sendTimingCmd({ deviceIds: [deviceInfo.device_info.id] });
+          response = await deviceCtrl_sendTimingCmd({
+            deviceIds: [deviceInfo.device_info.id],
+          });
           break;
         default:
           return;
@@ -206,20 +218,20 @@ export default function BatchControlModal({
 
       if (response.code === 200) {
         showMessageModal({
-          type: 'success',
-          message: '设置成功'
+          type: "success",
+          message: "设置成功",
         });
         onConfirm(formData);
       } else {
         showMessageModal({
-          type: 'error',
-          message: response.message || '设置失败'
+          type: "error",
+          message: response.message || "设置失败",
         });
       }
     } catch (error) {
       showMessageModal({
-        type: 'error',
-        message: '网络错误，请稍后重试'
+        type: "error",
+        message: "网络错误，请稍后重试",
       });
     } finally {
       hideLoading();
@@ -245,24 +257,37 @@ export default function BatchControlModal({
           {/* Tab 切换 */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'single' && styles.activeTab]}
-              onPress={() => setActiveTab('single')}
+              style={[styles.tab, activeTab === "single" && styles.activeTab]}
+              onPress={() => setActiveTab("single")}
             >
-              <Text style={[styles.tabText, activeTab === 'single' && styles.activeTabText]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "single" && styles.activeTabText,
+                ]}
+              >
                 单灯控制
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'concentrator' && styles.activeTab]}
-              onPress={() => setActiveTab('concentrator')}
+              style={[
+                styles.tab,
+                activeTab === "concentrator" && styles.activeTab,
+              ]}
+              onPress={() => setActiveTab("concentrator")}
             >
-              <Text style={[styles.tabText, activeTab === 'concentrator' && styles.activeTabText]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "concentrator" && styles.activeTabText,
+                ]}
+              >
                 集中器控制
               </Text>
             </TouchableOpacity>
           </View>
 
-          {activeTab === 'single' ? (
+          {activeTab === "single" ? (
             <View style={styles.formContainer}>
               {/* 操作模式选择 */}
               <View className="mb-4">
@@ -274,12 +299,18 @@ export default function BatchControlModal({
                     onChange={(value: string) => {
                       if (value === "COMM_NORMAL" && !controllerId) {
                         showMessageModal({
-                          type: 'warning',
-                          message: '单控模式需要选择控制器'
+                          type: "warning",
+                          message: "单控模式需要选择控制器",
                         });
                         return;
                       }
-                      setFormData({ ...formData, comm: value as "COMM_NORMAL" | "COMM_GROUP" | "COMM_BROADCAST" });
+                      setFormData({
+                        ...formData,
+                        comm: value as
+                          | "COMM_NORMAL"
+                          | "COMM_GROUP"
+                          | "COMM_BROADCAST",
+                      });
                     }}
                     className="flex-1 h-12"
                     placeholder="请选择操作模式"
@@ -293,9 +324,14 @@ export default function BatchControlModal({
                 <View className="flex-row items-center gap-3">
                   <Text className="text-base text-gray-600 w-20">组控模式</Text>
                   <CustomSelectPicker
-                    options={groupOptions.map(opt => ({ ...opt, value: opt.value.toString() }))}
+                    options={groupOptions.map((opt) => ({
+                      ...opt,
+                      value: opt.value.toString(),
+                    }))}
                     value={formData.group.toString()}
-                    onChange={(value: string) => setFormData({ ...formData, group: parseInt(value) })}
+                    onChange={(value: string) =>
+                      setFormData({ ...formData, group: parseInt(value) })
+                    }
                     className="flex-1 h-12"
                     placeholder="请选择组控模式"
                     initialLabel="1组"
@@ -310,7 +346,16 @@ export default function BatchControlModal({
                   <CustomSelectPicker
                     options={methodOptions}
                     value={formData.method}
-                    onChange={(value: string) => setFormData({ ...formData, method: value as "MD_ON" | "MD_OFF" | "MD_DIM" | "MD_DETECT" })}
+                    onChange={(value: string) =>
+                      setFormData({
+                        ...formData,
+                        method: value as
+                          | "MD_ON"
+                          | "MD_OFF"
+                          | "MD_DIM"
+                          | "MD_DETECT",
+                      })
+                    }
                     className="flex-1 h-12"
                     placeholder="请选择控制方式"
                     initialLabel="开灯"
@@ -330,9 +375,9 @@ export default function BatchControlModal({
                       step={1}
                       value={formData.dimming}
                       onSlidingComplete={(value) => {
-                        setFormData(prev => ({
+                        setFormData((prev) => ({
                           ...prev,
-                          dimming: value
+                          dimming: value,
                         }));
                       }}
                       minimumTrackTintColor="#1890ff"
@@ -350,38 +395,74 @@ export default function BatchControlModal({
                   <Text style={styles.label}>AB灯选项</Text>
                   <View className="flex-1 flex-row gap-3">
                     <TouchableOpacity
-                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                        }`}
+                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${
+                        formData.enabledA
+                          ? "border-blue-400 bg-blue-50"
+                          : "border-gray-200 bg-white"
+                      }`}
                       onPress={() =>
-                        setFormData({ ...formData, enabledA: !formData.enabledA })
+                        setFormData({
+                          ...formData,
+                          enabledA: !formData.enabledA,
+                        })
                       }
                     >
-                      <View className={`h-5 w-5 items-center justify-center rounded border ${formData.enabledA ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                        }`}>
+                      <View
+                        className={`h-5 w-5 items-center justify-center rounded border ${
+                          formData.enabledA
+                            ? "border-blue-400 bg-blue-50"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
                         {formData.enabledA && (
-                          <Ionicons name="checkmark" size={16} color="#1890ff" />
+                          <Ionicons
+                            name="checkmark"
+                            size={16}
+                            color="#1890ff"
+                          />
                         )}
                       </View>
-                      <Text className={`text-base ${formData.enabledA ? 'text-blue-500' : 'text-gray-600'
-                        }`}>
+                      <Text
+                        className={`text-base ${
+                          formData.enabledA ? "text-blue-500" : "text-gray-600"
+                        }`}
+                      >
                         A灯
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                        }`}
+                      className={`flex-1 flex-row items-center gap-2 rounded border p-2 ${
+                        formData.enabledB
+                          ? "border-blue-400 bg-blue-50"
+                          : "border-gray-200 bg-white"
+                      }`}
                       onPress={() =>
-                        setFormData({ ...formData, enabledB: !formData.enabledB })
+                        setFormData({
+                          ...formData,
+                          enabledB: !formData.enabledB,
+                        })
                       }
                     >
-                      <View className={`h-5 w-5 items-center justify-center rounded border ${formData.enabledB ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                        }`}>
+                      <View
+                        className={`h-5 w-5 items-center justify-center rounded border ${
+                          formData.enabledB
+                            ? "border-blue-400 bg-blue-50"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
                         {formData.enabledB && (
-                          <Ionicons name="checkmark" size={16} color="#1890ff" />
+                          <Ionicons
+                            name="checkmark"
+                            size={16}
+                            color="#1890ff"
+                          />
                         )}
                       </View>
-                      <Text className={`text-base ${formData.enabledB ? 'text-blue-500' : 'text-gray-600'
-                        }`}>
+                      <Text
+                        className={`text-base ${
+                          formData.enabledB ? "text-blue-500" : "text-gray-600"
+                        }`}
+                      >
                         B灯
                       </Text>
                     </TouchableOpacity>
@@ -395,33 +476,42 @@ export default function BatchControlModal({
                 <Text style={styles.label}>选择操作类型</Text>
                 <View style={styles.radioGroup}>
                   {[
-                    { label: '检测集中器参数', value: 1 },
-                    { label: '设置集中器复位', value: 2 },
-                    { label: '集中器手/自动切换', value: 3 },
-                    { label: '检测集中器系统时钟', value: 4 },
-                    { label: '设置集中器校时', value: 5 },
+                    { label: "检测集中器参数", value: 1 },
+                    { label: "设置集中器复位", value: 2 },
+                    { label: "集中器手/自动切换", value: 3 },
+                    { label: "检测集中器系统时钟", value: 4 },
+                    { label: "设置集中器校时", value: 5 },
                   ].map((option) => (
                     <TouchableOpacity
                       key={option.value}
                       style={[
                         styles.radioButton,
-                        concentratorParams === option.value && styles.radioButtonSelected,
+                        concentratorParams === option.value &&
+                          styles.radioButtonSelected,
                       ]}
                       onPress={() => setConcentratorParams(option.value)}
                     >
                       <View style={styles.radioButtonContent}>
-                        <View style={[
-                          styles.checkbox,
-                          concentratorParams === option.value && styles.checkboxSelected
-                        ]}>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            concentratorParams === option.value &&
+                              styles.checkboxSelected,
+                          ]}
+                        >
                           {concentratorParams === option.value && (
-                            <Ionicons name="checkmark" size={16} color="#1890ff" />
+                            <Ionicons
+                              name="checkmark"
+                              size={16}
+                              color="#1890ff"
+                            />
                           )}
                         </View>
                         <Text
                           style={[
                             styles.radioButtonText,
-                            concentratorParams === option.value && styles.radioButtonTextSelected,
+                            concentratorParams === option.value &&
+                              styles.radioButtonTextSelected,
                           ]}
                         >
                           {option.label}
@@ -444,7 +534,11 @@ export default function BatchControlModal({
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.confirmButton]}
-              onPress={activeTab === 'single' ? handleConfirm : handleConcentratorConfirm}
+              onPress={
+                activeTab === "single"
+                  ? handleConfirm
+                  : handleConcentratorConfirm
+              }
             >
               <Text style={[styles.buttonText, styles.confirmButtonText]}>
                 设置
@@ -504,21 +598,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   formItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     minWidth: 80,
   },
   pickerContainer: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 4,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     height: 40,
     // justifyContent: 'center',
   },
@@ -526,7 +620,7 @@ const styles = StyleSheet.create({
     height: 50,
     padding: 0,
     margin: 0,
-    width: '100%',
+    width: "100%",
     transform: [{ translateY: -7 }],
   },
   input: {
@@ -537,6 +631,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
     lineHeight: 40,
+    paddingVertical: 0,
+    includeFontPadding: false, // Android
+    textAlignVertical: "center", // Android
   },
   footer: {
     flexDirection: "row",
@@ -565,8 +662,8 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   slider: {
@@ -575,31 +672,31 @@ const styles = StyleSheet.create({
   },
   sliderValue: {
     width: 30,
-    textAlign: 'right',
+    textAlign: "right",
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1890ff',
+    borderBottomColor: "#1890ff",
   },
   tabText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   activeTabText: {
-    color: '#1890ff',
-    fontWeight: '600',
+    color: "#1890ff",
+    fontWeight: "600",
   },
   radioGroup: {
     gap: 8,
@@ -609,16 +706,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
   },
   radioButtonSelected: {
-    backgroundColor: '#e6f7ff',
-    borderColor: '#91d5ff',
+    backgroundColor: "#e6f7ff",
+    borderColor: "#91d5ff",
   },
   radioButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   checkbox: {
@@ -626,21 +723,21 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxSelected: {
-    borderColor: '#1890ff',
-    backgroundColor: '#e6f7ff',
+    borderColor: "#1890ff",
+    backgroundColor: "#e6f7ff",
   },
   radioButtonText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     flex: 1,
   },
   radioButtonTextSelected: {
-    color: '#1890ff',
+    color: "#1890ff",
   },
 });

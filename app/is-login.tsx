@@ -11,42 +11,42 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import {
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withTiming
-} from 'react-native-reanimated';
+  withTiming,
+} from "react-native-reanimated";
 // import { useAuthStore } from "@/store/auther";
 import { useCustomToast } from "@/components/public/UIComponents/ToastComponent";
 import { getCurrentBaseUrl } from "@/store/globalStateStore";
 import { getUserInfo, saveToken, saveUserInfo } from "@/utils/useStorageState";
 import { router } from "expo-router";
 import { md5 } from "js-md5";
-const kabuda = require("@/assets/images/images/kabuda.png")
-const sharkHot = require("@/assets/images/images/sharkHot.png")
+const kabuda = require("@/assets/images/images/kabuda.png");
+const sharkHot = require("@/assets/images/images/sharkHot.png");
 // const md5 = require('md5');
 // const default_url = 'http://182.99.177.29:48099'
 export default function LoginIndex() {
   // const {init}  = useWebSocketStore()
-  const {showError} = useCustomToast()
+  const { showError } = useCustomToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginFailed, setLoginFailed] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [iskabuda,setIskabuda] = useState<boolean>(true)
-  const DEFAULT_BASE_URL = getCurrentBaseUrl()  
-  const loginForm ={
-    username: '',
-    password: '',
-    grant_type: 'password',
-    client_id: '6eafe0d2-f2ab-4cdb-b829-6d4555c60b41',
-    client_secret: '123456',
-  }
+  const [iskabuda, setIskabuda] = useState<boolean>(true);
+  const DEFAULT_BASE_URL = getCurrentBaseUrl();
+  const loginForm = {
+    username: "",
+    password: "",
+    grant_type: "password",
+    client_id: "6eafe0d2-f2ab-4cdb-b829-6d4555c60b41",
+    client_secret: "123456",
+  };
   // 替换原来的动画实现
   const rotation = useSharedValue(0);
 
@@ -57,7 +57,7 @@ export default function LoginIndex() {
         easing: Easing.linear,
       }),
       -1, // 无限循环
-      false // 不反向
+      false, // 不反向
     );
   }, []);
 
@@ -84,28 +84,36 @@ export default function LoginIndex() {
       return;
     }
     setLoginFailed(false);
-    
+
     try {
       loginForm.username = username;
       loginForm.password = md5(password);
       const formBody = Object.keys(loginForm)
-        .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(loginForm[key as keyof typeof loginForm]))
-        .join('&');
+        .map(
+          (key) =>
+            encodeURIComponent(key) +
+            "=" +
+            encodeURIComponent(loginForm[key as keyof typeof loginForm]),
+        )
+        .join("&");
 
-      console.log('Login attempt with URL:', `${DEFAULT_BASE_URL}/smart/auth/token`);
-      
+      console.log(
+        "Login attempt with URL:",
+        `${DEFAULT_BASE_URL}/smart/auth/token`,
+      );
+
       const response = await fetch(`${DEFAULT_BASE_URL}/smart/auth/token`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json"
+          Accept: "application/json",
         },
-        body: formBody
+        body: formBody,
       });
 
       const responseText = await response.text();
-      console.log('Response status:', response.status);
-      console.log('Response text:', responseText);
+      console.log("Response status:", response.status);
+      console.log("Response text:", responseText);
 
       let responseData;
       try {
@@ -113,39 +121,42 @@ export default function LoginIndex() {
       } catch (e) {
         // console.error("Failed to parse response:", e);
         showError({
-          title: '登录失败',
-          message: '服务器响应格式错误'
+          title: "登录失败",
+          message: "服务器响应格式错误",
         });
         return;
       }
-      
+
       if (response.ok) {
         if (rememberPassword) {
-          await saveUserInfo({name: username, password: password});
+          await saveUserInfo({ name: username, password: password });
         } else {
-          await saveUserInfo({name: username, password: ''});
+          await saveUserInfo({ name: username, password: "" });
         }
-        
+
         if (responseData && responseData.access_token) {
           await saveToken(responseData.access_token);
           console.log("Login successful, token saved");
-          
+
           setTimeout(() => {
             router.replace("/(logging-in)/(tabs)/(devices)/ebox");
           }, 500);
         } else {
           // console.error("No access token in response:", responseData);
           showError({
-            title: '登录失败',
-            message: '服务器响应缺少必要信息'
+            title: "登录失败",
+            message: "服务器响应缺少必要信息",
           });
         }
       } else {
-        const errorMessage = responseData?.error_description || responseData?.error || '用户名或密码错误';
+        const errorMessage =
+          responseData?.error_description ||
+          responseData?.error ||
+          "用户名或密码错误";
         // console.error("Login failed:", errorMessage);
         showError({
-          title: '登录失败',
-          message: errorMessage
+          title: "登录失败",
+          message: errorMessage,
         });
         setLoginFailed(true);
       }
@@ -153,8 +164,8 @@ export default function LoginIndex() {
       console.error("Login request error:", error);
       setLoginFailed(true);
       showError({
-        title: '登录失败',
-        message: `网络请求错误，请检查网络连接或稍后再试${DEFAULT_BASE_URL},${error}`
+        title: "登录失败",
+        message: `网络请求错误，请检查网络连接或稍后再试${DEFAULT_BASE_URL},${error}`,
       });
     }
   };
@@ -163,32 +174,35 @@ export default function LoginIndex() {
   const passwordInputRef = useRef<TextInput>(null);
 
   const handleLongPressLogo = () => {
-    router.push('/change-ip');
+    router.push("/change-ip");
   };
-  const handleChangeImage = ()=>{
-   const changeiIskabuda = !iskabuda
-   setIskabuda(changeiIskabuda)
-   
-  }
+  const handleChangeImage = () => {
+    const changeiIskabuda = !iskabuda;
+    setIskabuda(changeiIskabuda);
+  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      
       <LinearGradient
-        style={[styles.gradient, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}
-        colors={iskabuda?["#0F55A1", "#4ade80"]:['#EC407A','#7B1FA2']}
+        style={[
+          styles.gradient,
+          {
+            paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+          },
+        ]}
+        colors={iskabuda ? ["#0F55A1", "#4ade80"] : ["#EC407A", "#7B1FA2"]}
         start={[0, 1]}
         end={[1, 0]}
       >
         <StatusBar
-        // backgroundColor={loginFailed ? "#ff4d4d" : "#4ade80"}
-        // barStyle="light-content"
-         backgroundColor="transparent"
-        translucent={true}
-      />
+          // backgroundColor={loginFailed ? "#ff4d4d" : "#4ade80"}
+          // barStyle="light-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
         <TouchableOpacity
           onLongPress={handleLongPressLogo}
           onPress={handleChangeImage}
@@ -207,10 +221,7 @@ export default function LoginIndex() {
             />
           </Animated.View> */}
           <View style={styles.logoContainer}>
-           <Image
-              source={iskabuda?kabuda:sharkHot}
-              style={styles.logo}
-            />
+            <Image source={iskabuda ? kabuda : sharkHot} style={styles.logo} />
           </View>
         </TouchableOpacity>
         <View style={styles.card}>
@@ -244,18 +255,18 @@ export default function LoginIndex() {
                   // login();
                 }}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <Icon 
-                  name={showPassword ? "eye" : "eye-slash"} 
-                  size={20} 
-                  color="#fff" 
+                <Icon
+                  name={showPassword ? "eye" : "eye-slash"}
+                  size={20}
+                  color="#fff"
                 />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.rememberContainer}>
               <Switch
                 value={rememberPassword}
@@ -272,7 +283,9 @@ export default function LoginIndex() {
           </TouchableOpacity>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Created By XDD 2025-{new Date().getFullYear()}.</Text>
+          <Text style={styles.footerText}>
+            Created By XDD 2025-{new Date().getFullYear()}.
+          </Text>
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -292,8 +305,8 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     marginBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   logo: {
     width: 160,
@@ -328,8 +341,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: "100%",
     color: "#fff",
     fontSize: 16,
+    paddingVertical: 0,
+    includeFontPadding: false, // Android
+    textAlignVertical: "center", // Android
   },
   button: {
     backgroundColor: "#007AFF",
@@ -363,13 +380,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   rememberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
     marginBottom: 20,
   },
   rememberText: {
-    color: '#fff',
+    color: "#fff",
     marginLeft: 10,
     fontSize: 14,
   },

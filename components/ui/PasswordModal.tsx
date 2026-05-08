@@ -48,27 +48,25 @@ export default function PasswordModal({
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: currentTheme.drawerBg }]}>
+        <View
+          style={[styles.modal, { backgroundColor: currentTheme.drawerBg }]}
+        >
           <View style={styles.header}>
             <Text style={[styles.title, { color: currentTheme.textColor }]}>
               {title}
             </Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Ionicons
-                name="close"
-                size={24}
-                color={currentTheme.textColor}
-              />
+              <Ionicons name="close" size={24} color={currentTheme.textColor} />
             </TouchableOpacity>
           </View>
           <View style={styles.content}>
             <TextInput
               style={[
                 styles.input,
-                { 
+                {
                   color: currentTheme.textColor,
                   backgroundColor: currentTheme.headerBg,
-                }
+                },
               ]}
               placeholder="请输入密码"
               placeholderTextColor={currentTheme.textColor}
@@ -83,7 +81,9 @@ export default function PasswordModal({
               style={[styles.button, styles.cancelButton]}
               onPress={handleClose}
             >
-              <Text style={[styles.buttonText, { color: currentTheme.textColor }]}>
+              <Text
+                style={[styles.buttonText, { color: currentTheme.textColor }]}
+              >
                 取消
               </Text>
             </TouchableOpacity>
@@ -92,7 +92,7 @@ export default function PasswordModal({
                 styles.button,
                 styles.confirmButton,
                 { backgroundColor: currentTheme.textColor },
-                loading && styles.disabledButton
+                loading && styles.disabledButton,
               ]}
               onPress={handleConfirm}
               disabled={loading || !password.trim()}
@@ -143,6 +143,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 12,
     fontSize: 16,
+    paddingVertical: 0,
+    includeFontPadding: false, // Android
+    textAlignVertical: "center", // Android
   },
   footer: {
     flexDirection: "row",
@@ -171,4 +174,4 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: "#FFFFFF",
   },
-}); 
+});

@@ -1,14 +1,14 @@
 import { getElectricCfg } from "@/api/street/configuration";
-import deviceMapJson from '@/assets/JSON/device_map_json.json';
+import deviceMapJson from "@/assets/JSON/device_map_json.json";
 import ConfigurationGraph, {
   ConfigNode,
 } from "@/components/configuration/svgComponent";
 import { useWebSocketStore } from "@/store/websocketStore";
-import AntDesign from '@expo/vector-icons/AntDesign';
+import AntDesign from "@expo/vector-icons/AntDesign";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // 修改 DeviceMeta 接口以匹配实际的 JSON 结构
 interface DeviceMeta {
   name: string;
@@ -33,8 +33,8 @@ interface TreeNode {
   xAxis: number;
   yAxis: number;
   children?: TreeNode[];
-  emsg:string|null;
-  num_value:number|null;
+  emsg: string | null;
+  num_value: number | null;
   [key: string]: any;
 }
 
@@ -42,12 +42,15 @@ export default function ConfigurationPage() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const {WS_SmartLight_Data} = useWebSocketStore()
+  const { WS_SmartLight_Data } = useWebSocketStore();
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [nodes, setNodes] = useState<ConfigNode[]>([]);
-  const flattenTree = (treeList: TreeNode[], children = "children"): ConfigNode[] => {
+  const flattenTree = (
+    treeList: TreeNode[],
+    children = "children",
+  ): ConfigNode[] => {
     const list: ConfigNode[] = [];
     if (!Array.isArray(treeList) || !treeList.length) return [];
     if (typeof children !== "string") return [];
@@ -55,8 +58,11 @@ export default function ConfigurationPage() {
     const getObj = (arr: TreeNode[]) => {
       arr.forEach((row: TreeNode) => {
         // 查找 meta，使用类型断言
-        const meta = deviceMapJson.find((m) => m.icon === row.icon) as DeviceMeta | undefined;
-        let spriteX = 0, spriteY = 0;
+        const meta = deviceMapJson.find((m) => m.icon === row.icon) as
+          | DeviceMeta
+          | undefined;
+        let spriteX = 0,
+          spriteY = 0;
 
         // 安全地访问坐标值
         if (meta && row.iconValue && Array.isArray(meta[row.iconValue])) {
@@ -76,7 +82,7 @@ export default function ConfigurationPage() {
           // yAxis: row.yAxis,
           spriteX,
           spriteY,
-          imageUrl: '',
+          imageUrl: "",
           parent: row.parent || null,
           // icon: row.icon,
           // iconValue: row.iconValue,
@@ -88,22 +94,22 @@ export default function ConfigurationPage() {
           voltageA: row.voltageA,
           voltageB: row.voltageB,
           voltageC: row.voltageC,
-          display_name:row.display_name,
-          cfg_type:row.cfg_type,
-          selectTypeA:row.selectTypeA,
-          selectTypeB:row.selectTypeB,
-          selectTypeC:row.selectTypeC,
+          display_name: row.display_name,
+          cfg_type: row.cfg_type,
+          selectTypeA: row.selectTypeA,
+          selectTypeB: row.selectTypeB,
+          selectTypeC: row.selectTypeC,
           // 添加其他必需的字段
           ...row,
         };
-        
+
         // 删除 children 字段
-        if ('children' in pushData) {
+        if ("children" in pushData) {
           delete (pushData as any).children;
         }
-        
+
         list.push(pushData);
-    
+
         if (row[children] && Array.isArray(row[children])) {
           getObj(row[children]);
         }
@@ -126,7 +132,6 @@ export default function ConfigurationPage() {
         const nodes = flattenTree(response.data.node);
         setNodes(nodes);
         // console.log(nodes);
-        
       } else {
         setError(response.msg || "获取配置失败");
       }
@@ -140,41 +145,47 @@ export default function ConfigurationPage() {
   useEffect(() => {
     fetchConfig();
   }, [params.item]);
-  useEffect(()=>{
-     const item = JSON.parse(params.item as string);
-     if(item.device_info.id===WS_SmartLight_Data?.did){
+  useEffect(() => {
+    const item = JSON.parse(params.item as string);
+    if (item.device_info.id === WS_SmartLight_Data?.did) {
       fetchConfig();
-     }
-  },[WS_SmartLight_Data])
+    }
+  }, [WS_SmartLight_Data]);
   const handleBack = () => {
     router.back();
   };
-  
+
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 2,
-          height: 55,
-          paddingTop: insets.top,
-          backgroundColor: 'black'
-        }}>
+      <View style={{ flex: 1, backgroundColor: "black" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 2,
+            height: 55,
+            paddingTop: insets.top,
+            backgroundColor: "black",
+          }}
+        >
           <Pressable onPress={handleBack} style={{ marginRight: 16 }}>
             <AntDesign name="arrowleft" size={24} color="#ffffff" />
           </Pressable>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: '#ffffff',
-          }}>
-            {JSON.parse(params.item as string).name || 'Configuration'}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: "#ffffff",
+            }}
+          >
+            {JSON.parse(params.item as string).name || "Configuration"}
           </Text>
         </View>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <ActivityIndicator size="large" color="#409eff" />
-          <Text style={{ marginTop: 10, color: 'white' }}>正在加载配置...</Text>
+          <Text style={{ marginTop: 10, color: "white" }}>正在加载配置...</Text>
         </View>
       </View>
     );
@@ -182,27 +193,33 @@ export default function ConfigurationPage() {
 
   if (error) {
     return (
-      <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 16,
-          height: 55,
-          paddingTop: insets.top,
-          backgroundColor: 'black'
-        }}>
+      <View style={{ flex: 1, backgroundColor: "black" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 16,
+            height: 55,
+            paddingTop: insets.top,
+            backgroundColor: "black",
+          }}
+        >
           <Pressable onPress={handleBack} style={{ marginRight: 16 }}>
             <AntDesign name="arrowleft" size={24} color="#ffffff" />
           </Pressable>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: '#ffffff',
-          }}>
-            {JSON.parse(params.item as string).name || 'Configuration'}
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: "#ffffff",
+            }}
+          >
+            {JSON.parse(params.item as string).name || "Configuration"}
           </Text>
         </View>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <Text style={{ color: "red" }}>{error}</Text>
         </View>
       </View>
@@ -210,24 +227,28 @@ export default function ConfigurationPage() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'black' }}>
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        height: 55,
-        paddingTop: insets.top,
-        backgroundColor: 'black'
-      }}>
+    <View style={{ flex: 1, backgroundColor: "black" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          height: 60,
+          paddingTop: insets.top,
+          backgroundColor: "black",
+        }}
+      >
         <Pressable onPress={handleBack} style={{ marginRight: 16 }}>
           <AntDesign name="arrowleft" size={24} color="#ffffff" />
         </Pressable>
-        <Text style={{
-          fontSize: 18,
-          fontWeight: 'bold',
-          color: '#ffffff',
-        }}>
-          {JSON.parse(params.item as string).name || 'Configuration'}
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "bold",
+            color: "#ffffff",
+          }}
+        >
+          {JSON.parse(params.item as string).name || "Configuration"}
         </Text>
       </View>
       <ConfigurationGraph nodes={nodes} />

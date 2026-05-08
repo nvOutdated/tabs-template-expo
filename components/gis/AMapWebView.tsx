@@ -89,7 +89,7 @@ const AMapWebView = ({
           warn: moveTo.warn,
           state: moveTo.state,
           direction: moveTo.direction,
-          container_id:moveTo.container_id
+          container_id: moveTo.container_id,
         },
       });
       webViewRef.current.injectJavaScript(`
@@ -413,13 +413,14 @@ const AMapWebView = ({
       switch (data.type) {
         case "getMarkerDetails":
           try {
-          
             if (data.Container.container_id) {
-              const res = await container_query_details({ container_id: data.Container.container_id });
+              const res = await container_query_details({
+                container_id: data.Container.container_id,
+              });
               if (res.code === 200) {
-                let updateDetailsScript = '';
-                if(res.data.container_type === 'lamp'){
-                   updateDetailsScript = `
+                let updateDetailsScript = "";
+                if (res.data.container_type === "lamp") {
+                  updateDetailsScript = `
                   (function() {
                     window.handleMarkerDetails({
                       data: {
@@ -436,9 +437,9 @@ const AMapWebView = ({
                     });
                   })();
                 `;
-                webViewRef.current?.injectJavaScript(updateDetailsScript);
-                }else{
-                   updateDetailsScript = `
+                  webViewRef.current?.injectJavaScript(updateDetailsScript);
+                } else {
+                  updateDetailsScript = `
                   (function() {
                     window.handleMarkerDetails({
                       data: {
@@ -454,9 +455,9 @@ const AMapWebView = ({
                     });
                   })();
                 `;
-                webViewRef.current?.injectJavaScript(updateDetailsScript);
+                  webViewRef.current?.injectJavaScript(updateDetailsScript);
                 }
-                }
+              }
             } else {
               // 处理单灯点击（没有container_id的情况）
               const updateDetailsScript = `
@@ -510,7 +511,7 @@ const AMapWebView = ({
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                 <title>高德地图</title>
                 <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
-                <script src="https://webapi.amap.com/maps?v=2.0&key=3eecd5c781cbafb6efc01aecb6149836"></script>
+                <script src="https://webapi.amap.com/maps?v=2.0&key=46706639eb0fcf93547033af8ea5b079"></script>
                 <style>
                   html, body, #container {
                     height: 100%;
@@ -540,8 +541,8 @@ const AMapWebView = ({
         startInLoadingState={true}
         scalesPageToFit={true}
         style={{
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "100%",
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
@@ -553,4 +554,3 @@ const AMapWebView = ({
 };
 
 export default AMapWebView;
-

@@ -1,10 +1,13 @@
 import { deviceQuantity_queryByArea } from "@/api/gis";
-import { get_container_list, gis_lightContainer_list } from "@/api/street/streetCommon";
+import {
+  get_container_list,
+  gis_lightContainer_list,
+} from "@/api/street/streetCommon";
 import AMapWebView from "@/components/gis/AMapWebView";
 import MapMessage from "@/components/gis/MapMessage";
 import { useCurrentTheme } from "@/components/ui/gluestack-ui-provider/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -13,14 +16,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
@@ -57,12 +60,12 @@ export default function GisIndexScreen() {
     yulanLampNum: 0,
     gardenLampNum: 0,
     otherLampNum: 0,
-    lampHolderNum: 0
+    lampHolderNum: 0,
   });
 
   // BottomSheet 相关
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = ['15%', '47%'];
+  const snapPoints = ["15%", "47%"];
 
   const searchAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: searchAnimation.value }],
@@ -84,7 +87,7 @@ export default function GisIndexScreen() {
     const gg_lng = z * Math.cos(theta);
     const gg_lat = z * Math.sin(theta);
     return { lat: gg_lat, lng: gg_lng };
-  }
+  };
 
   const fetchContainerList = async () => {
     try {
@@ -92,15 +95,15 @@ export default function GisIndexScreen() {
       if (res.code === 200) {
         const convertedData = res.data.map((item: any) => ({
           ...item,
-          searchName: '集中器: ' + `${item.device_code}` + `,(${item.name})`,
-          ...bdToGaoDe(item.lat, item.lng)
+          searchName: "集中器: " + `${item.device_code}` + `,(${item.name})`,
+          ...bdToGaoDe(item.lat, item.lng),
         }));
         setContainerList(convertedData);
       }
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const fetchAllLightData = async () => {
     try {
@@ -116,13 +119,13 @@ export default function GisIndexScreen() {
           lat2: 90,
           lng2: 180,
           page_size: 200,
-          current: current
+          current: current,
         });
         if (res.code === 200 && res.data && res.data.length > 0) {
           const convertedData = res.data.map((item: any) => ({
             ...item,
-            searchName: '单灯: ' + `${item.name}` + `,(${item.container_id})`,
-            ...bdToGaoDe(item.lat, item.lng)
+            searchName: "单灯: " + `${item.name}` + `,(${item.container_id})`,
+            ...bdToGaoDe(item.lat, item.lng),
           }));
           allLights = [...allLights, ...convertedData];
           setLightList([...allLights]); // 实时显示数量
@@ -141,7 +144,7 @@ export default function GisIndexScreen() {
   const fetchDeviceQuantityByArea = async () => {
     try {
       const res = await deviceQuantity_queryByArea({
-        areaId: 1
+        areaId: 1,
       });
       if (res.code === 200) {
         setDeviceQuantity(res.data);
@@ -149,12 +152,12 @@ export default function GisIndexScreen() {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   useEffect(() => {
     fetchContainerList();
-    fetchAllLightData()
-    fetchDeviceQuantityByArea()
+    fetchAllLightData();
+    fetchDeviceQuantityByArea();
   }, []);
 
   const toggleSearch = useCallback(() => {
@@ -171,9 +174,13 @@ export default function GisIndexScreen() {
     //console.log(containerList[0], lightList[0]);
 
     if (text.length > 0) {
-      const filtered = [...containerList, ...lightList].filter(item =>
-        item.searchName && item.searchName.toLowerCase().includes(text.toLowerCase())
-      ).slice(0, 10);
+      const filtered = [...containerList, ...lightList]
+        .filter(
+          (item) =>
+            item.searchName &&
+            item.searchName.toLowerCase().includes(text.toLowerCase()),
+        )
+        .slice(0, 10);
       setSearchResults(filtered);
       setShowSearchResults(true);
     } else {
@@ -182,13 +189,13 @@ export default function GisIndexScreen() {
   };
 
   const clearSearch = () => {
-    setSearchText('');
+    setSearchText("");
     setShowSearchResults(false);
     setSelectedMarker(null);
   };
 
   const handleSelectResult = (item: any) => {
-    if (item.container_type === 'lamp') {
+    if (item.container_type === "lamp") {
       setSearchText(item.name);
     } else {
       setSearchText(item.device_code);
@@ -197,32 +204,38 @@ export default function GisIndexScreen() {
     setSelectedMarker(item);
   };
 
-
-
   return (
-    <GestureHandlerRootView style={{ flex: 1,backgroundColor:currentTheme.headerBg }}>
-        <StatusBar translucent backgroundColor='transparent' barStyle={currentTheme.headerBg === '#fff' ? 'dark-content' : 'light-content'}/>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: currentTheme.headerBg }}
+    >
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={
+          currentTheme.headerBg === "#fff" ? "dark-content" : "light-content"
+        }
+      />
       <View className="flex-1" style={{ paddingTop: insets.top }}>
         <View style={{ height: height }}>
           {/* 蒙层 */}
           {loadingLight && (
             <View
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.5)',
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(0,0,0,0.5)",
                 zIndex: 100,
-                justifyContent: 'center',
-                alignItems: 'center'
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>
+              <Text style={{ color: "#fff", fontSize: 18, marginBottom: 8 }}>
                 单灯数据加载中...
               </Text>
-              <Text style={{ color: '#fff', fontSize: 16 }}>
+              <Text style={{ color: "#fff", fontSize: 16 }}>
                 已加载：{lightList.length}
               </Text>
             </View>
@@ -240,40 +253,47 @@ export default function GisIndexScreen() {
                 warn: item.warn,
                 icon: {
                   size: [40, 40] as [number, number],
-                  image: ''
+                  image: "",
                 },
-                container_id: item.container_id
+                container_id: item.container_id,
               })),
               ...lightList.map((item, index) => ({
                 id: `light_${item.id}_${index}`,
                 position: { latitude: item.lat, longitude: item.lng },
-                title: item.name || '单灯',
+                title: item.name || "单灯",
                 info: item.sn,
                 container_type: item.container_type,
                 single_lamp_status: item.single_lamp_status || [],
                 direction: item.direction,
                 icon: {
                   size: [40, 80] as [number, number],
-                  image: 'singleLightNormal'
+                  image: "singleLightNormal",
                 },
-                container_id: item.container_id
-              }))
+                container_id: item.container_id,
+              })),
             ]}
-            moveTo={selectedMarker ? {
-              position: { latitude: selectedMarker.lat, longitude: selectedMarker.lng },
-              zoom: mapZoom,
-              title: selectedMarker.name,
-              info: selectedMarker.device_code || selectedMarker.sn,
-              container_type: selectedMarker.container_type,
-              online: selectedMarker.online,
-              open: selectedMarker.open,
-              warn: selectedMarker.warn,
-              direction: selectedMarker.direction,
-              single_lamp_status: selectedMarker.single_lamp_status,
-              container_id: selectedMarker.container_id
-            } : null}
+            moveTo={
+              selectedMarker
+                ? {
+                    position: {
+                      latitude: selectedMarker.lat,
+                      longitude: selectedMarker.lng,
+                    },
+                    zoom: mapZoom,
+                    title: selectedMarker.name,
+                    info: selectedMarker.device_code || selectedMarker.sn,
+                    container_type: selectedMarker.container_type,
+                    online: selectedMarker.online,
+                    open: selectedMarker.open,
+                    warn: selectedMarker.warn,
+                    direction: selectedMarker.direction,
+                    single_lamp_status: selectedMarker.single_lamp_status,
+                    container_id: selectedMarker.container_id,
+                  }
+                : null
+            }
             onMapPress={(position) => {
-              console.log('Map pressed:', position);
+              console.log("Map pressed:", position);
             }}
           />
           <View className="absolute top-2 right-2 z-10">
@@ -289,7 +309,7 @@ export default function GisIndexScreen() {
             </TouchableOpacity>
           </View>
           <Animated.View
-            className="absolute h-11 top-2 left-2 right-12 z-10 bg-background-300 rounded-full px-3 flex-row items-center"
+            className="absolute h-11 top-2 left-0 right-12 z-10 bg-background-300 rounded-full px-3 flex-row items-center"
             style={searchAnimatedStyle}
           >
             <View className="flex-1 flex-row items-center">
@@ -304,10 +324,7 @@ export default function GisIndexScreen() {
                 autoFocus={showSearch}
               />
               {searchText.length > 0 && (
-                <TouchableOpacity
-                  onPress={clearSearch}
-                  className="p-1"
-                >
+                <TouchableOpacity onPress={clearSearch} className="p-1">
                   <Ionicons name="close-circle" size={20} color="#999" />
                 </TouchableOpacity>
               )}
@@ -322,8 +339,12 @@ export default function GisIndexScreen() {
                       className="px-4 py-2 border-b border-gray-100"
                       onPress={() => handleSelectResult(item)}
                     >
-                      <Text className="text-typography-900">{item.searchName.split(',')[0]}</Text>
-                      <Text className="text-typography-900">{item.searchName.split(',')[1]}</Text>
+                      <Text className="text-typography-900">
+                        {item.searchName.split(",")[0]}
+                      </Text>
+                      <Text className="text-typography-900">
+                        {item.searchName.split(",")[1]}
+                      </Text>
                     </TouchableOpacity>
                   )}
                 />
@@ -344,11 +365,14 @@ export default function GisIndexScreen() {
             height: 4,
           }}
           backgroundStyle={{
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
           }}
         >
           <BottomSheetView style={{ flex: 1 }}>
-            <MapMessage deviceQuantity={deviceQuantity} containerList={containerList} />
+            <MapMessage
+              deviceQuantity={deviceQuantity}
+              containerList={containerList}
+            />
           </BottomSheetView>
         </BottomSheet>
       </View>
